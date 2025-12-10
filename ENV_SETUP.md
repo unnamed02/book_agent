@@ -139,10 +139,6 @@ ENV_FILE=.env.production uvicorn api:app
 2. 提交 `.env.example` 到 Git
 3. 团队成员拉取后手动更新自己的 `.env`
 
-## 相关文档
-
-- [产品化改造方案](../.claude/plans/bubbly-plotting-quilt.md)
-- [API 文档](http://localhost:8000/docs) (启动后访问)
 
 ## 技术支持
 

@@ -88,10 +88,8 @@ def get_douban_book_detail(uri: str) -> str:
         title = extract_book_name(str(title_raw))
         author_raw = data.get("author", "")
         author = extract_first_author(str(author_raw)) if author_raw else "未知作者"
-        
-        temp_image = data.get("image", "")
-        logging.info("*** " + temp_image)
-        
+
+       
         return json.dumps({
             "title": title,
             "author": author,

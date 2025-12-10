@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { Input, Button, Card, Avatar, Space, Typography } from 'antd';
-import { SendOutlined, BookOutlined, UserOutlined } from '@ant-design/icons';
+import { Input, Button, Card, Avatar, Space, Typography, Tooltip } from 'antd';
+import { SendOutlined, BookOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 
@@ -18,6 +18,7 @@ function App() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  const [userId, setUserId] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -28,34 +29,200 @@ function App() {
     scrollToBottom();
   }, [messages]);
 
+  // 初始化时从 localStorage 恢复 session_id 和 user_id
+  useEffect(() => {
+    const savedSessionId = localStorage.getItem('book_agent_session_id');
+    const savedUserId = localStorage.getItem('book_agent_user_id');
+
+    if (savedSessionId) {
+      setSessionId(savedSessionId);
+      console.log('恢复会话:', savedSessionId);
+    }
+
+    if (savedUserId) {
+      setUserId(savedUserId);
+      console.log('恢复用户ID:', savedUserId);
+    }
+  }, []);
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage = { role: 'user', content: input };
+    const currentInput = input;
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8000/chat', {
-        message: input,
-        session_id: sessionId
+      const response = await fetch('http://localhost:8000/chat/stream', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentInput,
+          session_id: sessionId,
+          user_id: userId
+        }),
       });
 
-      // 保存session_id
-      if (response.data.session_id) {
-        setSessionId(response.data.session_id);
-      }
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentContent = '';
+      let fullContent = ''; // 完整内容（用于最终保存）
+      let hasCreatedMessage = false; // 标记是否已创建assistant消息
 
-      setMessages(prev => [...prev, { role: 'assistant', content: response.data.response }]);
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || ''; // 保留不完整的行
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'session') {
+                // 保存会话信息
+                if (data.session_id) {
+                  setSessionId(data.session_id);
+                  localStorage.setItem('book_agent_session_id', data.session_id);
+                  console.log('保存会话ID:', data.session_id);
+                }
+                if (data.user_id) {
+                  setUserId(data.user_id);
+                  localStorage.setItem('book_agent_user_id', data.user_id);
+                  console.log('保存用户ID:', data.user_id);
+                }
+              } else if (data.type === 'dialogue') {
+                // 对话部分 - 第一次有内容时创建消息
+                currentContent = data.content + '\n\n';
+                fullContent += currentContent;
+
+                if (!hasCreatedMessage) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
+                  hasCreatedMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: currentContent
+                    };
+                    return newMessages;
+                  });
+                }
+              } else if (data.type === 'books') {
+                // 书单部分
+                currentContent += data.content + '\n\n';
+                fullContent += data.content + '\n\n';
+
+                if (!hasCreatedMessage) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
+                  hasCreatedMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: currentContent
+                    };
+                    return newMessages;
+                  });
+                }
+              } else if (data.type === 'status') {
+                // 状态信息（正在查询...）
+                currentContent += `*${data.content}*\n\n`;
+
+                if (!hasCreatedMessage) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
+                  hasCreatedMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: currentContent
+                    };
+                    return newMessages;
+                  });
+                }
+              } else if (data.type === 'book_detail') {
+                // 移除"正在查询"的状态信息
+                currentContent = currentContent.replace(/\*正在为您查询这些书籍的详细信息\.\.\.\*\n\n/g, '');
+
+                // 添加详细信息
+                currentContent += data.content + '\n\n';
+                fullContent += data.content + '\n\n';
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    ...newMessages[newMessages.length - 1],
+                    content: currentContent
+                  };
+                  return newMessages;
+                });
+              } else if (data.type === 'message') {
+                // 简单消息（如澄清问题）
+                currentContent = data.content;
+                fullContent = data.content;
+
+                if (!hasCreatedMessage) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
+                  hasCreatedMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: currentContent
+                    };
+                    return newMessages;
+                  });
+                }
+              } else if (data.type === 'done') {
+                // 完成，标记为非流式
+                if (hasCreatedMessage) {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      isStreaming: false,
+                      content: currentContent || fullContent
+                    };
+                    return newMessages;
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('解析SSE数据失败:', e, line);
+            }
+          }
+        }
+      }
     } catch (error) {
+      console.error('发送消息失败:', error);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '抱歉，发生了错误。请稍后再试。'
+        content: '抱歉，发生了错误。请稍后再试。',
+        isStreaming: false
       }]);
     } finally {
       setLoading(false);
     }
+  };
+
+  // 开始新会话
+  const startNewSession = () => {
+    setMessages([]);
+    setSessionId(null);
+    localStorage.removeItem('book_agent_session_id');
+    console.log('已清除会话，开始新对话');
   };
 
   return (
@@ -75,12 +242,26 @@ function App() {
           <div style={{
             padding: '16px 24px',
             borderBottom: '1px solid #f0f0f0',
-            background: '#fff'
+            background: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center'
           }}>
             <Space>
               <Avatar icon={<BookOutlined />} style={{ background: '#1677ff' }} />
               <Title level={4} style={{ margin: 0 }}>图书推荐助手</Title>
             </Space>
+            {messages.length > 0 && (
+              <Tooltip title="清除当前会话，开始新对话">
+                <Button
+                  icon={<PlusOutlined />}
+                  onClick={startNewSession}
+                  disabled={loading}
+                >
+                  新会话
+                </Button>
+              </Tooltip>
+            )}
           </div>
 
           {/* Messages */}

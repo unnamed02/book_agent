@@ -1,3 +1,12 @@
 langchain
 langchain-openai
+langchain-community
 python-dotenv
+fastapi
+uvicorn
+sqlalchemy[asyncio]
+aiosqlite
+asyncpg
+chromadb
+psutil
+httpx[http2]
