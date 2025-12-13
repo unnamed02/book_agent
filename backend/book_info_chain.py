@@ -14,7 +14,13 @@ def filter_info_with_llm(raw_result: str, book_name: str) -> int:
         return raw_result
 
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    prompt = f"""从以下搜索结果中，筛选出与 query: {book_name}最相关的资源，如果有多个版本，找最新的版本。
+    prompt = f"""从以下搜索结果中，筛选出与 query: {book_name}最相关的资源。
+
+选择标准（按优先级）：
+1. 标题与query最接近（精确匹配优先）
+2. 如果标题相似度接近，优先选择有评分的版本
+3. 如果有多个版本且标题完全相同，选择出版时间最新的
+
 如果没有相关的，返回"暂无相关资源"。
 
 搜索结果：

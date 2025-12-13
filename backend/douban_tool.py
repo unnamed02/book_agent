@@ -44,7 +44,7 @@ def extract_book_name(book_name: str) -> str:
 
 @tool
 def search_douban_book(book_name: str) -> str:
-    """搜索豆瓣图书评分和评价 返回三个结果，选其中出版时间最新的，有评分的使用"""
+    """搜索豆瓣图书评分和评价 返回三个结果，选其中标题最接近，出版时间最新的，有评分的使用"""
     logger.info(f"开始搜索图书: {book_name}")
     try:
         url = f"https://frodo.douban.com/api/v2/search/book?q={book_name}&count=3&apiKey=0ac44ae016490db2204ce0a042db2916"
@@ -64,7 +64,7 @@ def search_douban_book(book_name: str) -> str:
                 "subtitle": target.get("card_subtitle", ""),
                 "uri": target.get("uri", "").split("/")[-1]
             })
-
+        logger.info(results)
         return json.dumps({"books": results}, ensure_ascii=False) if results else json.dumps({"error": f"未找到《{book_name}》的信息"}, ensure_ascii=False)
     except Exception as e:
         logger.error(f"搜索失败: {str(e)}")
