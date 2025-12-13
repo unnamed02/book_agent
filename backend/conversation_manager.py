@@ -6,7 +6,7 @@
 
 from typing import List, Dict, Optional
 from langchain_openai import ChatOpenAI
-from langchain.schema import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 import logging
 
 logger = logging.getLogger(__name__)

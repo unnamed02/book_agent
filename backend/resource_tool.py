@@ -1,5 +1,5 @@
 import requests
-from langchain.tools import tool
+from langchain_core.tools import tool
 import logging
 from bs4 import BeautifulSoup
 import re

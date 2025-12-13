@@ -9,13 +9,9 @@ from typing import Dict, List, Any, Optional
 from collections import defaultdict
 import json
 
-from langchain.memory import (
-    ConversationBufferMemory,
-    ConversationSummaryMemory,
-    VectorStoreRetrieverMemory,
-    CombinedMemory
-)
-from langchain.memory.chat_memory import BaseChatMemory
+from langchain_community.chat_message_histories import ChatMessageHistory
+from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
+from pydantic import BaseModel, ConfigDict
 from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,15 +21,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class LongTermUserMemory(BaseChatMemory):
+class LongTermUserMemory(BaseModel):
     """长期用户记忆 - 从数据库加载用户偏好和历史"""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     user_id: str
     db_session: AsyncSession
     memory_key: str = "long_term_memory"
-
-    class Config:
-        arbitrary_types_allowed = True
 
     @property
     def memory_variables(self) -> List[str]:

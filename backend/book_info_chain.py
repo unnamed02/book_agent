@@ -1,4 +1,4 @@
-from langchain.schema.runnable import RunnablePassthrough, RunnableLambda
+from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from douban_tool import search_douban_book, get_douban_book_detail
 from resource_tool import search_digital_resource
 from shop_tool import search_shop_by_isbn

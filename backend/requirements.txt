@@ -1,4 +1,4 @@
-langchain
+langchain==1.1.0
 langchain-openai
 langchain-community
 python-dotenv
@@ -10,3 +10,4 @@ asyncpg
 chromadb
 psutil
 httpx[http2]
+beautifulsoup4

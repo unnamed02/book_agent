@@ -6,7 +6,7 @@
 from typing import Optional, List, Dict
 from datetime import datetime
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain.schema import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from langchain_community.vectorstores import Chroma
 from memory_manager import UserMemoryManager
 from conversation_manager import ConversationManager, create_conversation_manager
