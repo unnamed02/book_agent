@@ -186,7 +186,8 @@ function App() {
                   });
                 }
               } else if (data.type === 'done') {
-                // 完成，标记为非流式
+                // 完成，标记为非流式，并立即关闭 loading
+                setLoading(false);  // 立即关闭加载状态
                 if (hasCreatedMessage) {
                   setMessages(prev => {
                     const newMessages = [...prev];

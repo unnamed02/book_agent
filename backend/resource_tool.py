@@ -81,8 +81,8 @@ def search_cidp_resource(book_name: str, author: str = "", isbn: str = "") -> st
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', book_name.lower())
-        normalized_author = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', author.lower()) if author else ''
+        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', book_name.lower())
+        normalized_author = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', author.lower()) if author else ''
 
         for tr in soup.select('tr[onclick]')[:20]:
             onclick = tr.get('onclick', '')
@@ -92,10 +92,10 @@ def search_cidp_resource(book_name: str, author: str = "", isbn: str = "") -> st
 
             if title and link:
                 title_text = title.get('title')
-                normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', title_text.lower())
+                normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', title_text.lower())
                 author_text = author_td.get_text(strip=True) if author_td else ''
                 author_text = ' '.join(author_text.split())
-                normalized_author_text = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', author_text.lower())
+                normalized_author_text = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', author_text.lower())
 
                 title_match = normalized_search in normalized_title or normalized_title in normalized_search
                 author_match = not normalized_author or normalized_author in normalized_author_text
@@ -151,11 +151,11 @@ def search_ry_resouce(book_name: str, author: str = "", isbn: str = "") -> str:
         response = requests.post(api_url, json=payload, headers=headers, timeout=10)
         data = response.json()
 
-        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', book_name.lower())
+        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', book_name.lower())
 
         for item in data.get("data", {}).get("list", [])[:20]:
             title = item.get("title", "")
-            normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', title.lower())
+            normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', title.lower())
 
             if normalized_search in normalized_title or normalized_title in normalized_search:
                 all_results.append({

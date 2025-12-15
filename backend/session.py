@@ -7,7 +7,7 @@ from typing import Optional, List, Dict
 from datetime import datetime
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
-from langchain_community.vectorstores import Chroma
+from langchain_milvus import Milvus
 from memory_manager import UserMemoryManager
 from conversation_manager import ConversationManager, create_conversation_manager
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -84,7 +84,7 @@ class Session:
     async def initialize_memory_manager(
         self,
         db_session: AsyncSession,
-        vectorstore: Chroma
+        vectorstore: Milvus
     ):
         """
         初始化记忆管理器（懒加载）
@@ -184,7 +184,7 @@ class SessionManager:
         session_id: Optional[str],
         user_id: Optional[str],
         db: Optional[AsyncSession] = None,
-        vectorstore: Optional[Chroma] = None
+        vectorstore: Optional[Milvus] = None
     ) -> Session:
         """
         获取或创建会话
@@ -236,7 +236,7 @@ class SessionManager:
             sid for sid, session in self.sessions.items()
             if session.is_expired(self.session_timeout)
         ]
-
+    
         for sid in expired:
             del self.sessions[sid]
             logger.info(f"🗑️ 清理过期会话: {sid}")

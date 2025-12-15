@@ -4,7 +4,7 @@ from fastapi.responses import Response, StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_milvus import Milvus
 from book_info_chain import process_book_with_chain
 from memory_manager import UserMemoryManager
 from models import get_db, get_db_manager
@@ -18,13 +18,35 @@ import uuid
 import requests
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
+from contextlib import asynccontextmanager
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-app = FastAPI()
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    """应用生命周期管理"""
+    # 启动时执行
+    try:
+        db_manager = get_db_manager()
+        await db_manager.init_db()
+        logger.info("数据库初始化成功")
+    except Exception as e:
+        logger.warning(f"数据库初始化失败: {e}，记忆功能将不可用")
+
+    yield
+
+    # 关闭时执行
+    try:
+        db_manager = get_db_manager()
+        await db_manager.close()
+        logger.info("数据库连接已关闭")
+    except Exception as e:
+        logger.error(f"关闭数据库连接失败: {e}")
+
+app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -44,38 +66,29 @@ def get_vectorstore():
     """获取或创建向量数据库实例"""
     global vectorstore
     if vectorstore is None:
-        embeddings = OpenAIEmbeddings()
-        vectorstore = Chroma(
-            collection_name="book_recommendations",
-            embedding_function=embeddings,
-            persist_directory="./chroma_db"
-        )
+        try:
+            embeddings = OpenAIEmbeddings()
+            # 连接 Milvus 服务器
+            vectorstore = Milvus(
+                collection_name="book_recommendations",
+                embedding_function=embeddings,
+                connection_args={
+                    "host": "localhost",
+                    "port": "2379"
+                },
+                auto_id=True
+            )
+            logger.info("✓ Milvus 向量数据库连接成功")
+        except Exception as e:
+            logger.warning(f"⚠ Milvus 连接失败: {e}")
+            logger.warning("向量检索功能将不可用，但应用可以继续运行")
+            vectorstore = None
     return vectorstore
 
 class ChatRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     user_id: Optional[str] = None  # 用户ID,支持多用户记忆
-
-@app.on_event("startup")
-async def startup_event():
-    """应用启动时初始化数据库"""
-    try:
-        db_manager = get_db_manager()
-        await db_manager.init_db()
-        logger.info("数据库初始化成功")
-    except Exception as e:
-        logger.warning(f"数据库初始化失败: {e}，记忆功能将不可用")
-
-@app.on_event("shutdown")
-async def shutdown_event():
-    """应用关闭时清理资源"""
-    try:
-        db_manager = get_db_manager()
-        await db_manager.close()
-        logger.info("数据库连接已关闭")
-    except Exception as e:
-        logger.error(f"关闭数据库连接失败: {e}")
 
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):

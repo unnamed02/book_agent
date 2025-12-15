@@ -8,11 +8,10 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from collections import defaultdict
 import json
-
 from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage
 from pydantic import BaseModel, ConfigDict
-from langchain_community.vectorstores import Chroma
+from langchain_milvus import Milvus
 from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, desc
@@ -252,7 +251,7 @@ class UserMemoryManager:
         db_session: AsyncSession,
         llm: Optional[ChatOpenAI] = None,
         embeddings: Optional[OpenAIEmbeddings] = None,
-        vectorstore: Optional[Chroma] = None
+        vectorstore: Optional[Milvus] = None
     ):
         self.user_id = user_id
         self.db_session = db_session
@@ -267,64 +266,31 @@ class UserMemoryManager:
         self._init_memories()
 
     def _init_memories(self):
-        """初始化记忆组件"""
+        """初始化记忆组件 (使用 LangChain 1.x 推荐方式)"""
 
-        # 1. 短期记忆 (Buffer) - 最近5轮对话
-        self.buffer_memory = ConversationBufferMemory(
-            memory_key="chat_history",
-            return_messages=True,
-            input_key="input",
-            output_key="output",
-            k=5
-        )
+        # 1. 短期记忆 - 使用 ChatMessageHistory 存储最近对话
+        self.chat_history = ChatMessageHistory()
 
-        # 2. 摘要记忆 - 自动摘要历史对话
-        self.summary_memory = ConversationSummaryMemory(
-            llm=self.llm,
-            memory_key="conversation_summary",
-            return_messages=False,
-            input_key="input",
-            output_key="output"
-        )
-
-        # 3. 向量检索记忆 - 相似历史检索
-        if self.vectorstore:
-            self.retriever_memory = VectorStoreRetrieverMemory(
-                retriever=self.vectorstore.as_retriever(
-                    search_kwargs={"k": 3, "filter": {"user_id": self.user_id}}
-                ),
-                memory_key="relevant_history",
-                input_key="input"
-            )
-        else:
-            self.retriever_memory = None
-
-        # 4. 长期记忆 - 用户偏好和历史
+        # 2. 长期记忆 - 用户偏好和历史
         self.longterm_memory = LongTermUserMemory(
             user_id=self.user_id,
             db_session=self.db_session
         )
 
-        logger.info(f"用户 {self.user_id} 记忆系统初始化完成")
+        logger.info(f"用户 {self.user_id} 记忆系统初始化完成 (LangChain 1.x)")
 
     async def load_all_memories(self, user_input: str) -> Dict[str, Any]:
-        """加载所有类型的记忆"""
+        """加载所有类型的记忆 (LangChain 1.x)"""
         inputs = {"input": user_input}
-
         memories = {}
 
         try:
-            # 1. 短期记忆 (同步)
-            memories.update(self.buffer_memory.load_memory_variables(inputs))
+            # 1. 短期记忆 - 从 ChatMessageHistory 获取
+            chat_messages = self.chat_history.messages
+            if chat_messages:
+                memories["chat_history"] = chat_messages
 
-            # 2. 摘要记忆 (同步)
-            memories.update(self.summary_memory.load_memory_variables(inputs))
-
-            # 3. 向量检索记忆 (同步)
-            if self.retriever_memory:
-                memories.update(self.retriever_memory.load_memory_variables(inputs))
-
-            # 4. 长期记忆 (异步)
+            # 2. 长期记忆 (异步)
             long_term = await self.longterm_memory.load_memory_variables(inputs)
             memories.update(long_term)
 
@@ -344,15 +310,14 @@ class UserMemoryManager:
         return self._memories
 
     def save_interaction(self, user_input: str, assistant_output: str):
-        """保存交互到短期和摘要记忆"""
-        inputs = {"input": user_input}
-        outputs = {"output": assistant_output}
+        """保存交互到短期记忆 (LangChain 1.x)"""
+        # 保存到 ChatMessageHistory
+        self.chat_history.add_user_message(user_input)
+        self.chat_history.add_ai_message(assistant_output)
 
-        # 保存到 Buffer
-        self.buffer_memory.save_context(inputs, outputs)
-
-        # 保存到 Summary
-        self.summary_memory.save_context(inputs, outputs)
+        # 只保留最近10条消息
+        if len(self.chat_history.messages) > 20:  # 10轮对话 = 20条消息
+            self.chat_history.messages = self.chat_history.messages[-20:]
 
         logger.debug(f"保存交互到短期记忆: {user_input[:50]}...")
 
@@ -422,26 +387,44 @@ class UserMemoryManager:
             raise  # 重新抛出异常，让调用者处理
 
     async def update_preferences_from_query(self, user_query: str):
-        """从用户查询中提取并更新偏好"""
+        """基于用户现有偏好和当前查询，智能更新偏好"""
 
         try:
-            # 使用 LLM 提取偏好
-            extract_prompt = f"""
-            从用户查询中提取阅读偏好,返回JSON格式:
+            # 1. 加载用户当前偏好
+            current_preferences = await self.longterm_memory._load_preferences()
 
-            查询: {user_query}
+            # 2. 格式化当前偏好供 LLM 参考
+            current_prefs_text = self._format_current_preferences(current_preferences)
 
-            返回格式:
-            {{
-                "genres": ["类型1", "类型2"],
-                "topics": ["主题1", "主题2"],
-                "authors": ["作者1"],
-                "reading_level": "beginner/intermediate/advanced",
-                "purpose": "entertainment/learning/research"
-            }}
+            # 3. 使用 LLM 提取偏好，同时考虑历史偏好
+            extract_prompt = f"""你是一个专业的用户偏好分析助手。请基于用户的历史偏好和当前查询，分析并更新用户的阅读偏好。
 
-            只提取明确提到的信息,不要推测。
-            """
+## 用户当前偏好
+{current_prefs_text}
+
+## 用户当前查询
+{user_query}
+
+## 任务
+1. 从当前查询中提取新的偏好信息（类型、主题、作者等）
+2. 结合用户的历史偏好，判断这些新偏好是否需要添加或强化
+3. 如果查询与现有偏好相关，应该强化现有偏好的权重
+
+## 返回格式（JSON）
+{{
+    "genres": ["类型1", "类型2"],
+    "topics": ["主题1", "主题2"],
+    "authors": ["作者1"],
+    "reading_level": "beginner/intermediate/advanced",
+    "purpose": "entertainment/learning/research",
+    "reasoning": "简短说明你的分析"
+}}
+
+注意：
+- 只提取明确提到的信息，不要过度推测
+- 如果查询很模糊或只是澄清问题，返回空列表
+- genres/topics/authors 应该是具体的值，如 "科幻"、"Python编程"、"刘慈欣"
+"""
 
             response = await asyncio.to_thread(
                 self.llm.invoke,
@@ -451,13 +434,36 @@ class UserMemoryManager:
             # 解析 LLM 响应
             prefs = self._parse_preferences(response.content)
 
-            # 更新数据库
-            await self._upsert_preferences(prefs, source="explicit")
-
-            logger.info(f"从查询更新偏好: {prefs}")
+            if prefs and any(prefs.get(k) for k in ["genres", "topics", "authors"]):
+                # 更新数据库
+                await self._upsert_preferences(prefs, source="explicit")
+                logger.info(f"从查询更新偏好: {prefs}")
+            else:
+                logger.debug("查询中未提取到明确偏好，跳过更新")
 
         except Exception as e:
             logger.error(f"更新偏好失败: {str(e)}")
+
+    def _format_current_preferences(self, preferences: List[Dict]) -> str:
+        """格式化当前偏好为文本"""
+        if not preferences:
+            return "暂无历史偏好（新用户）"
+
+        formatted_prefs = defaultdict(list)
+        for pref in preferences[:15]:  # 只显示前15个
+            formatted_prefs[pref["type"]].append(
+                f"{pref['value']} (权重: {pref['weight']:.2f})"
+            )
+
+        result = []
+        if formatted_prefs.get("genre"):
+            result.append(f"- 喜欢的类型: {', '.join(formatted_prefs['genre'][:5])}")
+        if formatted_prefs.get("topic"):
+            result.append(f"- 关注的主题: {', '.join(formatted_prefs['topic'][:5])}")
+        if formatted_prefs.get("author"):
+            result.append(f"- 喜爱的作者: {', '.join(formatted_prefs['author'][:5])}")
+
+        return "\n".join(result) if result else "暂无明显偏好"
 
     def _parse_preferences(self, llm_response: str) -> Dict:
         """解析 LLM 返回的偏好"""

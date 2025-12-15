@@ -79,13 +79,13 @@ def search_online_shop(book_name: str, author: str = "") -> str:
         author_editor = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
 
         results = []
-        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', book_name.lower())
-        normalized_author = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', author.lower()) if author else ''
+        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', book_name.lower())
+        normalized_author = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', author.lower()) if author else ''
 
         for i in range(min(len(book_titles), len(prices), len(isbns), len(author_editor))):
             title = re.sub(r'<[^>]+>', '', book_titles[i])
-            normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', title.lower())
-            normalized_author_text = re.sub(r'[（）()【】\[\]《》<>""''\s]', '', author_editor[i].lower())
+            normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', title.lower())
+            normalized_author_text = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', author_editor[i].lower())
 
             title_match = normalized_search in normalized_title or normalized_title in normalized_search
             author_match = not normalized_author or normalized_author in normalized_author_text
