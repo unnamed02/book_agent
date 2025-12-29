@@ -55,7 +55,12 @@ function App() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:8000/chat/stream', {
+      // 使用当前域名和协议，兼容本地和远程部署
+      const apiBaseUrl = window.location.hostname === 'localhost'
+        ? 'http://localhost:8000'
+        : `http://${window.location.hostname}:8000`;
+
+      const response = await fetch(`${apiBaseUrl}/chat/stream`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -10,6 +10,21 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+def optimize_query(query: str) -> str:
+    """优化豆瓣query"""
+  
+
+    llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
+    prompt = f"""请将以下由标题作者组成的query做以下优化
+1. 从书名中去掉版本号信息（如"第X版"、"单行本"等），只保留核心书名
+2. 如果有多个作者保留第一个
+3. 去掉音译的外国作者
+只返回最终的query，不要其他内容
+query：{query}"""
+
+    result = llm.invoke(prompt).content.strip()
+    return result
+
 def extract_first_author(author_string: str) -> str:
     """提取第一个作者名"""
     if isinstance(author_string, list):
@@ -45,7 +60,8 @@ def extract_book_name(book_name: str) -> str:
 @tool
 def search_douban_book(book_name: str,author: str) -> str:
     """搜索豆瓣图书评分和评价 返回三个结果，选其中标题最接近，出版时间最新的，有评分的使用"""
-    query = f"{book_name} {author}"
+    query = optimize_query(f"{book_name} {author}")
+    
     logger.info(f"开始搜索图书: {query}")
     try:
         url = f"https://frodo.douban.com/api/v2/search/book?q={query}&count=3&apiKey=0ac44ae016490db2204ce0a042db2916"

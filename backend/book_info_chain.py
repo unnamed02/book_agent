@@ -24,7 +24,7 @@ def filter_info_with_llm(raw_result: str, book_name: str, author: str) -> int:
 
 选择标准（按优先级）：
 1. 作者最接近 (模糊匹配)
-2. 标题最接近 
+2. 标题最接近
 3. 如果标题相似度接近，优先选择有评分的版本
 4. 如果有多个版本且标题完全相同，选择出版时间最新的
 

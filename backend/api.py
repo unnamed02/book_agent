@@ -54,10 +54,16 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # 全局会话管理器
 session_manager = SessionManager(session_timeout=3600)
+
+@app.get("/")
+async def root():
+    """健康检查端点"""
+    return {"status": "ok", "message": "Book recommendation API is running"}
 
 # 向量数据库（共享实例）
 vectorstore = None
