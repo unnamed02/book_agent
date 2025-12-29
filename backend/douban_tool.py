@@ -43,11 +43,12 @@ def extract_book_name(book_name: str) -> str:
 
 
 @tool
-def search_douban_book(book_name: str) -> str:
+def search_douban_book(book_name: str,author: str) -> str:
     """搜索豆瓣图书评分和评价 返回三个结果，选其中标题最接近，出版时间最新的，有评分的使用"""
-    logger.info(f"开始搜索图书: {book_name}")
+    query = f"{book_name} {author}"
+    logger.info(f"开始搜索图书: {query}")
     try:
-        url = f"https://frodo.douban.com/api/v2/search/book?q={book_name}&count=3&apiKey=0ac44ae016490db2204ce0a042db2916"
+        url = f"https://frodo.douban.com/api/v2/search/book?q={query}&count=3&apiKey=0ac44ae016490db2204ce0a042db2916"
         headers = {
             "Referer": "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html",
             "User-Agent": "MicroMessenger/"

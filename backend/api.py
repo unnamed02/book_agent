@@ -211,7 +211,7 @@ JSON格式：
         # 使用 deepseek-v3.2-exp 进行推荐（temperature=0.7 更有创意）
         llm_response = await conversation_manager.ainvoke(
             recommend_prompt,
-            model="deepseek-v3.2-exp",
+            model="DeepSeek-V3.2-Fast",
             temperature=0.7
         )
         logger.info(f"LLM原始响应: {llm_response}")
@@ -278,7 +278,7 @@ JSON格式：
                         "author": authors[i],
                         "reason": reasons[i] if i < len(reasons) else "推荐阅读"
                     })
-                logger.info(f"正则提取得到 {len(books)} 本��籍")
+                logger.info(f"正则提取得到 {len(books)} 本书籍")
 
         if not books:
             # 如果没有书籍，返回错误
@@ -304,9 +304,8 @@ JSON格式：
 
         # 阶段2: 异步获取详细信息
         logger.info(f"推荐书单: {books}")
-        book_queries = [f"{b['title']} {b['author']}" for b in books]
 
-        tasks = [process_book_with_chain(book) for book in book_queries[:5]]
+        tasks = [process_book_with_chain(b['title'], b['author']) for b in books]
         all_books_info = await asyncio.gather(*tasks)
 
         # 过滤空结果和去重，同时提取书籍元数据
@@ -392,7 +391,7 @@ JSON格式：
                 import traceback
                 traceback.print_exc()
         else:
-            logger.warning("⚠ session.memory_manager 为 None，跳过记忆保存")
+            logger.warning("session.memory_manager 为 None，跳过记忆保存")
 
         # 第五步：结束标记
         yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
