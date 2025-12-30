@@ -100,13 +100,12 @@ def get_douban_book_detail(uri: str) -> str:
         }
         response = requests.get(url, params=params, headers=headers, timeout=10, verify=False)
         data = response.json()
-        
+
         title_raw = data.get("title", "")
         title = extract_book_name(str(title_raw))
         author_raw = data.get("author", "")
         author = extract_first_author(str(author_raw)) if author_raw else "未知作者"
 
-       
         return json.dumps({
             "title": title,
             "author": author,
@@ -116,6 +115,7 @@ def get_douban_book_detail(uri: str) -> str:
             "summary": data.get("summary", ""),
             "image": data.get("image", "")
         }, ensure_ascii=False)
+
     except Exception as e:
         logger.error(f"获取失败: {str(e)}")
         return json.dumps({"error": str(e)}, ensure_ascii=False)
