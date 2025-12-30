@@ -175,9 +175,8 @@ def create_book_info_chain():
         except:
             library_text = '暂无馆藏\n\n[荐购此书](https://library.example.com/recommend)'
 
-        from urllib.parse import quote
-        proxy_image = f"http://localhost:8000/proxy-image?url={quote(image)}" if image else ""
-        image_markdown = f"![{title}]({proxy_image})\n\n" if proxy_image else ""
+        # 直接使用豆瓣原图，前端会自动转换为代理URL
+        image_markdown = f"![{title}]({image})\n\n" if image else ""
 
         markdown = f"""{image_markdown}###  {title}
 **作者**：{author} \n
