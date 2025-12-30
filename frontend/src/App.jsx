@@ -45,6 +45,26 @@ function App() {
     }
   }, []);
 
+  // 获取API基础URL
+  const getApiBaseUrl = () => {
+    return window.location.hostname === 'localhost'
+      ? 'http://localhost:8000'
+      : `http://${window.location.hostname}:8000`;
+  };
+
+  // 将豆瓣图片URL替换为代理URL
+  const proxyImageUrls = (content) => {
+    const apiBaseUrl = getApiBaseUrl();
+    // 匹配markdown图片格式：![alt](https://img*.doubanio.com/...)
+    return content.replace(
+      /!\[(.*?)\]\((https:\/\/img\d*\.doubanio\.com\/[^)]+)\)/g,
+      (_match, alt, imageUrl) => {
+        const proxyUrl = `${apiBaseUrl}/proxy-image?url=${encodeURIComponent(imageUrl)}`;
+        return `![${alt}](${proxyUrl})`;
+      }
+    );
+  };
+
   const sendMessage = async () => {
     if (!input.trim()) return;
 
@@ -56,9 +76,7 @@ function App() {
 
     try {
       // 使用当前域名和协议，兼容本地和远程部署
-      const apiBaseUrl = window.location.hostname === 'localhost'
-        ? 'http://localhost:8000'
-        : `http://${window.location.hostname}:8000`;
+      const apiBaseUrl = getApiBaseUrl();
 
       const response = await fetch(`${apiBaseUrl}/chat/stream`, {
         method: 'POST',
@@ -161,9 +179,10 @@ function App() {
                 // 移除"正在查询"的状态信息
                 currentContent = currentContent.replace(/\*正在为您查询这些书籍的详细信息\.\.\.\*\n\n/g, '');
 
-                // 添加详细信息
-                currentContent += data.content + '\n\n';
-                fullContent += data.content + '\n\n';
+                // 添加详细信息，并将豆瓣图片URL替换为代理URL
+                const processedContent = proxyImageUrls(data.content);
+                currentContent += processedContent + '\n\n';
+                fullContent += processedContent + '\n\n';
                 setMessages(prev => {
                   const newMessages = [...prev];
                   newMessages[newMessages.length - 1] = {

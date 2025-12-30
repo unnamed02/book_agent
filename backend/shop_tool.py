@@ -61,10 +61,12 @@ def search_online_shop(book_name: str, author: str = "") -> str:
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
             "Content-Type": "application/json;charset=UTF-8"
         }
+        
+        query = f"{book_name} {author}"
 
         payload = {
             "searchField": "searchAll",
-            "searchContent": book_name,
+            "searchContent": query,
             "page": 1,
             "rows": 10
         }
@@ -79,24 +81,16 @@ def search_online_shop(book_name: str, author: str = "") -> str:
         author_editor = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
 
         results = []
-        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', book_name.lower())
-        normalized_author = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', author.lower()) if author else ''
-
+    
         for i in range(min(len(book_titles), len(prices), len(isbns), len(author_editor))):
             title = re.sub(r'<[^>]+>', '', book_titles[i])
-            normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', title.lower())
-            normalized_author_text = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', author_editor[i].lower())
-
-            title_match = normalized_search in normalized_title or normalized_title in normalized_search
-            author_match = not normalized_author or normalized_author in normalized_author_text
-
-            if title_match and author_match:
-                results.append({
-                    "source": "新华书店在线商城",
-                    "title": title,
-                    "price": f"¥{prices[i]}",
-                    "link": "https://fx.cnpdx.com/s_fxpms/query"
-                })
+         
+            results.append({
+                "source": "新华书店在线商城",
+                "title": title,
+                "price": f"¥{prices[i]}",
+                "link": "https://fx.cnpdx.com/s_fxpms/query"
+            })
 
         return json.dumps(results[:5], ensure_ascii=False)
     except Exception as e:
@@ -105,9 +99,9 @@ def search_online_shop(book_name: str, author: str = "") -> str:
 
 if __name__ == "__main__":
     print("=== 测试搜索在线商城 ===")
-    result = search_online_shop("Python编程")
+    result = search_online_shop.invoke({"book_name": "Python编程"})
     print(result)
     result = search_online_shop.invoke({"book_name": "机械设计手册", "author": "成大先"})
     print(result)
-    result = search_shop_by_isbn("9787111473947")
+    result = search_shop_by_isbn.invoke({"isbn": "9787111473947"})
     print(result)
