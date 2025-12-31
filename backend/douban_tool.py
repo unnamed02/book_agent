@@ -16,7 +16,7 @@ def optimize_query(query: str) -> str:
 
     llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
     prompt = f"""请将以下由标题作者组成的query做以下优化
-1. 从书名中去掉版本号信息（如"第X版"、"单行本"等），只保留核心书名
+1. 从书名中去掉版本号信息（如"第X版"、"单行本"等），去掉副标题，只保留核心书名
 2. 如果有多个作者保留第一个
 3. 去掉音译的外国作者
 只返回最终的query，不要其他内容
