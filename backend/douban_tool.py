@@ -4,8 +4,14 @@ import requests
 import logging
 import urllib3
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+DOUBAN_API_KEY = os.getenv("DOUBAN_API_KEY", "")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -64,7 +70,7 @@ def search_douban_book(book_name: str,author: str) -> str:
     
     logger.info(f"开始搜索图书: {query}")
     try:
-        url = f"https://frodo.douban.com/api/v2/search/book?q={query}&count=3&apiKey=0ac44ae016490db2204ce0a042db2916"
+        url = f"https://frodo.douban.com/api/v2/search/book?q={query}&count=3&apiKey={DOUBAN_API_KEY}"
         headers = {
             "Referer": "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html",
             "User-Agent": "MicroMessenger/"
@@ -94,7 +100,7 @@ def get_douban_book_detail(uri: str) -> str:
     logger.info(f"开始获取图书详情: {uri}")
     try:
         url = f"https://api.douban.com/v2/book/{uri}"
-        params = {"apiKey": "0ac44ae016490db2204ce0a042db2916"}
+        params = {"apiKey": DOUBAN_API_KEY}
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
