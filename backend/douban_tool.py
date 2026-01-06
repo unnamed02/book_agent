@@ -17,18 +17,34 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def optimize_query(query: str) -> str:
-    """优化豆瓣query"""
-  
+    """优化豆瓣搜索query"""
 
     llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
-    prompt = f"""请将以下由标题作者组成的query做以下优化
-1. 从书名中去掉版本号信息（如"第X版"、"单行本"等），去掉副标题，只保留核心书名
-2. 如果有多个作者保留第一个
-3. 去掉音译的外国作者
-只返回最终的query，不要其他内容
-query：{query}"""
+    prompt = f"""请优化以下图书搜索query，使豆瓣搜索更精准：
+
+优化规则：
+1. 书名处理：
+   - 去掉版本号（如"第3版"、"修订版"、"珍藏版"等）
+   - 去掉副标题（保留主标题）
+
+2. 作者处理：
+   - 先去掉"著"、"编"、"译"、"续"等后缀词
+   - 如有多个作者（用逗号、顿号、"与"等分隔），只保留第一个
+   - 去掉外国作者的音译名（如"埃里克·马瑟斯"、"Joshua Bloch"等）
+   - 对于家喻户晓的经典名著，如果作者是原作者，去掉作者名以提高搜索准确率
+     示例：
+     * 「红楼梦 曹雪芹」→「红楼梦」（经典名著原作者）
+     * 「三国演义 罗贯中」→「三国演义」（经典名著原作者）
+     * 「红楼梦 刘心武」→「红楼梦 刘心武」（续作/点评者，需保留）
+     * 「Python编程从入门到实践 埃里克」→「Python编程从入门到实践」（外国作者）
+
+只返回优化后的query，不要任何解释或其他内容。
+
+原query：{query}
+优化后："""
 
     result = llm.invoke(prompt).content.strip()
+    logger.info(f"Query优化: '{query}' -> '{result}'")
     return result
 
 def extract_first_author(author_string: str) -> str:
@@ -134,5 +150,4 @@ if __name__ == "__main__":
     print("\n=== 测试获取详情 ===")
     result2 = get_douban_book_detail("36365320")
     print(result2)
-
 
