@@ -10,6 +10,7 @@ from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, Base
 from langchain_milvus import Milvus
 from memory_manager import UserMemoryManager
 from conversation_manager import ConversationManager, create_conversation_manager
+from knowledge_base_tool import RAGCustomerService, KnowledgeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 
@@ -25,6 +26,7 @@ class Session:
         - user_id: 用户ID
         - conversation_manager: 对话管理器（管理上下文）
         - memory_manager: 记忆管理器（管理长期记忆）
+        - rag_service: RAG 客服服务（处理知识库问答）
         - history: 对话历史（简单备份）
         - last_access: 最后访问时间
     """
@@ -58,6 +60,9 @@ class Session:
 
         # 记忆管理器（懒加载）
         self.memory_manager: Optional[UserMemoryManager] = None
+
+        # RAG 客服服务（懒加载）
+        self.rag_service: Optional[RAGCustomerService] = None
 
         # 对话历史（备份用）
         self.history: List[Dict] = []
@@ -120,6 +125,47 @@ class Session:
         except Exception as e:
             logger.warning(f"创建记忆管理器失败: {e}，将使用无记忆模式")
             self.memory_manager = None
+
+    async def initialize_rag_service(
+        self,
+        kb_vectorstore: Optional[Milvus] = None
+    ):
+        """
+        初始化 RAG 客服服务（懒加载）
+
+        Args:
+            kb_vectorstore: 知识库向量数据库
+        """
+        if self.rag_service is not None:
+            logger.debug(f"会话 {self.session_id} 的 RAG 服务已存在")
+            return
+
+        try:
+            if kb_vectorstore is None:
+                logger.warning("知识库向量数据库未提供，RAG 服务不可用")
+                return
+
+            embeddings = OpenAIEmbeddings()
+            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+
+            # 创建知识库
+            kb = KnowledgeBase(
+                collection_name="customer_service_kb",
+                embeddings=embeddings,
+                vectorstore=kb_vectorstore
+            )
+
+            # 创建 RAG 服务
+            self.rag_service = RAGCustomerService(
+                knowledge_base=kb,
+                llm=llm
+            )
+
+            logger.info(f"✓ 为会话 {self.session_id} 创建 RAG 客服服务")
+
+        except Exception as e:
+            logger.warning(f"创建 RAG 服务失败: {e}，将使用默认客服模式")
+            self.rag_service = None
 
     def add_to_history(self, user_msg: str, assistant_msg: str):
         """
