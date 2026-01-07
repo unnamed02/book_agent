@@ -42,6 +42,7 @@ class BookRecommendationState(TypedDict):
     query_type: str  # "book_recommendation" | "customer_service" | "clarification"
     is_query_clear: bool  # 需求是否明确
     clarification_questions: List[str]  # 澄清问题列表
+    need_detail: bool  # 是否需要详细信息（用户明确要求）
 
     # 推荐结果
     recommended_books: List[Dict]  # [{"title": "", "author": "", "reason": ""}]
@@ -76,31 +77,61 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
     conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
 
+    # 获取对话历史（最近2轮）
+    conversation_history = ""
+    if conversation_manager and len(conversation_manager.messages) >= 2:
+        recent_messages = conversation_manager.messages[-4:]  # 最近2轮（用户+助手各2条）
+        history_parts = []
+        for i in range(0, len(recent_messages), 2):
+            if i + 1 < len(recent_messages):
+                user_msg = recent_messages[i].content if hasattr(recent_messages[i], 'content') else str(recent_messages[i])
+                asst_msg = recent_messages[i+1].content if hasattr(recent_messages[i+1], 'content') else str(recent_messages[i+1])
+                history_parts.append(f"用户: {user_msg}\n助手: {asst_msg[:200]}...")  # 只取前200字
+        conversation_history = "\n\n".join(history_parts)
+
     route_prompt = f"""分析用户的查询意图和明确性。
 
-用户查询：{user_query}
+{'## 对话历史' if conversation_history else ''}
+{conversation_history if conversation_history else ''}
+
+## 当前用户查询
+{user_query}
 
 请按以下步骤分析：
 
 1. **查询类型判断**：
    - 图书推荐（book_recommendation）：用户想要图书推荐、询问书籍、查找书籍等
    - 客服咨询（customer_service）：询问系统功能、使用方法、技术问题、投诉建议等
+   - 请求详细信息（request_detail）：用户明确要求查看详细信息、馆藏、资源等
+
+   **重要**：如果对话历史中助手刚刚推荐了书籍并询问"需要我帮您查找这些书籍的详细信息吗"，
+   而用户回复"需要"、"要"、"好"、"可以"、"行"等肯定词，应判断为 request_detail。
 
 2. **明确性判断**（仅针对图书推荐类）：
    - 明确：包含具体的主题、领域、技能、书名等，例如"Python编程"、"机器学习入门"、"找红楼梦"
    - 不明确：过于宽泛或模糊，例如"推荐几本书"、"有什么好看的"
 
+3. **详细信息需求判断**：
+   - 如果用户明确要求查看详细信息、馆藏、资源、购买链接等，设置 need_detail 为 true
+   - 关键词：详细、馆藏、资源、链接、购买、哪里买、电子版、借阅、需要、要、好、可以等
+   - 如果是对上一轮询问的肯定回复，也应设置 need_detail 为 true
+
 返回格式（JSON）：
 {{
-  "query_type": "book_recommendation 或 customer_service",
+  "query_type": "book_recommendation 或 customer_service 或 request_detail",
   "is_clear": true/false,
+  "need_detail": true/false,
   "clarification_questions": ["问题1", "问题2", "问题3"]  // 仅在不明确时提供
 }}
 
 示例：
-- 输入："Python编程的书" → {{"query_type": "book_recommendation", "is_clear": true}}
-- 输入："推荐几本书" → {{"query_type": "book_recommendation", "is_clear": false, "clarification_questions": ["您想了解哪个领域？", "是学习还是娱乐？"]}}
-- 输入："怎么使用这个系统？" → {{"query_type": "customer_service", "is_clear": true}}
+- 输入："Python编程的书" → {{"query_type": "book_recommendation", "is_clear": true, "need_detail": false}}
+- 输入："推荐几本书" → {{"query_type": "book_recommendation", "is_clear": false, "need_detail": false, "clarification_questions": ["您想了解哪个领域？", "是学习还是娱乐？"]}}
+- 输入："怎么使用这个系统？" → {{"query_type": "customer_service", "is_clear": true, "need_detail": false}}
+- 输入："红楼梦的详细信息" → {{"query_type": "request_detail", "is_clear": true, "need_detail": true}}
+- 输入："第一本书的馆藏在哪" → {{"query_type": "request_detail", "is_clear": true, "need_detail": true}}
+- 对话历史显示刚推荐了书并询问是否需要详细信息，用户回复："需要" → {{"query_type": "request_detail", "is_clear": true, "need_detail": true}}
+- 对话历史显示刚推荐了书并询问是否需要详细信息，用户回复："要" → {{"query_type": "request_detail", "is_clear": true, "need_detail": true}}
 
 只返回JSON，不要其他内容。"""
 
@@ -124,15 +155,17 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 
         state["query_type"] = route_data.get("query_type", "book_recommendation")
         state["is_query_clear"] = route_data.get("is_clear", True)
+        state["need_detail"] = route_data.get("need_detail", False)
         state["clarification_questions"] = route_data.get("clarification_questions", [])
 
-        logger.info(f"✓ 路由结果: type={state['query_type']}, clear={state['is_query_clear']}")
+        logger.info(f"✓ 路由结果: type={state['query_type']}, clear={state['is_query_clear']}, need_detail={state['need_detail']}")
 
     except Exception as e:
         logger.error(f"路由解析失败: {e}, 使用默认值")
         # 默认当作明确的图书推荐
         state["query_type"] = "book_recommendation"
         state["is_query_clear"] = True
+        state["need_detail"] = False
         state["clarification_questions"] = []
 
     return state
@@ -390,6 +423,46 @@ JSON格式：
     return state
 
 
+async def check_detail_need(state: BookRecommendationState) -> BookRecommendationState:
+    """
+    节点: 检查是否需要详细信息（虚拟节点，直接传递状态）
+    """
+    logger.info("📍 节点: check_detail_need")
+    return state
+
+
+async def generate_simple_response(state: BookRecommendationState) -> BookRecommendationState:
+    """
+    节点: 生成简单推荐响应（不获取详细信息）
+
+    返回书单并询问用户是否需要详细信息
+    """
+    logger.info("📍 节点: generate_simple_response")
+
+    dialogue = state.get("dialogue_response", "")
+    books = state["recommended_books"]
+
+    # 格式化简单书单
+    book_list = []
+    for i, book in enumerate(books, 1):
+        book_list.append(f"**{i}. {book['title']}** - {book['author']}\n   {book.get('reason', '经典推荐')}")
+
+    books_text = "\n\n".join(book_list)
+
+    # 添加询问是否需要详细信息
+    prompt_text = "\n\n💡 **需要我帮您查找这些书籍的详细信息吗？**（包括馆藏信息、电子资源、购买链接等）"
+
+    if dialogue:
+        final_response = f"{dialogue}\n\n{books_text}{prompt_text}"
+    else:
+        final_response = f"{books_text}{prompt_text}"
+
+    state["final_response"] = final_response
+    logger.info("✓ 生成简单推荐响应完成")
+
+    return state
+
+
 async def fetch_books_detail(state: BookRecommendationState) -> BookRecommendationState:
     """
     节点6: 并行获取所有书籍的详细信息
@@ -519,7 +592,7 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "customer_service" | "clarify" | "recommend"
+        "customer_service" | "clarify" | "recommend" | "request_detail"
     """
     query_type = state.get("query_type", "book_recommendation")
 
@@ -527,12 +600,30 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "customer_service":
         return "customer_service"
 
+    # 如果是请求详细信息（用户明确要求）
+    if query_type == "request_detail" or state.get("need_detail", False):
+        return "request_detail"
+
     # 如果是图书推荐，检查是否需要澄清
     if not state.get("is_query_clear", True):
         return "clarify"
 
     # 明确的图书推荐需求
     return "recommend"
+
+
+def need_detail_info(state: BookRecommendationState) -> str:
+    """
+    条件边: 判断是否需要获取详细信息
+
+    Returns:
+        "fetch_detail" 或 "simple_response"
+    """
+    # 如果用户明确要求详细信息，或者是request_detail类型
+    if state.get("need_detail", False) or state.get("query_type") == "request_detail":
+        return "fetch_detail"
+    else:
+        return "simple_response"
 
 
 def should_clarify(state: BookRecommendationState) -> str:
@@ -821,33 +912,31 @@ def create_recommendation_graph() -> StateGraph:
     0. route_query（智能路由）
        ├─ 客服咨询 → customer_service → END
        ├─ 需求不明确 → clarify → END
-       └─ 明确的图书推荐 → load_context
+       ├─ 请求详细信息 → load_context → recommend → fetch_detail（直接获取详细）
+       └─ 明确的图书推荐 → load_context → recommend → simple_response（询问是否需要详细）
 
     1. load_context（加载用户上下文）
        └→ recommend（生成推荐书单）
 
     2. recommend（生成推荐书单）
        ├─ 有错误 → END
-       └─ 无错误 → fetch_detail
+       └─ 无错误 → 条件判断
+           ├─ need_detail=true → fetch_detail（获取详细信息）
+           └─ need_detail=false → simple_response（简单推荐+询问）
 
-    3. fetch_detail（获取书籍详细信息）
-       └→ format_response
+    3a. simple_response（生成简单推荐响应）
+       └→ update_prefs → save_memory → END
 
-    4. format_response（格式化最终响应）
-       └→ update_prefs
-
-    5. update_prefs（更新用户偏好）
-       └→ save_memory
-
-    6. save_memory（保存到记忆系统）
-       └→ END
+    3b. fetch_detail（获取书籍详细信息）
+       └→ format_response → update_prefs → save_memory → END
 
     节点说明：
-    - route_query: 智能路由，判断查询类型和明确性
+    - route_query: 智能路由，判断查询类型、明确性和是否需要详细信息
     - customer_service: 处理客服咨询
     - clarify: 生成澄清问题引导用户
     - load_context: 从数据库加载用户画像和历史推荐
     - recommend: 使用LLM生成个性化推荐书单（基于用户画像）
+    - simple_response: 生成简单推荐并询问是否需要详细信息
     - fetch_detail: 并行获取豆瓣、馆藏、资源、购买链接
     - format_response: 格式化为Markdown响应
     - update_prefs: 根据推荐结果增量更新用户偏好（偏好学习）
@@ -862,6 +951,8 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("load_context", load_user_context)
     workflow.add_node("update_prefs", update_user_preferences)
     workflow.add_node("recommend", generate_book_recommendations)
+    workflow.add_node("check_detail_need", check_detail_need)  # 检查是否需要详细信息的虚拟节点
+    workflow.add_node("simple_response", generate_simple_response)
     workflow.add_node("fetch_detail", fetch_books_detail)
     workflow.add_node("format_response", format_final_response)
     workflow.add_node("save_memory", save_to_memory)
@@ -876,7 +967,8 @@ def create_recommendation_graph() -> StateGraph:
         {
             "customer_service": "customer_service",
             "clarify": "clarify",
-            "recommend": "load_context"
+            "recommend": "load_context",
+            "request_detail": "load_context"  # 明确请求详细信息也走推荐流程
         }
     )
 
@@ -893,13 +985,28 @@ def create_recommendation_graph() -> StateGraph:
         has_error,
         {
             "error": END,
-            "continue": "fetch_detail"
+            "continue": "check_detail_need"  # 无错误，检查是否需要详细信息
         }
     )
+
+    # 检查是否需要详细信息
+    workflow.add_conditional_edges(
+        "check_detail_need",
+        need_detail_info,
+        {
+            "fetch_detail": "fetch_detail",  # 需要详细信息
+            "simple_response": "simple_response"  # 简单推荐
+        }
+    )
+
+    # 简单推荐流程
+    workflow.add_edge("simple_response", "update_prefs")
 
     # 详细信息流程
     workflow.add_edge("fetch_detail", "format_response")
     workflow.add_edge("format_response", "update_prefs")
+
+    # 统一的后续流程
     workflow.add_edge("update_prefs", "save_memory")
     workflow.add_edge("save_memory", END)
 
@@ -945,6 +1052,7 @@ async def stream_recommendation_workflow(
         rag_service=rag_service,  # 添加 RAG 服务
         query_type="book_recommendation",  # 新增
         is_query_clear=True,
+        need_detail=False,  # 新增
         clarification_questions=[],
         recommended_books=[],
         books_detail=[],
@@ -999,23 +1107,32 @@ async def stream_recommendation_workflow(
                     yield {"type": "done"}
                     return
 
-                # 发送对话部分
-                if node_state.get("dialogue_response"):
+                # 如果需要详细信息，发送对话和简单书单作为预览
+                if node_state.get("need_detail") or node_state.get("query_type") == "request_detail":
+                    # 发送对话部分
+                    if node_state.get("dialogue_response"):
+                        yield {
+                            "type": "dialogue",
+                            "content": node_state["dialogue_response"]
+                        }
+
+                    # 发送简单书单作为预览
+                    books = node_state["recommended_books"]
+                    book_list_text = "\n\n".join([
+                        f"**{i}. {b['title']}** - {b['author']}\n    {b.get('reason', '经典推荐')}"
+                        for i, b in enumerate(books, 1)
+                    ])
+
                     yield {
-                        "type": "dialogue",
-                        "content": node_state["dialogue_response"]
+                        "type": "books",
+                        "content": book_list_text
                     }
 
-                # 发送简单书单
-                books = node_state["recommended_books"]
-                book_list_text = "\n\n".join([
-                    f"**{i}. {b['title']}** - {b['author']}\n    {b.get('reason', '经典推荐')}"
-                    for i, b in enumerate(books, 1)
-                ])
-
+            elif node_name == "simple_response":
+                # 简单推荐响应（包含对话、书单和询问是否需要详细信息）
                 yield {
-                    "type": "books",
-                    "content": book_list_text
+                    "type": "message",
+                    "content": node_state["final_response"]
                 }
 
             elif node_name == "fetch_detail":
