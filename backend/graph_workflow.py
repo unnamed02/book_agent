@@ -15,7 +15,7 @@ from datetime import datetime
 
 from douban_tool import search_douban_book, get_douban_book_detail
 from resource_tool import search_digital_resource
-from shop_tool import search_shop_by_isbn
+from shop_tool import search_shop_by_isbn, search_and_filter_book
 from library_tool import search_library_collection
 from memory_manager import UserMemoryManager
 from conversation_manager import ConversationManager
@@ -587,85 +587,28 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
                     logger.info("等待1秒，避免频率限制...")
                     await asyncio.sleep(1)
 
-                # 直接调用商城 API 搜索图书（只用书名，不加作者）
+                # 使用 search_and_filter_book 工具搜索并筛选
                 logger.info(f"[{idx + 1}/{len(books)}] 正在搜索《{title}》...")
 
-                import requests
-                api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Content-Type": "application/json;charset=UTF-8"
-                }
-                payload = {
-                    "searchField": "searchAll",
-                    "searchContent": title,  # 只用书名搜索
-                    "page": 1,
-                    "rows": 10
-                }
+                result = search_and_filter_book.invoke({
+                    "book_name": title,
+                    "author": author
+                })
 
-                response = requests.post(api_url, json=payload, headers=headers, timeout=10)
-                raw_data = response.text
+                data = json.loads(result)
 
-                # 提取所有搜索结果
-                import re
-                book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
-                isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
-                authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
-
-                if not book_titles:
-                    # 未找到，使用原始信息
+                if "error" in data:
+                    # 未找到或出错，使用原始信息
                     table_lines.append(f"| {title} | {author} | |")
-                    logger.warning(f"未找到《{title}》")
-                    continue
+                    logger.warning(f"未找到《{title}》: {data['error']}")
+                else:
+                    # 找到匹配的书籍
+                    actual_title = data.get("title", title)
+                    actual_author = data.get("author", author)
+                    isbn = data.get("isbn", "")
 
-                # 构建候选书籍列表（用于 LLM 筛选）
-                candidates = []
-                for i in range(min(len(book_titles), len(isbns), len(authors_list))):
-                    clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
-                    candidates.append({
-                        "title": clean_title,
-                        "author": authors_list[i],
-                        "isbn": isbns[i]
-                    })
-
-                # 使用 LLM 筛选最匹配的书籍
-                logger.info(f"使用 LLM 筛选《{title}》的最佳匹配...")
-                filter_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-                filter_prompt = f"""从以下搜索结果中，选择与目标书籍最匹配的一本。
-
-目标书籍：
-- 书名：{title}
-- 作者：{author}
-
-搜索结果：
-{json.dumps(candidates, ensure_ascii=False, indent=2)}
-
-请选择最匹配的书籍，只返回该书籍的索引（0-{len(candidates)-1}）。
-如果没有合适的匹配，返回 -1。
-
-只返回数字，不要其他内容。"""
-
-                filter_result = filter_llm.invoke(filter_prompt).content.strip()
-
-                try:
-                    selected_idx = int(filter_result)
-                    if 0 <= selected_idx < len(candidates):
-                        selected = candidates[selected_idx]
-                        actual_title = selected["title"]
-                        actual_author = selected["author"]
-                        isbn = selected["isbn"]
-
-                        table_lines.append(f"| {actual_title} | {actual_author} | {isbn} |")
-                        logger.info(f"✓ 获取《{title}》信息成功")
-                    else:
-                        # LLM 返回 -1，没有合适的匹配
-                        table_lines.append(f"| {title} | {author} | |")
-                        logger.warning(f"LLM 未找到《{title}》的合适匹配")
-                except ValueError:
-                    # LLM 返回格式错误，使用第一个结果
-                    logger.warning(f"LLM 返回格式错误，使用第一个结果")
-                    selected = candidates[0]
-                    table_lines.append(f"| {selected['title']} | {selected['author']} | {selected['isbn']} |")
+                    table_lines.append(f"| {actual_title} | {actual_author} | {isbn} |")
+                    logger.info(f"✓ 获取《{title}》信息成功")
 
             except Exception as e:
                 logger.error(f"获取《{title}》信息失败: {e}")
