@@ -73,14 +73,11 @@ def get_vectorstore():
     if vectorstore is None:
         try:
             embeddings = OpenAIEmbeddings()
-            # 使用 Docker Milvus
+            # 使用本地 Milvus Lite（SQLite 存储）
             vectorstore = Milvus(
                 collection_name="book_recommendations",
                 embedding_function=embeddings,
-                connection_args={
-                    "host": "localhost",
-                    "port": "19530"
-                },
+                connection_args={"uri": "./milvus_memory.db"},
                 auto_id=True
             )
             logger.info("✓ Milvus 用户记忆向量数据库连接成功")
@@ -96,14 +93,11 @@ def get_kb_vectorstore():
     if kb_vectorstore is None:
         try:
             embeddings = OpenAIEmbeddings()
-            # 使用 Docker Milvus
+            # 使用本地 Milvus Lite（SQLite 存储）
             kb_vectorstore = Milvus(
                 collection_name="customer_service_kb",
                 embedding_function=embeddings,
-                connection_args={
-                    "host": "localhost",
-                    "port": "19530"
-                },
+                connection_args={"uri": "./milvus_kb.db"},
                 auto_id=True
             )
             logger.info("✓ Milvus 知识库向量数据库连接成功")
