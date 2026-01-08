@@ -5,7 +5,6 @@ LangGraph 图书推荐工作流 (适配 LangGraph 1.0.4)
 
 from typing import TypedDict, List, Dict, Optional
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 import logging
 import json
@@ -914,24 +913,15 @@ def _format_book_markdown(detail: Dict) -> str:
     isbn = detail.get("isbn", "未知")
     summary = detail.get("summary", "暂无简介")
     image = detail.get("image", "")
+    rating = detail.get("rating", "")
+    reason = detail.get("reason", "")
 
-    # 使用LLM生成推荐理由（可选，可以直接使用summary）
-    if summary and summary != "暂无简介":
-        try:
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-            prompt = f"""根据以下信息生成一段简洁的推荐理由（100-150字）：
-
-书名：{title}
-作者：{author}
-简介：{summary}
-
-要求：突出书籍特点和内容梗概，语言简洁有吸引力。"""
-
-            recommendation = llm.invoke(prompt).content
-        except Exception as e:
-            logger.warning(f"生成推荐理由失败: {e}")
-            recommendation = summary
+    # 构建推荐理由：优先使用 LLM 生成的 reason，其次使用豆瓣简介
+    if reason:
+        # 如果有推荐理由，结合简介一起展示
+        recommendation = f"{reason}\n\n{summary[:200]}..." if len(summary) > 200 else f"{reason}\n\n{summary}"
     else:
+        # 只使用简介
         recommendation = summary
 
     # 格式化电子资源
@@ -946,6 +936,9 @@ def _format_book_markdown(detail: Dict) -> str:
     # 图片
     image_markdown = f"![{title}]({image})\n\n" if image else ""
 
+    # 评分
+    rating_text = f"⭐ **豆瓣评分**：{rating}\n\n" if rating else ""
+
     markdown = f"""{image_markdown}###  {title}
 **作者**：{author}
 
@@ -953,7 +946,7 @@ def _format_book_markdown(detail: Dict) -> str:
 
 **ISBN**：{isbn}
 
-**推荐理由**：
+{rating_text}**推荐理由**：
 {recommendation}
 
 **📍 馆藏信息**：
@@ -1220,6 +1213,18 @@ async def stream_recommendation_workflow(
                     yield {
                         "type": "dialogue",
                         "content": node_state["dialogue_response"]
+                    }
+
+                # 发送初步书单（简单格式）
+                books = node_state.get("recommended_books", [])
+                if books:
+                    book_list_text = "\n\n".join([
+                        f"**{i}. {b['title']}** - {b['author']}"
+                        for i, b in enumerate(books, 1)
+                    ])
+                    yield {
+                        "type": "books",
+                        "content": book_list_text
                     }
 
             elif node_name == "fetch_detail":
