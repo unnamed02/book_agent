@@ -3,6 +3,7 @@ import { Input, Button, Card, Avatar, Space, Typography, Tooltip } from 'antd';
 import { SendOutlined, BookOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 const ImageComponent = ({ src, alt }) => {
   const [error, setError] = useState(false);
@@ -326,7 +327,12 @@ function App() {
                           }}
                         >
                           <div className="markdown-content">
-                            <ReactMarkdown components={{ img: ImageComponent }}>{msg.content}</ReactMarkdown>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={{ img: ImageComponent }}
+                            >
+                              {msg.content}
+                            </ReactMarkdown>
                           </div>
                         </Card>
                       ) : (

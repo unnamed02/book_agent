@@ -80,10 +80,13 @@ def extract_book_name(book_name: str) -> str:
 
 
 @tool
-def search_douban_book(book_name: str,author: str) -> str:
+def search_douban_book(book_name: str, author: str, use_llm_optimize: bool = True) -> str:
     """搜索豆瓣图书评分和评价 返回三个结果，选其中标题最接近，出版时间最新的，有评分的使用"""
-    query = optimize_query(f"{book_name} {author}")
-    
+    if use_llm_optimize:
+        query = optimize_query(f"{book_name} {author}")
+    else:
+        query = f"{book_name} {author}"
+
     logger.info(f"开始搜索图书: {query}")
     try:
         url = f"https://frodo.douban.com/api/v2/search/book?q={query}&count=3&apiKey={DOUBAN_API_KEY}"
@@ -94,6 +97,7 @@ def search_douban_book(book_name: str,author: str) -> str:
         response = requests.get(url, headers=headers, timeout=10, verify=False)
         data = response.json()
 
+        logger.info(f"*** {response} ***")
         results = []
         for item in data.get("items", []):
             target = item.get("target", {})
@@ -111,7 +115,7 @@ def search_douban_book(book_name: str,author: str) -> str:
 
 
 @tool
-def get_douban_book_detail(uri: str) -> str:
+def get_douban_book_detail(uri: str, use_llm_optimize: bool = True) -> str:
     """获取豆瓣图书详情，包括简介和评价"""
     logger.info(f"开始获取图书详情: {uri}")
     try:
@@ -124,9 +128,22 @@ def get_douban_book_detail(uri: str) -> str:
         data = response.json()
 
         title_raw = data.get("title", "")
-        title = extract_book_name(str(title_raw))
         author_raw = data.get("author", "")
-        author = extract_first_author(str(author_raw)) if author_raw else "未知作者"
+
+        logger.info(f"*** {response} ***")
+        if use_llm_optimize:
+            title = extract_book_name(str(title_raw))
+            author = extract_first_author(str(author_raw)) if author_raw else "未知作者"
+        else:
+            title = str(title_raw) if title_raw else "未知书名"
+            # 简单处理作者：取列表第一个，去掉常见后缀
+            if isinstance(author_raw, list) and author_raw:
+                author = str(author_raw[0])
+                # 简单去掉后缀
+                import re
+                author = re.sub(r'\s*(著|编|译|注|校|主编|编著).*$', '', author).strip()
+            else:
+                author = str(author_raw) if author_raw else "未知作者"
 
         return json.dumps({
             "title": title,
