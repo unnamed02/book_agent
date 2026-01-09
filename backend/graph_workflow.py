@@ -13,13 +13,13 @@ import re
 import asyncio
 
 
-from backend.recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
-from backend.recommend.tools.resource_tool import search_digital_resource
-from backend.recommend.tools.shop_tool import search_shop_by_isbn, search_and_filter_book
-from backend.recommend.tools.library_tool import search_library_collection
-from backend.session.memory_manager import UserMemoryManager
-from backend.session.conversation_manager import ConversationManager
-from backend.service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
+from recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
+from recommend.tools.resource_tool import search_digital_resource
+from recommend.tools.shop_tool import search_shop_by_isbn, search_and_filter_book
+from recommend.tools.library_tool import search_library_collection
+from session.memory_manager import UserMemoryManager
+from session.conversation_manager import ConversationManager
+from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 
 logger = logging.getLogger(__name__)
 

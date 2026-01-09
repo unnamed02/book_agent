@@ -8,9 +8,9 @@ from datetime import datetime
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from langchain_milvus import Milvus
-from backend.session.memory_manager import UserMemoryManager
-from backend.session.conversation_manager import ConversationManager, create_conversation_manager
-from backend.service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
+from session.memory_manager import UserMemoryManager
+from session.conversation_manager import ConversationManager, create_conversation_manager
+from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 

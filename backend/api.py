@@ -5,9 +5,9 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_milvus import Milvus
-from backend.session.memory_manager import UserMemoryManager
-from backend.utils.models import get_db, get_db_manager
-from backend.session.session import SessionManager
+from session.memory_manager import UserMemoryManager
+from utils.models import get_db, get_db_manager
+from session.session import SessionManager
 from graph_workflow import stream_recommendation_workflow
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging

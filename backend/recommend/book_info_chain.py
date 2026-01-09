@@ -1,8 +1,8 @@
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
-from backend.recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
-from backend.recommend.tools.resource_tool import search_digital_resource
-from backend.recommend.tools.shop_tool import search_shop_by_isbn
-from backend.recommend.tools.library_tool import search_library_collection
+from recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
+from recommend.tools.resource_tool import search_digital_resource
+from recommend.tools.shop_tool import search_shop_by_isbn
+from recommend.tools.library_tool import search_library_collection
 import logging
 import json
 import asyncio
