@@ -56,9 +56,9 @@ function App() {
   // 将豆瓣图片URL替换为代理URL
   const proxyImageUrls = (content) => {
     const apiBaseUrl = getApiBaseUrl();
-    // 匹配markdown图片格式：![alt](https://img*.doubanio.com/...)
+    // 匹配markdown图片格式：![alt](http(s)://img*.doubanio.com/...) 或其他豆瓣域名
     return content.replace(
-      /!\[(.*?)\]\((https:\/\/img\d*\.doubanio\.com\/[^)]+)\)/g,
+      /!\[(.*?)\]\((https?:\/\/[^)]*douban[^)]*\.(com|net)\/[^)]+)\)/g,
       (_match, alt, imageUrl) => {
         const proxyUrl = `${apiBaseUrl}/proxy-image?url=${encodeURIComponent(imageUrl)}`;
         return `![${alt}](${proxyUrl})`;
