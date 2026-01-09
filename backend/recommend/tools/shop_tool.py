@@ -52,9 +52,10 @@ def search_and_filter_book(book_name: str, author: str = "") -> str:
         candidates = []
         for i in range(min(len(book_titles), len(isbns), len(authors_list))):
             clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
+            clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
             candidates.append({
                 "title": clean_title,
-                "author": authors_list[i],
+                "author": clean_author,
                 "isbn": isbns[i]
             })
 
@@ -128,9 +129,11 @@ def search_shop_by_isbn(isbn: str) -> str:
         for i in range(min(len(book_titles), len(prices), len(isbns), len(authors))):
             if isbn in isbns[i]:
                 title = re.sub(r'<[^>]+>', '', book_titles[i])
+                author = re.sub(r'<[^>]+>', '', authors[i])
                 results.append({
                     "source": "新华书店在线商城",
                     "title": title,
+                    "author": author,
                     "price": f"¥{prices[i]}",
                     "link": "https://fx.cnpdx.com/s_fxpms/query"
                 })
@@ -171,13 +174,15 @@ def search_online_shop(book_name: str, author: str = "") -> str:
         author_editor = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
 
         results = []
-    
+
         for i in range(min(len(book_titles), len(prices), len(isbns), len(author_editor))):
             title = re.sub(r'<[^>]+>', '', book_titles[i])
-         
+            author = re.sub(r'<[^>]+>', '', author_editor[i])
+
             results.append({
                 "source": "新华书店在线商城",
                 "title": title,
+                "author": author,
                 "price": f"¥{prices[i]}",
                 "link": "https://fx.cnpdx.com/s_fxpms/query"
             })

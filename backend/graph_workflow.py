@@ -240,27 +240,103 @@ async def handle_general_chat(state: BookRecommendationState) -> BookRecommendat
     2. 与书籍/作者相关的一般性问题
     3. 用户需求不明确
     4. 一般闲聊
+
+    支持网络搜索以提供更准确的信息
     """
     logger.info("📍 节点: handle_general_chat")
 
     conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
 
+    # 判断是否需要搜索
+    try:
+        from langchain_community.tools.tavily_search import TavilySearchResults
+
+        # 创建 Tavily 搜索工具
+        search_tool = TavilySearchResults(max_results=3)
+
+        # 使用 LLM 判断是否需要搜索
+        decision_prompt = f"""判断以下问题是否需要网络搜索来获取最新或准确的信息。
+
+用户问题：{user_query}
+
+如果是以下情况，返回 "yes"：
+- 询问特定作者的生平、作品
+- 询问特定书籍的详细信息
+- 需要最新的书单推荐（如：2024年畅销书）
+- 询问时事相关的阅读推荐
+
+如果是以下情况，返回 "no"：
+- 一般性的闲聊
+- 模糊的推荐需求（如：推荐几本好书）
+- 系统使用问题
+
+只返回 yes 或 no，不要其他内容。"""
+
+        decision = await conversation_manager.ainvoke(
+            decision_prompt,
+            model="gpt-4o-mini",
+            temperature=0
+        )
+
+        search_context = ""
+        if decision.strip().lower() == "yes":
+            logger.info("🔍 需要网络搜索，正在使用 Tavily 搜索...")
+            try:
+                # 提取搜索关键词
+                search_query = user_query
+                if "书单" in user_query or "推荐" in user_query:
+                    search_query = f"{user_query} 书单 2025"
+
+                # 执行搜索
+                search_results = search_tool.invoke(search_query)
+
+                # 格式化搜索结果
+                if search_results:
+                    formatted_results = []
+                    for result in search_results:
+                        if isinstance(result, dict):
+                            content = result.get("content", "")
+                            url = result.get("url", "")
+                            formatted_results.append(f"- {content[:200]}... (来源: {url})")
+
+                    if formatted_results:
+                        search_context = f"\n\n搜索结果参考：\n" + "\n".join(formatted_results) + "\n"
+                        logger.info(f"✓ Tavily 搜索完成，获取到 {len(formatted_results)} 条参考信息")
+                    else:
+                        search_context = ""
+                else:
+                    search_context = ""
+
+            except Exception as e:
+                logger.warning(f"Tavily 搜索失败，继续使用 LLM 知识: {e}")
+                search_context = ""
+
+    except ImportError:
+        logger.warning("Tavily 搜索工具未安装，使用 LLM 直接回答")
+        search_context = ""
+    except Exception as e:
+        logger.warning(f"搜索判断失败: {e}")
+        search_context = ""
+
     # 使用对话管理器直接生成响应
     chat_prompt = f"""你是一个专业且友好的图书推荐助手。请根据用户的问题提供帮助。
 
 用户问题：{user_query}
+{search_context}
 
 请注意：
 1. 如果用户需要书单推荐（如：全民阅读书单、党建书单等），请在最后提供详细的书单，包括书名和作者
 2. 如果用户询问作者或书籍信息，请提供准确的介绍
-3. 如果用户需求不够明确（如：推荐几本书），可以友好地询问更多细节，或者根据常见需求提供一些通用推荐
-4. 如果是一般闲聊，请友好回应
+3. 如果有搜索结果参考，请结合搜索结果提供更准确的信息
+4. 如果用户需求不够明确（如：推荐几本书），可以友好地询问更多细节，或者根据常见需求提供一些通用推荐
+5. 如果是一般闲聊，请友好回应
 
 回答要求：
 - 语气友好、专业
 - 如果推荐书籍，请使用格式：书名 - 作者
-- 内容要准确、有帮助"""
+- 内容要准确、有帮助
+- 如果使用了搜索结果，不要明确说明"根据搜索结果"，自然地融入答案中"""
 
     response = await conversation_manager.ainvoke(
         chat_prompt,
@@ -493,14 +569,14 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
             author = book["author"]
 
             try:
-                # 频率控制：每次调用前等待1秒（第一次除外）
+                # 频率控制：每次调用前等待0.2秒（第一次除外）
                 if idx > 0:
-                    logger.info("等待1秒，避免频率限制...")
-                    await asyncio.sleep(1)
+                    logger.info("等待0.2秒，避免频率限制...")
+                    await asyncio.sleep(0.2)
 
                 # 直接调用商城 API 搜索图书（只用书名，不加作者）
                 logger.info(f"[{idx + 1}/{len(books)}] 正在搜索《{title}》...")
-
+                
                 import requests
                 api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
                 headers = {
@@ -533,9 +609,10 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
                 candidates = []
                 for i in range(min(len(book_titles), len(isbns), len(authors_list))):
                     clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
+                    clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
                     candidates.append({
                         "title": clean_title,
-                        "author": authors_list[i],
+                        "author": clean_author,
                         "isbn": isbns[i]
                     })
 
