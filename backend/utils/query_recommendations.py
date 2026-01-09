@@ -4,7 +4,7 @@
 import asyncio
 import sys
 from sqlalchemy import select, func, desc, and_
-from backend.utils.models import RecommendationHistory, UserPreference, FeedbackRecord, ReadingProgress, get_db_manager
+from utils.models import RecommendationHistory, UserPreference, FeedbackRecord, ReadingProgress, get_db_manager
 from datetime import datetime, timedelta
 
 

@@ -66,7 +66,7 @@ class LongTermUserMemory(BaseModel):
 
     async def _load_preferences(self) -> List[Dict]:
         """加载用户偏好"""
-        from backend.utils.models import UserPreference
+        from utils.models import UserPreference
 
         result = await self.db_session.execute(
             select(UserPreference)
@@ -82,7 +82,7 @@ class LongTermUserMemory(BaseModel):
 
     async def _load_recent_recommendations(self, days: int = 30) -> List[Dict]:
         """加载最近N天的推荐书籍,避免重复推荐"""
-        from backend.utils.models import RecommendationHistory
+        from utils.models import RecommendationHistory
 
         cutoff_date = datetime.now() - timedelta(days=days)
 
@@ -111,7 +111,7 @@ class LongTermUserMemory(BaseModel):
 
     async def _load_liked_books(self) -> List[Dict]:
         """加载用户喜欢的书籍"""
-        from backend.utils.models import FeedbackRecord, RecommendationHistory
+        from utils.models import FeedbackRecord, RecommendationHistory
 
         result = await self.db_session.execute(
             select(RecommendationHistory)
@@ -139,7 +139,7 @@ class LongTermUserMemory(BaseModel):
 
     async def _load_reading_progress(self) -> List[Dict]:
         """加载阅读进度"""
-        from backend.utils.models import ReadingProgress
+        from utils.models import ReadingProgress
 
         result = await self.db_session.execute(
             select(ReadingProgress)
@@ -356,7 +356,7 @@ class UserMemoryManager:
         auto_commit: bool = True
     ):
         """保存推荐记录到长期记忆"""
-        from backend.utils.models import RecommendationHistory
+        from utils.models import RecommendationHistory
 
         try:
             recommendation = RecommendationHistory(
@@ -483,7 +483,7 @@ class UserMemoryManager:
 
     async def _upsert_preferences(self, preferences: Dict, source: str = "explicit"):
         """插入或更新用户偏好"""
-        from backend.utils.models import UserPreference
+        from utils.models import UserPreference
 
         try:
             # 处理各类偏好
@@ -510,7 +510,7 @@ class UserMemoryManager:
         weight: float = 0.5
     ):
         """插入或更新单个偏好"""
-        from backend.utils.models import UserPreference
+        from utils.models import UserPreference
 
         # 查询是否存在
         result = await self.db_session.execute(

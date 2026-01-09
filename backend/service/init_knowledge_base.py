@@ -7,7 +7,7 @@ import asyncio
 import logging
 from langchain_openai import OpenAIEmbeddings
 from langchain_milvus import Milvus
-from backend.service.knowledge_base_tool import (
+from service.knowledge_base_tool import (
     KnowledgeBase,
     RAGCustomerService,
     get_default_knowledge_base

@@ -10,7 +10,7 @@
    - 需要在首次运行时配置 `.env` 文件中的 API Key
 
 2. **或者分别启动**：
-   - 双击 `start_backend.bat` 启动后端
+   - 双击 `start_bat` 启动后端
    - 双击 `start_frontend.bat` 启动前端
 
 ### Linux/macOS 用户
@@ -28,8 +28,8 @@ chmod +x start.sh
 
 3. **或者分别启动**：
 ```bash
-chmod +x start_backend.sh start_frontend.sh
-./start_backend.sh    # 在一个终端启动后端
+chmod +x start_sh start_frontend.sh
+./start_sh    # 在一个终端启动后端
 ./start_frontend.sh   # 在另一个终端启动前端
 ```
 
