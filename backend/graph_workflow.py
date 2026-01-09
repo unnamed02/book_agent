@@ -6,11 +6,12 @@ LangGraph 图书推荐工作流 (适配 LangGraph 1.0.4)
 from typing import TypedDict, List, Dict, Optional
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+from langchain_openai import ChatOpenAI
 import logging
 import json
 import re
 import asyncio
-from datetime import datetime
+
 
 from douban_tool import search_douban_book, get_douban_book_detail
 from resource_tool import search_digital_resource
@@ -84,6 +85,10 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
    - 图书推荐（book_recommendation）：用户想要图书推荐、询问书籍、查找书籍等
    - 客服咨询（customer_service）：询问系统功能、使用方法、技术问题、投诉建议等
 
+2. **搜索书单（search_booklist）**：用户直接提供书单，包含书名和作者的列表
+   - 例如："帮我查找：1. Python编程 - Eric, 2. 红楼梦 - 曹雪芹"
+   - 判断标准：用户消息中包含多本书籍信息（书名+作者），并且有明确的列表格式（数字编号、换行等）
+
 3. **请求详细信息（request_detail）**：用户明确要求查看详细信息、馆藏、资源等
    - 明确关键词：详细信息、馆藏、资源、链接、购买、哪里买、电子版、借阅
    - **重要**：如果对话历史中助手刚刚推荐了书籍并询问"需要我帮您查找这些书籍的详细信息吗"，
@@ -91,7 +96,7 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 
 返回格式（JSON）：
 {{
-  "query_type": "book_recommendation 或 customer_service",
+  "query_type": "book_recommendation 或 customer_service 或 search_booklist",
   "is_clear": true/false,
   "clarification_questions": ["问题1", "问题2", "问题3"]  // 仅在不明确时提供
 }}
@@ -100,6 +105,8 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 - 输入："Python编程的书" → {{"query_type": "book_recommendation", "is_clear": true}}
 - 输入："推荐几本书" → {{"query_type": "book_recommendation", "is_clear": false, "clarification_questions": ["您想了解哪个领域？", "是学习还是娱乐？"]}}
 - 输入："怎么使用这个系统？" → {{"query_type": "customer_service", "is_clear": true}}
+- 输入："1. 《源代码》（[美]比尔·盖茨，鲁伊 译，郑纬民、韦青 审校）2. 《大道》（赵理亚 选，芒格书院 编）" ->  → {{"query_type": "search_booklist", "is_clear": true}}
+
 
 只返回JSON，不要其他内容。"""
 
@@ -511,6 +518,167 @@ async def fetch_books_detail(state: BookRecommendationState) -> BookRecommendati
 
     return state
 
+async def search_booklist(state: BookRecommendationState) -> BookRecommendationState:
+    """
+    节点: 搜索书单 - 解析用户提供的书单并调用 douban_tool 查找基本信息，直接输出 CSV
+
+    用户直接提供书单（书名+作者），系统解析后使用 douban_tool 查找 ISBN，输出纯 CSV
+    """
+    logger.info("📍 节点: search_booklist")
+
+    conversation_manager = state["conversation_manager"]
+    user_query = state["user_query"]
+
+    # 使用 LLM 解析用户提供的书单
+    parse_prompt = f"""请从用户消息中提取书单信息，返回 JSON 格式的书籍列表。
+
+用户消息：
+{user_query}
+
+要求：
+1. 提取所有书籍的书名和作者
+2. 返回格式：{{"books": [{{"title": "书名", "author": "作者"}}]}}
+3. 如果无法提取，返回空列表：{{"books": []}}
+
+只返回 JSON，不要其他内容。"""
+
+    parse_result = await conversation_manager.ainvoke(
+        parse_prompt,
+        model="gpt-4o-mini",
+        temperature=0
+    )
+
+    # 解析 JSON
+    try:
+        clean_result = parse_result.strip()
+        if clean_result.startswith("```"):
+            clean_result = clean_result.split("```")[1]
+            if clean_result.startswith("json"):
+                clean_result = clean_result[4:]
+        clean_result = clean_result.strip()
+
+        book_data = json.loads(clean_result)
+        books = book_data.get("books", [])
+
+        if not books:
+            state["error"] = "无法从您的消息中提取书单信息，请提供书名和作者"
+            state["final_response"] = "无法从您的消息中提取书单信息，请提供书名和作者"
+            return state
+
+        logger.info(f"✓ 解析到 {len(books)} 本书籍")
+
+        # 使用 Markdown 表格格式
+        table_lines = [
+            "| 书名 | 作者 | ISBN |",
+            "| --- | --- | --- |"
+        ]
+
+        for idx, book in enumerate(books):
+            title = book["title"]
+            author = book["author"]
+
+            try:
+                # 频率控制：每次调用前等待1秒（第一次除外）
+                if idx > 0:
+                    logger.info("等待1秒，避免频率限制...")
+                    await asyncio.sleep(1)
+
+                # 直接调用商城 API 搜索图书（只用书名，不加作者）
+                logger.info(f"[{idx + 1}/{len(books)}] 正在搜索《{title}》...")
+
+                import requests
+                api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
+                headers = {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+                    "Content-Type": "application/json;charset=UTF-8"
+                }
+                payload = {
+                    "searchField": "searchAll",
+                    "searchContent": title,  # 只用书名搜索
+                    "page": 1,
+                    "rows": 10
+                }
+
+                response = requests.post(api_url, json=payload, headers=headers, timeout=10)
+                raw_data = response.text
+
+                # 提取所有搜索结果
+                import re
+                book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
+                isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
+                authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
+
+                if not book_titles:
+                    # 未找到，使用原始信息
+                    table_lines.append(f"| {title} | {author} | |")
+                    logger.warning(f"未找到《{title}》")
+                    continue
+
+                # 构建候选书籍列表（用于 LLM 筛选）
+                candidates = []
+                for i in range(min(len(book_titles), len(isbns), len(authors_list))):
+                    clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
+                    candidates.append({
+                        "title": clean_title,
+                        "author": authors_list[i],
+                        "isbn": isbns[i]
+                    })
+
+                # 使用 LLM 筛选最匹配的书籍
+                logger.info(f"使用 LLM 筛选《{title}》的最佳匹配...")
+                filter_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+                filter_prompt = f"""从以下搜索结果中，选择与目标书籍最匹配的一本。
+
+目标书籍：
+- 书名：{title}
+- 作者：{author}
+
+搜索结果：
+{json.dumps(candidates, ensure_ascii=False, indent=2)}
+
+请选择最匹配的书籍，只返回该书籍的索引（0-{len(candidates)-1}）。
+如果没有合适的匹配，返回 -1。
+
+只返回数字，不要其他内容。"""
+
+                filter_result = filter_llm.invoke(filter_prompt).content.strip()
+
+                try:
+                    selected_idx = int(filter_result)
+                    if 0 <= selected_idx < len(candidates):
+                        selected = candidates[selected_idx]
+                        actual_title = selected["title"]
+                        actual_author = selected["author"]
+                        isbn = selected["isbn"]
+
+                        table_lines.append(f"| {actual_title} | {actual_author} | {isbn} |")
+                        logger.info(f"✓ 获取《{title}》信息成功")
+                    else:
+                        # LLM 返回 -1，没有合适的匹配
+                        table_lines.append(f"| {title} | {author} | |")
+                        logger.warning(f"LLM 未找到《{title}》的合适匹配")
+                except ValueError:
+                    # LLM 返回格式错误，使用第一个结果
+                    logger.warning(f"LLM 返回格式错误，使用第一个结果")
+                    selected = candidates[0]
+                    table_lines.append(f"| {selected['title']} | {selected['author']} | {selected['isbn']} |")
+
+            except Exception as e:
+                logger.error(f"获取《{title}》信息失败: {e}")
+                # 失败时也添加到表格，ISBN 为空
+                table_lines.append(f"| {title} | {author} | |")
+
+        # 直接设置最终响应（Markdown 表格格式）
+        state["final_response"] = "\n".join(table_lines)
+        logger.info(f"✓ 生成表格数据完成，共 {len(books)} 本书")
+
+    except Exception as e:
+        logger.error(f"搜索书单失败: {e}")
+        state["error"] = f"搜索书单失败: {str(e)}"
+        state["final_response"] = f"搜索书单失败: {str(e)}"
+
+    return state
+
 
 async def format_final_response(state: BookRecommendationState) -> BookRecommendationState:
     """
@@ -608,13 +776,17 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "customer_service" | "clarify" | "recommend"
+        "customer_service" | "clarify" | "recommend" | "search_booklist"
     """
     query_type = state.get("query_type", "book_recommendation")
 
     # 如果是客服咨询，直接路由到客服节点
     if query_type == "customer_service":
         return "customer_service"
+
+    # 如果是搜索书单，直接路由到搜索书单节点
+    if query_type == "search_booklist":
+        return "search_booklist"
 
     # 如果是图书推荐，检查是否需要澄清
     if not state.get("is_query_clear", True):
@@ -688,45 +860,6 @@ def _parse_recommendation_response(llm_response: str) -> tuple[str, List[Dict]]:
     return dialogue_part, books
 
 
-def _parse_simple_recommendation_response(llm_response: str) -> tuple[str, List[Dict]]:
-    """
-    解析简单推荐响应，提取对话部分和书籍列表（不含reason）
-
-    Returns:
-        (dialogue_part, books_list)
-    """
-    dialogue_part = ""
-    books = []
-
-    # 尝试提取JSON部分
-    json_match = re.search(r'\{["\']books["\']\s*:\s*\[.*?\]\s*\}', llm_response, re.DOTALL)
-
-    if json_match:
-        json_part = json_match.group(0)
-        dialogue_part = llm_response[:json_match.start()].strip()
-
-        try:
-            # 清理并解析JSON
-            clean_json = re.sub(r'```json\s*|\s*```', '', json_part).strip()
-
-            book_data = json.loads(clean_json)
-            raw_books = book_data.get("books", [])
-
-            # 确保每本书都只有 title 和 author（移除可能存在的 reason）
-            books = [
-                {"title": book.get("title", ""), "author": book.get("author", "")}
-                for book in raw_books
-            ]
-        except Exception as e:
-            logger.error(f"解析简单书单JSON失败: {e}")
-            # 尝试正则提取
-            books = _regex_extract_simple_books(llm_response)
-    else:
-        # 没有找到标准JSON，尝试正则提取
-        books = _regex_extract_simple_books(llm_response)
-
-    return dialogue_part, books
-
 
 def _regex_extract_books(text: str) -> List[Dict]:
     """使用正则表达式提取书籍信息（带 reason）"""
@@ -750,25 +883,6 @@ def _regex_extract_books(text: str) -> List[Dict]:
     logger.info(f"正则提取得到 {len(books)} 本书籍")
     return books
 
-
-def _regex_extract_simple_books(text: str) -> List[Dict]:
-    """使用正则表达式提取简单书籍信息（只有 title 和 author）"""
-    books = []
-
-    title_pattern = r'"title":\s*"([^"]+)"'
-    author_pattern = r'"author":\s*"([^"]+)"'
-
-    titles = re.findall(title_pattern, text)
-    authors = re.findall(author_pattern, text)
-
-    for i in range(min(len(titles), len(authors))):
-        books.append({
-            "title": titles[i],
-            "author": authors[i]
-        })
-
-    logger.info(f"正则提取得到 {len(books)} 本简单书籍")
-    return books
 
 
 def _parse_natural_language_response(llm_response: str) -> tuple[str, List[Dict]]:
@@ -1020,9 +1134,12 @@ def create_recommendation_graph() -> StateGraph:
     0. route_query（智能路由）
        ├─ 客服咨询 → customer_service → END
        ├─ 需求不明确 → clarify → END
+       ├─ 搜索书单 → search_booklist → END
        └─ 明确的图书推荐 → load_context
 
-    两条独立路径：
+    图书推荐路径：
+    1. load_context（加载用户上下文）
+       └→ recommend
 
     2. recommend（生成推荐书单）
        ├─ 有错误 → END
@@ -1042,8 +1159,9 @@ def create_recommendation_graph() -> StateGraph:
 
     节点说明：
     - route_query: 智能路由，判断查询类型和明确性
-    - customer_service: 处理客服咨询
+    - customer_service: 处理客服咨询（使用 RAG）
     - clarify: 生成澄清问题引导用户
+    - search_booklist: 搜索用户提供的书单，输出 Markdown 表格
     - load_context: 从数据库加载用户画像和历史推荐
     - recommend: 使用LLM生成个性化推荐书单（基于用户画像）
     - fetch_detail: 并行获取豆瓣、馆藏、资源、购买链接
@@ -1057,6 +1175,7 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("route", route_query)
     workflow.add_node("customer_service", handle_customer_service)
     workflow.add_node("clarify", generate_clarification_response)
+    workflow.add_node("search_booklist", search_booklist)
     workflow.add_node("load_context", load_user_context)
     workflow.add_node("update_prefs", update_user_preferences)
     workflow.add_node("recommend", generate_book_recommendations)
@@ -1074,7 +1193,8 @@ def create_recommendation_graph() -> StateGraph:
         {
             "customer_service": "customer_service",
             "clarify": "clarify",
-            "recommend": "load_context"
+            "recommend": "load_context",
+            "search_booklist": "search_booklist"
         }
     )
 
@@ -1083,6 +1203,9 @@ def create_recommendation_graph() -> StateGraph:
 
     # 澄清分支直接结束
     workflow.add_edge("clarify", END)
+
+    # 搜索书单分支直接结束
+    workflow.add_edge("search_booklist", END)
 
     # load_context → recommend（直接进入详细推荐流程）
     workflow.add_edge("load_context", "recommend")
