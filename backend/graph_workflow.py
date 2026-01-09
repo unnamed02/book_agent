@@ -13,13 +13,13 @@ import re
 import asyncio
 
 
-from douban_tool import search_douban_book, get_douban_book_detail
-from resource_tool import search_digital_resource
-from shop_tool import search_shop_by_isbn, search_and_filter_book
-from library_tool import search_library_collection
-from memory_manager import UserMemoryManager
-from conversation_manager import ConversationManager
-from knowledge_base_tool import RAGCustomerService, KnowledgeBase
+from backend.recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
+from backend.recommend.tools.resource_tool import search_digital_resource
+from backend.recommend.tools.shop_tool import search_shop_by_isbn, search_and_filter_book
+from backend.recommend.tools.library_tool import search_library_collection
+from backend.session.memory_manager import UserMemoryManager
+from backend.session.conversation_manager import ConversationManager
+from backend.service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 
 logger = logging.getLogger(__name__)
 
@@ -316,96 +316,6 @@ async def update_user_preferences(state: BookRecommendationState) -> BookRecomme
             logger.info("✓ 更新用户偏好完成")
         except Exception as e:
             logger.warning(f"更新偏好失败: {e}")
-
-    return state
-
-
-async def generate_simple_recommendations(state: BookRecommendationState) -> BookRecommendationState:
-    """
-    节点: 生成简单推荐（对话式，不含详细理由）
-
-    专注于图书推荐对话，深入挖掘读者需求，推荐尽量多的书籍
-    """
-    logger.info("📍 节点: generate_simple_recommendations")
-
-    conversation_manager = state["conversation_manager"]
-    user_query = state["user_query"]
-    user_profile = state.get("user_profile")
-    recent_books = state.get("recent_recommendations", [])
-
-    # 更新系统上下文
-    if user_profile or recent_books:
-        system_context = f"""你是专业的图书推荐助手。
-
-## 用户画像
-{user_profile if user_profile else "新用户"}
-
-## 最近推荐（避免重复）
-{', '.join(recent_books[:10]) if recent_books else '无'}
-
-请基于用户画像提供个性化推荐。"""
-
-        conversation_manager.set_system_context(system_context)
-
-    simple_prompt = f"""请用自然、亲切的对话方式回应用户的图书需求。
-
-用户需求：{user_query}
-
-请仔细分析读者的需求，深入挖掘他们可能感兴趣的方向，然后推荐**尽可能多的相关书籍**（至少5-10本，如果合适可以更多）。
-
-推荐策略：
-- 深入分析读者需求：如果是某个领域，考虑入门、进阶、高级等不同层次
-- 推荐书籍时注意由浅入深、循序渐进
-- 可以包括经典必读、实用工具书、理论著作等不同类型
-- 避免推荐最近已推荐的书籍
-
-选书标准：
-- 必须是真实存在的图书
-- 优先推荐中文版（如果有翻译版）
-- 优先选择经典、权威、口碑好的书籍
-- 书籍要确实与用户需求相关
-
-回答要求：
-1. **先用1-2段自然语言分析读者需求**，展示你的理解和推荐思路
-2. **然后直接列出书单**，格式：`序号. 书名 - 作者`
-3. **不要添加每本书的推荐理由**，保持简洁（理由已在开头的分析中体现）
-4. **尽量推荐多一些书籍**，让读者有更多选择
-
-示例：
-用户："推荐Python编程的书"
-回答："好的！Python编程是一个很实用的技能。根据您的需求，我为您准备了一份从入门到进阶的书单，涵盖了基础语法、实战项目、高级特性等方面，这样可以帮助您系统地学习Python：
-
-1. Python编程：从入门到实践 - Eric Matthes
-2. 笨办法学Python - Zed Shaw
-3. Python核心编程 - Wesley Chun
-4. 流畅的Python - Luciano Ramalho
-5. Effective Python - Brett Slatkin
-6. Python Cookbook - David Beazley
-7. Python数据分析 - Wes McKinney
-8. Python Web开发实战 - 董伟明
-9. Flask Web开发 - Miguel Grinberg
-10. Django企业开发实战 - 胡阳
-"
-
-请现在为用户推荐书籍。"""
-
-    llm_response = await conversation_manager.ainvoke(
-        simple_prompt,
-        model="doubao-seed-1-8-251215",
-        temperature=0.7
-    )
-    logger.info(f"简单推荐响应: {llm_response[:200]}...")
-
-    # 解析响应（从自然语言中提取书名和作者）
-    dialogue_part, books = _parse_natural_language_response(llm_response)
-
-    if not books:
-        state["error"] = "无法生成推荐书单"
-        state["recommended_books"] = []
-    else:
-        state["dialogue_response"] = dialogue_part
-        state["recommended_books"] = books
-        logger.info(f"✓ 生成 {len(books)} 本简单推荐")
 
     return state
 
@@ -883,62 +793,6 @@ def _regex_extract_books(text: str) -> List[Dict]:
     logger.info(f"正则提取得到 {len(books)} 本书籍")
     return books
 
-
-
-def _parse_natural_language_response(llm_response: str) -> tuple[str, List[Dict]]:
-    """
-    解析自然语言推荐响应，提取对话部分和书籍列表
-
-    支持格式：
-    1. 数字编号：1. 书名 - 作者
-    2. 其他格式：《书名》- 作者 或 书名 - 作者
-
-    Returns:
-        (dialogue_part, books_list)
-    """
-    dialogue_part = ""
-    books = []
-
-    lines = llm_response.strip().split('\n')
-
-    # 查找书单开始位置（通常是第一个数字编号的行）
-    book_start_index = -1
-    for i, line in enumerate(lines):
-        # 匹配格式：1. 书名 - 作者 或 1、书名 - 作者
-        if re.match(r'^\s*\d+[.、]\s*.+\s*[-－—]\s*.+', line):
-            book_start_index = i
-            break
-
-    # 提取对话部分（书单之前的所有行）
-    if book_start_index > 0:
-        dialogue_part = '\n'.join(lines[:book_start_index]).strip()
-    elif book_start_index == -1:
-        # 如果没有找到数字编号，整个响应都是对话
-        dialogue_part = llm_response.strip()
-        return dialogue_part, books
-
-    # 提取书籍列表
-    for i in range(book_start_index, len(lines)):
-        line = lines[i].strip()
-        if not line:
-            continue
-
-        # 匹配格式：1. 书名 - 作者 或 1、《书名》- 作者
-        match = re.match(r'^\s*\d+[.、]\s*[《【]?([^》】\-－—]+)[》】]?\s*[-－—]\s*(.+)', line)
-        if match:
-            title = match.group(1).strip()
-            author = match.group(2).strip()
-
-            # 移除作者名中的后缀（著、编、译等）
-            author = re.sub(r'\s*(著|编|译|主编|编著).*$', '', author).strip()
-
-            books.append({
-                "title": title,
-                "author": author
-            })
-
-    logger.info(f"自然语言解析得到 {len(books)} 本书籍")
-    return dialogue_part, books
 
 
 async def _fetch_single_book_detail(book: Dict) -> Dict:
