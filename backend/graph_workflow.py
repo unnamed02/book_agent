@@ -40,8 +40,6 @@ class BookRecommendationState(TypedDict):
 
     # 路由结果
     query_type: str  # "book_recommendation" | "customer_service" | "clarification"
-    is_query_clear: bool  # 需求是否明确
-    clarification_questions: List[str]  # 澄清问题列表
 
     # 推荐结果
     recommended_books: List[Dict]  # [{"title": "", "author": "", "reason": ""}]
@@ -81,34 +79,18 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 
 请判断查询类型：
 
-1. **查询类型判断**：
-   - 图书推荐（book_recommendation）：用户想要图书推荐、询问书籍、查找书籍等
-   - 客服咨询（customer_service）：询问系统功能、使用方法、技术问题、投诉建议等
+**查询类型判断**：
+   - 精确推荐（book_recommendation）：用户想要具体领域的图书推荐,询问书籍,查找书籍等，通过推荐3-5本书就可以满足需求
+        如：我想学习python/找一下红楼梦
+   - 宽泛推荐（general_chat）：用户的需求比较宽泛3-5本书无法满足要求，或者是与书/作者相关的问题
+        如：全民阅读中小学书单/党建书单/介绍一下杜定有
+   - 客服咨询（customer_service）：询问系统功能,使用方法,技术问题,投诉建议等
+   - 搜索书单（search_booklist）：用户直接提供书单,包含书名和作者的列表
 
-2. **搜索书单（search_booklist）**：用户直接提供书单，包含书名和作者的列表
-   - 例如："帮我查找：1. Python编程 - Eric, 2. 红楼梦 - 曹雪芹"
-   - 判断标准：用户消息中包含多本书籍信息（书名+作者），并且有明确的列表格式（数字编号、换行等）
+返回格式：
+只返回查询类型对应的字符串，book_recommendation/general_chat/customer_service/search_booklist，不返回其他内容
 
-3. **请求详细信息（request_detail）**：用户明确要求查看详细信息、馆藏、资源等
-   - 明确关键词：详细信息、馆藏、资源、链接、购买、哪里买、电子版、借阅
-   - **重要**：如果对话历史中助手刚刚推荐了书籍并询问"需要我帮您查找这些书籍的详细信息吗"，
-     而用户回复"需要"、"要"、"好的"、"可以"、"行"、"嗯"等肯定词，应判断为 request_detail。
-
-返回格式（JSON）：
-{{
-  "query_type": "book_recommendation 或 customer_service 或 search_booklist",
-  "is_clear": true/false,
-  "clarification_questions": ["问题1", "问题2", "问题3"]  // 仅在不明确时提供
-}}
-
-示例：
-- 输入："Python编程的书" → {{"query_type": "book_recommendation", "is_clear": true}}
-- 输入："推荐几本书" → {{"query_type": "book_recommendation", "is_clear": false, "clarification_questions": ["您想了解哪个领域？", "是学习还是娱乐？"]}}
-- 输入："怎么使用这个系统？" → {{"query_type": "customer_service", "is_clear": true}}
-- 输入："1. 《源代码》（[美]比尔·盖茨，鲁伊 译，郑纬民、韦青 审校）2. 《大道》（赵理亚 选，芒格书院 编）" ->  → {{"query_type": "search_booklist", "is_clear": true}}
-
-
-只返回JSON，不要其他内容。"""
+"""
 
     route_result = await conversation_manager.ainvoke(
         route_prompt,
@@ -116,30 +98,30 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
         temperature=0
     )
 
-    # 解析路由结果
+    # 解析路由结果 - 直接返回查询类型字符串
     try:
-        # 清理可能的 markdown 代码块
+        # 清理结果（去除可能的空格、换行等）
         clean_result = route_result.strip()
-        if clean_result.startswith("```"):
-            clean_result = clean_result.split("```")[1]
-            if clean_result.startswith("json"):
-                clean_result = clean_result[4:]
-        clean_result = clean_result.strip()
 
-        route_data = json.loads(clean_result)
+        # 验证返回的查询类型是否有效
+        valid_types = ["book_recommendation", "general_chat", "customer_service", "search_booklist"]
 
-        state["query_type"] = route_data.get("query_type", "book_recommendation")
-        state["is_query_clear"] = route_data.get("is_clear", True)
-        state["clarification_questions"] = route_data.get("clarification_questions", [])
+        if clean_result in valid_types:
+            state["query_type"] = clean_result
+        else:
+            logger.warning(f"无效的查询类型: {clean_result}, 使用默认值")
+            state["query_type"] = "book_recommendation"
 
-        logger.info(f"✓ 路由结果: type={state['query_type']}, clear={state['is_query_clear']}")
+        state["is_query_clear"] = True
+        state["clarification_questions"] = []
+
+        logger.info(f"✓ 路由结果: type={state['query_type']}")
 
     except Exception as e:
         logger.error(f"路由解析失败: {e}, 使用默认值")
         # 默认当作图书推荐
         state["query_type"] = "book_recommendation"
-        state["is_query_clear"] = True
-        state["clarification_questions"] = []
+
 
     return state
 
@@ -247,26 +229,49 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
     return state
 
 
-async def generate_clarification_response(state: BookRecommendationState) -> BookRecommendationState:
+
+
+async def handle_general_chat(state: BookRecommendationState) -> BookRecommendationState:
     """
-    节点: 生成澄清问题响应
+    节点: 处理一般聊天和宽泛推荐
 
-    当用户需求不明确时调用
+    处理以下情况：
+    1. 需求比较宽泛，需要更多书籍推荐
+    2. 与书籍/作者相关的一般性问题
+    3. 用户需求不明确
+    4. 一般闲聊
     """
-    logger.info("📍 节点: generate_clarification_response")
+    logger.info("📍 节点: handle_general_chat")
 
-    questions = state["clarification_questions"]
+    conversation_manager = state["conversation_manager"]
+    user_query = state["user_query"]
 
-    response_text = f"""我需要了解更多信息来为您推荐合适的书籍：
+    # 使用对话管理器直接生成响应
+    chat_prompt = f"""你是一个专业且友好的图书推荐助手。请根据用户的问题提供帮助。
 
-{chr(10).join([f"{i+1}. {q}" for i, q in enumerate(questions)])}
+用户问题：{user_query}
 
-请告诉我更多详细信息，我会为您精准推荐！"""
+请注意：
+1. 如果用户需要书单推荐（如：全民阅读书单、党建书单等），请在最后提供详细的书单，包括书名和作者
+2. 如果用户询问作者或书籍信息，请提供准确的介绍
+3. 如果用户需求不够明确（如：推荐几本书），可以友好地询问更多细节，或者根据常见需求提供一些通用推荐
+4. 如果是一般闲聊，请友好回应
 
-    state["final_response"] = response_text
-    state["dialogue_response"] = response_text
+回答要求：
+- 语气友好、专业
+- 如果推荐书籍，请使用格式：书名 - 作者
+- 内容要准确、有帮助"""
 
-    logger.info("✓ 生成澄清问题完成")
+    response = await conversation_manager.ainvoke(
+        chat_prompt,
+        model="DeepSeek-V3.2",
+        temperature=0.7
+    )
+
+    state["final_response"] = response
+    state["dialogue_response"] = response
+
+    logger.info("✓ 一般聊天响应生成完成")
     return state
 
 
@@ -686,7 +691,7 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "customer_service" | "clarify" | "recommend" | "search_booklist"
+        "customer_service" | "general_chat" | "recommend" | "search_booklist"
     """
     query_type = state.get("query_type", "book_recommendation")
 
@@ -698,25 +703,12 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "search_booklist":
         return "search_booklist"
 
-    # 如果是图书推荐，检查是否需要澄清
-    if not state.get("is_query_clear", True):
-        return "clarify"
+    # 如果是宽泛推荐/一般聊天，路由到一般聊天节点
+    if query_type == "general_chat":
+        return "general_chat"
 
-    # 明确的图书推荐需求
+    # 精确的图书推荐需求，进入推荐流程
     return "recommend"
-
-
-def should_clarify(state: BookRecommendationState) -> str:
-    """
-    条件边: 判断是否需要澄清
-
-    Returns:
-        "clarify" 或 "proceed"
-    """
-    if state.get("is_query_clear", True):
-        return "proceed"
-    else:
-        return "clarify"
 
 
 def has_error(state: BookRecommendationState) -> str:
@@ -987,9 +979,9 @@ def create_recommendation_graph() -> StateGraph:
     工作流程：
     0. route_query（智能路由）
        ├─ 客服咨询 → customer_service → END
-       ├─ 需求不明确 → clarify → END
+       ├─ 宽泛推荐/一般聊天 → general_chat → END
        ├─ 搜索书单 → search_booklist → END
-       └─ 明确的图书推荐 → load_context
+       └─ 精确的图书推荐 → load_context
 
     图书推荐路径：
     1. load_context（加载用户上下文）
@@ -1012,12 +1004,12 @@ def create_recommendation_graph() -> StateGraph:
        └→ END
 
     节点说明：
-    - route_query: 智能路由，判断查询类型和明确性
+    - route_query: 智能路由，判断查询类型（精确推荐/宽泛推荐/客服/搜索书单）
     - customer_service: 处理客服咨询（使用 RAG）
-    - clarify: 生成澄清问题引导用户
+    - general_chat: 处理宽泛推荐、作者介绍、一般闲聊、需求不明确的情况
     - search_booklist: 搜索用户提供的书单，输出 Markdown 表格
     - load_context: 从数据库加载用户画像和历史推荐
-    - recommend: 使用LLM生成个性化推荐书单（基于用户画像）
+    - recommend: 使用LLM生成个性化推荐书单（基于用户画像，3-5本书）
     - fetch_detail: 并行获取豆瓣、馆藏、资源、购买链接
     - format_response: 格式化为Markdown响应
     - update_prefs: 根据推荐结果增量更新用户偏好（偏好学习）
@@ -1028,7 +1020,7 @@ def create_recommendation_graph() -> StateGraph:
     # 添加节点
     workflow.add_node("route", route_query)
     workflow.add_node("customer_service", handle_customer_service)
-    workflow.add_node("clarify", generate_clarification_response)
+    workflow.add_node("general_chat", handle_general_chat)
     workflow.add_node("search_booklist", search_booklist)
     workflow.add_node("load_context", load_user_context)
     workflow.add_node("update_prefs", update_user_preferences)
@@ -1046,7 +1038,7 @@ def create_recommendation_graph() -> StateGraph:
         route_by_type,
         {
             "customer_service": "customer_service",
-            "clarify": "clarify",
+            "general_chat": "general_chat",
             "recommend": "load_context",
             "search_booklist": "search_booklist"
         }
@@ -1055,8 +1047,8 @@ def create_recommendation_graph() -> StateGraph:
     # 客服分支直接结束
     workflow.add_edge("customer_service", END)
 
-    # 澄清分支直接结束
-    workflow.add_edge("clarify", END)
+    # 一般聊天分支直接结束
+    workflow.add_edge("general_chat", END)
 
     # 搜索书单分支直接结束
     workflow.add_edge("search_booklist", END)
@@ -1166,8 +1158,8 @@ async def stream_recommendation_workflow(
                 yield {"type": "done"}
                 return
 
-            elif node_name == "clarify":
-                # 澄清问题
+            elif node_name == "general_chat":
+                # 一般聊天响应
                 yield {
                     "type": "message",
                     "content": node_state["final_response"]
