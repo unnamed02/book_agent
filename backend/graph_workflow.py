@@ -249,14 +249,29 @@ async def handle_general_chat(state: BookRecommendationState) -> BookRecommendat
     user_query = state["user_query"]
 
     # 判断是否需要搜索
+    search_context = ""
     try:
-        from langchain_community.tools.tavily_search import TavilySearchResults
+        import os
+        # 检查是否配置了 Tavily API Key
+        if not os.getenv("TAVILY_API_KEY"):
+            logger.info("未配置 TAVILY_API_KEY，跳过搜索功能")
+        else:
+            try:
+                # 优先使用新版本
+                from langchain_tavily import TavilySearchResults  # type: ignore
+            except ImportError:
+                try:
+                    # 回退到旧版本
+                    from langchain_community.tools.tavily_search import TavilySearchResults  # type: ignore
+                except ImportError:
+                    logger.info("Tavily 搜索工具未安装")
+                    raise
 
-        # 创建 Tavily 搜索工具
-        search_tool = TavilySearchResults(max_results=3)
+            # 创建 Tavily 搜索工具
+            search_tool = TavilySearchResults(max_results=3)
 
-        # 使用 LLM 判断是否需要搜索
-        decision_prompt = f"""判断以下问题是否需要网络搜索来获取最新或准确的信息。
+            # 使用 LLM 判断是否需要搜索
+            decision_prompt = f"""判断以下问题是否需要网络搜索来获取最新或准确的信息。
 
 用户问题：{user_query}
 
@@ -265,6 +280,7 @@ async def handle_general_chat(state: BookRecommendationState) -> BookRecommendat
 - 询问特定书籍的详细信息
 - 需要最新的书单推荐（如：2024年畅销书）
 - 询问时事相关的阅读推荐
+- 与最新政策相关
 
 如果是以下情况，返回 "no"：
 - 一般性的闲聊
@@ -273,51 +289,43 @@ async def handle_general_chat(state: BookRecommendationState) -> BookRecommendat
 
 只返回 yes 或 no，不要其他内容。"""
 
-        decision = await conversation_manager.ainvoke(
-            decision_prompt,
-            model="gpt-4o-mini",
-            temperature=0
-        )
+            decision = await conversation_manager.ainvoke(
+                decision_prompt,
+                model="gpt-4o-mini",
+                temperature=0
+            )
 
-        search_context = ""
-        if decision.strip().lower() == "yes":
-            logger.info("🔍 需要网络搜索，正在使用 Tavily 搜索...")
-            try:
-                # 提取搜索关键词
-                search_query = user_query
-                if "书单" in user_query or "推荐" in user_query:
-                    search_query = f"{user_query} 书单 2025"
+            if decision.strip().lower() == "yes":
+                logger.info("🔍 需要网络搜索，正在使用 Tavily 搜索...")
+                try:
+                    # 提取搜索关键词
+                    search_query = user_query
+                    if "书单" in user_query or "推荐" in user_query:
+                        search_query = f"{user_query} 书单 2025"
 
-                # 执行搜索
-                search_results = search_tool.invoke(search_query)
+                    # 执行搜索
+                    search_results = search_tool.invoke(search_query)
 
-                # 格式化搜索结果
-                if search_results:
-                    formatted_results = []
-                    for result in search_results:
-                        if isinstance(result, dict):
-                            content = result.get("content", "")
-                            url = result.get("url", "")
-                            formatted_results.append(f"- {content[:200]}... (来源: {url})")
+                    # 格式化搜索结果
+                    if search_results:
+                        formatted_results = []
+                        for result in search_results:
+                            if isinstance(result, dict):
+                                content = result.get("content", "")
+                                url = result.get("url", "")
+                                formatted_results.append(f"- {content[:200]}... (来源: {url})")
 
-                    if formatted_results:
-                        search_context = f"\n\n搜索结果参考：\n" + "\n".join(formatted_results) + "\n"
-                        logger.info(f"✓ Tavily 搜索完成，获取到 {len(formatted_results)} 条参考信息")
-                    else:
-                        search_context = ""
-                else:
-                    search_context = ""
+                        if formatted_results:
+                            search_context = f"\n\n搜索结果参考：\n" + "\n".join(formatted_results) + "\n"
+                            logger.info(f"✓ Tavily 搜索完成，获取到 {len(formatted_results)} 条参考信息")
 
-            except Exception as e:
-                logger.warning(f"Tavily 搜索失败，继续使用 LLM 知识: {e}")
-                search_context = ""
+                except Exception as e:
+                    logger.warning(f"Tavily 搜索失败，继续使用 LLM 知识: {e}")
 
-    except ImportError:
-        logger.warning("Tavily 搜索工具未安装，使用 LLM 直接回答")
-        search_context = ""
+    except ImportError as e:
+        logger.info(f"Tavily 搜索工具未安装: {e}")
     except Exception as e:
-        logger.warning(f"搜索判断失败: {e}")
-        search_context = ""
+        logger.info(f"搜索功能不可用: {e}")
 
     # 使用对话管理器直接生成响应
     chat_prompt = f"""你是一个专业且友好的图书推荐助手。请根据用户的问题提供帮助。
