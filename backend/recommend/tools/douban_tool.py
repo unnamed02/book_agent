@@ -64,28 +64,28 @@ def extract_first_author(author_string: str) -> str:
     result = llm.invoke(prompt).content.strip()
     return result if result else "未知作者"
 
-def extract_book_name(book_name: str) -> str:
+def extract_title(title: str) -> str:
     """提取书名，去掉版本号"""
-    if not book_name:
+    if not title:
         return ""
 
     llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
     prompt = f"""从以下书名中去掉版本号信息（如"第X版"、"单行本"等），只保留核心书名。
 只返回书名，不要其他内容。
 
-书名：{book_name}"""
+书名：{title}"""
 
     result = llm.invoke(prompt).content.strip()
-    return result if result else book_name
+    return result if result else title
 
 
 @tool
-def search_douban_book(book_name: str, author: str, use_llm_optimize: bool = True) -> str:
+def search_douban_book(title: str, author: str, use_llm_optimize: bool = True) -> str:
     """搜索豆瓣图书评分和评价 返回三个结果，选其中标题最接近，出版时间最新的，有评分的使用"""
     if use_llm_optimize:
-        query = optimize_query(f"{book_name} {author}")
+        query = optimize_query(f"{title} {author}")
     else:
-        query = f"{book_name} {author}"
+        query = f"{title} {author}"
 
     logger.info(f"开始搜索图书: {query}")
     try:
@@ -108,7 +108,7 @@ def search_douban_book(book_name: str, author: str, use_llm_optimize: bool = Tru
                 "uri": target.get("uri", "").split("/")[-1]
             })
         logger.info(results)
-        return json.dumps({"books": results}, ensure_ascii=False) if results else json.dumps({"error": f"未找到《{book_name}》的信息"}, ensure_ascii=False)
+        return json.dumps({"books": results}, ensure_ascii=False) if results else json.dumps({"error": f"未找到《{title}》的信息"}, ensure_ascii=False)
     except Exception as e:
         logger.error(f"搜索失败: {str(e)}")
         return json.dumps({"error": str(e)}, ensure_ascii=False)
@@ -132,7 +132,7 @@ def get_douban_book_detail(uri: str, use_llm_optimize: bool = True) -> str:
 
         logger.info(f"*** {response} ***")
         if use_llm_optimize:
-            title = extract_book_name(str(title_raw))
+            title = extract_title(str(title_raw))
             author = extract_first_author(str(author_raw)) if author_raw else "未知作者"
         else:
             title = str(title_raw) if title_raw else "未知书名"

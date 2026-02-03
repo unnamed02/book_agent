@@ -11,16 +11,16 @@ from langchain_openai import ChatOpenAI
 logger = logging.getLogger(__name__)
 
 
-def filter_info_with_llm(raw_result: str, book_name: str, author: str) -> int:
+def filter_info_with_llm(raw_result: str, title: str, author: str) -> int:
     """使用 LLM 过滤搜索结果，只保留相关的"""
 
     if "未找到" in raw_result or "搜索失败" in raw_result:
         return raw_result
 
-    logger.info(f"\n{raw_result} {book_name} {author} ***\n")
+    logger.info(f"\n{raw_result} {title} {author} ***\n")
     
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-    prompt = f"""从以下搜索结果中，筛选出与书名: {book_name} 作者：{author} 最相关的资源。
+    prompt = f"""从以下搜索结果中，筛选出与书名: {title} 作者：{author} 最相关的资源。
 
 选择标准（按优先级）：
 1. 作者最接近 (模糊匹配)
@@ -47,11 +47,11 @@ def create_book_info_chain():
 
     # Step 1: 搜索豆瓣获取 URI
     def get_uri(x):
-        result = search_douban_book.invoke({"book_name": x["book_name"], "author": x["author"]})
+        result = search_douban_book.invoke({"title": x["title"], "author": x["author"]})
         try:
             data = json.loads(result)
             books = data.get("books", [])
-            return books[filter_info_with_llm(result,x["book_name"],x["author"])]["uri"] if books else ""
+            return books[filter_info_with_llm(result,x["title"],x["author"])]["uri"] if books else ""
         except:
             return ""
 
@@ -75,13 +75,13 @@ def create_book_info_chain():
 
         publisher = detail.get("publisher", "")
         author = detail.get("author", "")
-        title = detail.get("title", x["book_name"])
+        title = detail.get("title", x["title"])
         isbn = detail.get("isbn", "")
 
         tasks = []
         tasks.append(asyncio.to_thread(
             search_digital_resource.invoke,
-            {"publisher": publisher, "book_name": title, "author": author, "isbn": isbn}
+            {"publisher": publisher, "title": title, "author": author, "isbn": isbn}
         ))
         if isbn:
             tasks.append(asyncio.to_thread(
@@ -90,7 +90,7 @@ def create_book_info_chain():
             ))
             tasks.append(asyncio.to_thread(
                 search_library_collection.invoke,
-                {"isbn": isbn, "book_name": title}
+                {"isbn": isbn, "title": title}
             ))
         else:
             tasks.append(asyncio.sleep(0, result="无购买信息"))
@@ -201,15 +201,15 @@ def create_book_info_chain():
 
     return final_chain | RunnableLambda(format_output)
 
-async def process_book_with_chain(book_name: str, author: str) -> str:
+async def process_book_with_chain(title: str, author: str) -> str:
     """使用 LCEL 链处理单本书"""
 
     try:
-        logger.info(f"开始处理: {book_name} {author}")
+        logger.info(f"开始处理: {title} {author}")
         chain = create_book_info_chain()
-        result = await chain.ainvoke({"book_name": book_name,"author": author})
-        logger.info(f"完成处理: {book_name}, 结果长度: {len(result)}")
+        result = await chain.ainvoke({"title": title,"author": author})
+        logger.info(f"完成处理: {title}, 结果长度: {len(result)}")
         return result
     except Exception as e:
-        logger.error(f"处理《{book_name}》失败: {e}", exc_info=True)
-        return f"处理《{book_name}》时出错: {str(e)}"
+        logger.error(f"处理《{title}》失败: {e}", exc_info=True)
+        return f"处理《{title}》时出错: {str(e)}"

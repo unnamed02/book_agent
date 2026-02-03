@@ -87,7 +87,7 @@ class LongTermUserMemory(BaseModel):
         cutoff_date = datetime.now() - timedelta(days=days)
 
         result = await self.db_session.execute(
-            select(RecommendationHistory.book_title, RecommendationHistory.book_isbn)
+            select(RecommendationHistory.title, RecommendationHistory.book_isbn)
             .where(
                 and_(
                     RecommendationHistory.user_id == self.user_id,
@@ -129,7 +129,7 @@ class LongTermUserMemory(BaseModel):
         books = result.scalars().all()
         return [
             {
-                "title": book.book_title,
+                "title": book.title,
                 "author": book.book_author,
                 "genre": book.book_genre,
                 "isbn": book.book_isbn
@@ -362,7 +362,7 @@ class UserMemoryManager:
             recommendation = RecommendationHistory(
                 user_id=self.user_id,
                 session_id=session_id,
-                book_title=book.get("title", ""),
+                title=book.get("title", ""),
                 book_author=book.get("author", ""),
                 book_isbn=book.get("isbn", ""),
                 book_genre=book.get("genre", ""),

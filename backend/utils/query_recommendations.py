@@ -28,7 +28,7 @@ async def query_all_recommendations():
             print(f"[{i}] ID: {rec.id}")
             print(f"    用户ID: {rec.user_id}")
             print(f"    会话ID: {rec.session_id}")
-            print(f"    书名: {rec.book_title}")
+            print(f"    书名: {rec.title}")
             print(f"    作者: {rec.book_author}")
             print(f"    ISBN: {rec.book_isbn or '无'}")
             print(f"    类型: {rec.book_genre or '无'}")
@@ -55,7 +55,7 @@ async def query_by_user(user_id: str):
         print(f"{'='*80}\n")
 
         for i, rec in enumerate(recommendations, 1):
-            print(f"[{i}] {rec.book_title} - {rec.book_author}")
+            print(f"[{i}] {rec.title} - {rec.book_author}")
             print(f"    ISBN: {rec.book_isbn or '无'}")
             print(f"    推荐时间: {rec.recommended_at}")
             print(f"    查询: {rec.user_query[:50]}..." if rec.user_query and len(rec.user_query) > 50 else f"    查询: {rec.user_query}")
@@ -82,7 +82,7 @@ async def query_recent_recommendations(days: int = 7):
         print(f"{'='*80}\n")
 
         for i, rec in enumerate(recommendations, 1):
-            print(f"[{i}] {rec.book_title} - {rec.book_author}")
+            print(f"[{i}] {rec.title} - {rec.book_author}")
             print(f"    用户: {rec.user_id}")
             print(f"    ISBN: {rec.book_isbn or '无'}")
             print(f"    时间: {rec.recommended_at}")
@@ -109,7 +109,7 @@ async def query_statistics():
 
         # 推荐的不同书籍数
         book_result = await session.execute(
-            select(func.count(func.distinct(RecommendationHistory.book_title)))
+            select(func.count(func.distinct(RecommendationHistory.title)))
         )
         book_count = book_result.scalar()
 
@@ -159,7 +159,7 @@ async def query_by_isbn(isbn: str):
 
         if recommendations:
             first_rec = recommendations[0]
-            print(f"书名: {first_rec.book_title}")
+            print(f"书名: {first_rec.title}")
             print(f"作者: {first_rec.book_author}")
             print(f"类型: {first_rec.book_genre or '无'}")
             print(f"\n推荐历史:")

@@ -7,13 +7,13 @@ import re
 logger = logging.getLogger(__name__)
 
 @tool
-def search_library_collection(isbn: str, book_name: str) -> str:
+def search_library_collection(isbn: str, title: str) -> str:
     """
     查询图书馆馆藏信息
 
     Args:
         isbn: 图书ISBN
-        book_name: 书名
+        title: 书名
 
     Returns:
         JSON格式的馆藏信息
@@ -66,7 +66,7 @@ def search_library_collection(isbn: str, book_name: str) -> str:
 
         # 使用LLM判断是否应该有馆藏
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        check_prompt = f"""判断《{book_name}》是否可能在图书馆有馆藏。
+        check_prompt = f"""判断《{title}》是否可能在图书馆有馆藏。
 如果是特别小众、新出版（2024-2025年）、或非常专业的书籍，返回"无"。
 否则返回"有"。
 只返回"有"或"无"，不要其他内容。"""
@@ -78,7 +78,7 @@ def search_library_collection(isbn: str, book_name: str) -> str:
 
         # 生成馆藏信息
         llm2 = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-        prompt = f"""参考以下模板，为《{book_name}》(ISBN: {isbn})生成1-2条图书馆馆藏记录。
+        prompt = f"""参考以下模板，为《{title}》(ISBN: {isbn})生成1-2条图书馆馆藏记录。
 要求：
 1. 根据书名生成合适的索书号(call_number)，如计算机类用TP开头，文学类用I开头等
 2. 随机生成status：可借、在馆、借出等
