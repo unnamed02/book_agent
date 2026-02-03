@@ -9,19 +9,19 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 @tool
-def search_and_filter_book(book_name: str, author: str = "") -> str:
+def search_and_filter_book(title: str, author: str = "") -> str:
     """
     搜索新华书店在线商城并使用 LLM 筛选最匹配的书籍
 
     Args:
-        book_name: 书名
+        title: 书名
         author: 作者（可选）
 
     Returns:
         JSON 字符串，包含最匹配的书籍信息 {"title": "书名", "author": "作者", "isbn": "ISBN"}
         如果未找到，返回 {"error": "未找到匹配书籍"}
     """
-    logger.info(f"开始搜索并筛选: {book_name}, 作者: {author}")
+    logger.info(f"开始搜索并筛选: {title}, 作者: {author}")
 
     try:
         # 调用商城 API 搜索（只用书名）
@@ -32,7 +32,7 @@ def search_and_filter_book(book_name: str, author: str = "") -> str:
         }
         payload = {
             "searchField": "searchAll",
-            "searchContent": book_name,
+            "searchContent": title,
             "page": 1,
             "rows": 10
         }
@@ -41,17 +41,17 @@ def search_and_filter_book(book_name: str, author: str = "") -> str:
         raw_data = response.text
 
         # 提取所有搜索结果
-        book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
+        titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
         isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
         authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
 
-        if not book_titles:
+        if not titles:
             return json.dumps({"error": "未找到搜索结果"}, ensure_ascii=False)
 
         # 构建候选书籍列表
         candidates = []
-        for i in range(min(len(book_titles), len(isbns), len(authors_list))):
-            clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
+        for i in range(min(len(titles), len(isbns), len(authors_list))):
+            clean_title = re.sub(r'<[^>]+>', '', titles[i])
             clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
             candidates.append({
                 "title": clean_title,
@@ -60,12 +60,12 @@ def search_and_filter_book(book_name: str, author: str = "") -> str:
             })
 
         # 使用 LLM 筛选最匹配的书籍
-        logger.info(f"使用 LLM 筛选《{book_name}》的最佳匹配...")
+        logger.info(f"使用 LLM 筛选《{title}》的最佳匹配...")
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
         filter_prompt = f"""从以下搜索结果中，选择与目标书籍最匹配的一本。
 
 目标书籍：
-- 书名：{book_name}
+- 书名：{title}
 - 作者：{author if author else "未知"}
 
 搜索结果：
@@ -86,7 +86,7 @@ def search_and_filter_book(book_name: str, author: str = "") -> str:
                 return json.dumps(selected, ensure_ascii=False)
             else:
                 # LLM 返回 -1，没有合适的匹配
-                logger.warning(f"LLM 未找到《{book_name}》的合适匹配")
+                logger.warning(f"LLM 未找到《{title}》的合适匹配")
                 return json.dumps({"error": "未找到匹配书籍"}, ensure_ascii=False)
         except ValueError:
             # LLM 返回格式错误，使用第一个结果
@@ -120,15 +120,15 @@ def search_shop_by_isbn(isbn: str) -> str:
         data = response.text
 
         # 提取书名、价格、ISBN、作者
-        book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', data)
+        titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', data)
         prices = re.findall(r'"price":((?:\\"|[^"])*),', data)
         isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', data)
         authors = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
 
         results = []
-        for i in range(min(len(book_titles), len(prices), len(isbns), len(authors))):
+        for i in range(min(len(titles), len(prices), len(isbns), len(authors))):
             if isbn in isbns[i]:
-                title = re.sub(r'<[^>]+>', '', book_titles[i])
+                title = re.sub(r'<[^>]+>', '', titles[i])
                 author = re.sub(r'<[^>]+>', '', authors[i])
                 results.append({
                     "source": "新华书店在线商城",
@@ -144,9 +144,9 @@ def search_shop_by_isbn(isbn: str) -> str:
         return json.dumps([], ensure_ascii=False)
 
 @tool
-def search_online_shop(book_name: str, author: str = "") -> str:
+def search_online_shop(title: str, author: str = "") -> str:
     """搜索新华书店在线商城购买链接"""
-    logger.info(f"开始搜索在线商城: {book_name}, 作者: {author}")
+    logger.info(f"开始搜索在线商城: {title}, 作者: {author}")
     try:
         import json
         api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
@@ -155,7 +155,7 @@ def search_online_shop(book_name: str, author: str = "") -> str:
             "Content-Type": "application/json;charset=UTF-8"
         }
         
-        query = f"{book_name} {author}"
+        query = f"{title} {author}"
 
         payload = {
             "searchField": "searchAll",
@@ -168,15 +168,15 @@ def search_online_shop(book_name: str, author: str = "") -> str:
         data = response.text
 
         # 提取书名、价格、ISBN、作者
-        book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', data)
+        titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', data)
         prices = re.findall(r'"price":((?:\\"|[^"])*),', data)
         isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', data)
         author_editor = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
 
         results = []
 
-        for i in range(min(len(book_titles), len(prices), len(isbns), len(author_editor))):
-            title = re.sub(r'<[^>]+>', '', book_titles[i])
+        for i in range(min(len(titles), len(prices), len(isbns), len(author_editor))):
+            title = re.sub(r'<[^>]+>', '', titles[i])
             author = re.sub(r'<[^>]+>', '', author_editor[i])
 
             results.append({
@@ -194,9 +194,9 @@ def search_online_shop(book_name: str, author: str = "") -> str:
 
 if __name__ == "__main__":
     print("=== 测试搜索在线商城 ===")
-    result = search_online_shop.invoke({"book_name": "Python编程"})
+    result = search_online_shop.invoke({"title": "Python编程"})
     print(result)
-    result = search_online_shop.invoke({"book_name": "机械设计手册", "author": "成大先"})
+    result = search_online_shop.invoke({"title": "机械设计手册", "author": "成大先"})
     print(result)
     result = search_shop_by_isbn.invoke({"isbn": "9787111473947"})
     print(result)

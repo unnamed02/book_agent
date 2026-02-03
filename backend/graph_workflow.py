@@ -23,6 +23,10 @@ from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 
 logger = logging.getLogger(__name__)
 
+# ========== 并发控制 ==========
+# 全局信号量：限制同时进行的书籍详情获取数量（避免 API 频率限制）
+BOOK_DETAIL_SEMAPHORE = asyncio.Semaphore(2)  # 最多同时处理 2 本书
+
 
 # ========== 状态定义 ==========
 
@@ -603,11 +607,11 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
 
                 # 提取所有搜索结果
                 import re
-                book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
+                titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
                 isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
                 authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
 
-                if not book_titles:
+                if not titles:
                     # 未找到，使用原始信息
                     table_lines.append(f"| {title} | {author} | |")
                     logger.warning(f"未找到《{title}》")
@@ -615,8 +619,8 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
 
                 # 构建候选书籍列表（用于 LLM 筛选）
                 candidates = []
-                for i in range(min(len(book_titles), len(isbns), len(authors_list))):
-                    clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
+                for i in range(min(len(titles), len(isbns), len(authors_list))):
+                    clean_title = re.sub(r'<[^>]+>', '', titles[i])
                     clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
                     candidates.append({
                         "title": clean_title,
@@ -874,7 +878,7 @@ def _regex_extract_books(text: str) -> List[Dict]:
 
 async def _fetch_single_book_detail(book: Dict) -> Dict:
     """
-    获取单本书的完整信息
+    获取单本书的完整信息（使用信号量控制并发）
 
     包括：豆瓣详情、馆藏、电子资源、购买链接
     """
@@ -882,67 +886,75 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
     author = book["author"]
     reason = book.get("reason", "")
 
-    try:
-        logger.info(f"开始获取《{title}》的详细信息")
+    # 使用信号量控制并发数量
+    async with BOOK_DETAIL_SEMAPHORE:
+        try:
+            logger.info(f"开始获取《{title}》的详细信息")
 
-        # Step 1: 搜索豆瓣获取 URI
-        douban_search_result = search_douban_book.invoke({
-            "book_name": title,
-            "author": author
-        })
+            # Step 1: 搜索豆瓣获取 URI
+            douban_search_result = search_douban_book.invoke({
+                "title": title,
+                "author": author
+            })
 
-        data = json.loads(douban_search_result)
-        books_found = data.get("books", [])
+            # 添加小延迟，避免请求过于密集
+            await asyncio.sleep(0.3)
 
-        if not books_found:
-            logger.warning(f"豆瓣未找到《{title}》")
+            data = json.loads(douban_search_result)
+            books_found = data.get("books", [])
+
+            if not books_found:
+                logger.warning(f"豆瓣未找到《{title}》")
+                return {}
+
+            # 选择最相关的结果（通常第一个）
+            uri = books_found[0]["uri"]
+
+            # Step 2: 获取豆瓣详情
+            detail_result = get_douban_book_detail.invoke({"uri": uri})
+            detail = json.loads(detail_result)
+
+            # 添加小延迟
+            await asyncio.sleep(0.3)
+
+            # Step 3: 并行获取资源、购买、馆藏信息
+            isbn = detail.get("isbn", "")
+            publisher = detail.get("publisher", "")
+
+            tasks = [
+                asyncio.to_thread(
+                    search_digital_resource.invoke,
+                    {"publisher": publisher, "title": title, "author": author, "isbn": isbn}
+                )
+            ]
+
+            if isbn:
+                tasks.append(asyncio.to_thread(search_shop_by_isbn.invoke, {"isbn": isbn}))
+                tasks.append(asyncio.to_thread(search_library_collection.invoke, {"isbn": isbn, "title": title}))
+            else:
+                tasks.append(asyncio.sleep(0, result="[]"))
+                tasks.append(asyncio.sleep(0, result="[]"))
+
+            results = await asyncio.gather(*tasks)
+
+            # 组装完整信息
+            return {
+                "title": detail.get("title", title),
+                "author": detail.get("author", author),
+                "publisher": detail.get("publisher", "未知"),
+                "isbn": isbn,
+                "rating": detail.get("rating", ""),
+                "summary": detail.get("summary", ""),
+                "image": detail.get("image", ""),
+                "reason": reason,
+                "digital_resources": results[0],
+                "shop_links": results[1],
+                "library_info": results[2]
+            }
+
+        except Exception as e:
+            logger.error(f"获取《{title}》详细信息失败: {e}")
             return {}
-
-        # 选择最相关的结果（通常第一个）
-        uri = books_found[0]["uri"]
-
-        # Step 2: 获取豆瓣详情
-        detail_result = get_douban_book_detail.invoke({"uri": uri})
-        detail = json.loads(detail_result)
-
-        # Step 3: 并行获取资源、购买、馆藏信息
-        isbn = detail.get("isbn", "")
-        publisher = detail.get("publisher", "")
-
-        tasks = [
-            asyncio.to_thread(
-                search_digital_resource.invoke,
-                {"publisher": publisher, "book_name": title, "author": author, "isbn": isbn}
-            )
-        ]
-
-        if isbn:
-            tasks.append(asyncio.to_thread(search_shop_by_isbn.invoke, {"isbn": isbn}))
-            tasks.append(asyncio.to_thread(search_library_collection.invoke, {"isbn": isbn, "book_name": title}))
-        else:
-            tasks.append(asyncio.sleep(0, result="[]"))
-            tasks.append(asyncio.sleep(0, result="[]"))
-
-        results = await asyncio.gather(*tasks)
-
-        # 组装完整信息
-        return {
-            "title": detail.get("title", title),
-            "author": detail.get("author", author),
-            "publisher": detail.get("publisher", "未知"),
-            "isbn": isbn,
-            "rating": detail.get("rating", ""),
-            "summary": detail.get("summary", ""),
-            "image": detail.get("image", ""),
-            "reason": reason,
-            "digital_resources": results[0],
-            "shop_links": results[1],
-            "library_info": results[2]
-        }
-
-    except Exception as e:
-        logger.error(f"获取《{title}》详细信息失败: {e}")
-        return {}
 
 
 def _format_book_markdown(detail: Dict) -> str:

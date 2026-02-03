@@ -55,7 +55,7 @@ class RecommendationHistory(Base):
     session_id = Column(String(36))
 
     # 推荐内容
-    book_title = Column(String(255), nullable=False)
+    title = Column(String(255), nullable=False)
     book_author = Column(String(255))
     book_isbn = Column(String(20), index=True)
     book_genre = Column(String(100))
@@ -82,7 +82,7 @@ class RecommendationHistory(Base):
     )
 
     def __repr__(self):
-        return f"<RecommendationHistory(user={self.user_id}, book={self.book_title}, at={self.recommended_at})>"
+        return f"<RecommendationHistory(user={self.user_id}, book={self.title}, at={self.recommended_at})>"
 
 
 class FeedbackRecord(Base):
