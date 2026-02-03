@@ -24,9 +24,12 @@ class ResourceResult(TypedDict):
 def search_digital_resource(publisher: str, title: str, author: str, isbn: str) -> str:
     """根据出版社、书名、作者、ISBN搜索数字资源"""
     logger.info(f"搜索电子资源 - 书名: {title}, 出版社: {publisher}, 作者: {author}, ISBN: {isbn}")
-    raw_result = search_zhangyue_resource(title=title,author=author)
-    
 
+    # 合并掌阅和畅想之星的搜索结果
+    zhangyue_list = json.loads(search_zhangyue_resource(title, author))
+    cxstar_list = json.loads(search_cxstar_resource(title, author, isbn))
+
+    raw_result = json.dumps(zhangyue_list + cxstar_list, ensure_ascii=False)
     return filter_resources_with_llm(raw_result, title, author)
 
 
@@ -214,6 +217,97 @@ def search_cxstar_resource(title: str, author: str = "", isbn: str = "") -> str:
         logger.error(f"搜索失败: {str(e)}")
         return json.dumps([], ensure_ascii=False)
 
+def search_chineseall_resource(title: str, author: str = "", isbn: str = "") -> str:
+    """搜索中文在线（书香陕西）资源"""
+    logger.info(f"开始搜索中文在线资源: {title}, 作者: {author}, ISBN: {isbn}")
+    try:
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Content-Type": "application/json"
+        }
+        all_results: list[ResourceResult] = []
+
+        # 中文在线（书香陕西）API 地址 - URL参数直接拼接
+        api_url = "https://shanxist.cahd.chineseall.cn/book/searchBook?searchkey=&page=1&pageSize=15&categoryIds=&publishDates=&publishers=&sortType=0"
+
+        # 构建搜索条件
+        payload = []
+
+        # 添加书名搜索条件
+        if title:
+            payload.append({
+                "field": "name",
+                "logicOperator": "AND",
+                "matchType": "FUZZY",
+                "value": title
+            })
+
+        # 添加作者搜索条件
+        if author:
+            payload.append({
+                "field": "author",
+                "logicOperator": "AND",
+                "matchType": "FUZZY",
+                "value": author
+            })
+
+        # 如果没有任何搜索条件，返回空结果
+        if not payload:
+            return json.dumps([], ensure_ascii=False)
+
+        response = requests.post(api_url, json=payload, headers=headers, timeout=10)
+        data = response.json()
+
+        print(data)
+        
+        normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', title.lower())
+
+        # 解析返回的数据
+        for item in data.get("list", []):
+            item_title = item.get("name", "")
+            # 移除 HTML 标签（如 <span class="search_key_highlight">）
+            item_title = re.sub(r'<[^>]+>', '', item_title)
+
+            item_author = item.get("author", "")
+            # 移除 HTML 标签
+            item_author = re.sub(r'<[^>]+>', '', item_author)
+
+            item_publisher = item.get("publisher", "")
+            item_isbn = item.get("isbn", "").replace('-', '')
+            item_shid = item.get("shId", "")
+
+            if item_title:
+                normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', item_title.lower())
+
+                # 使用 rapidfuzz 计算相似度
+                title_similarity = fuzz.partial_ratio(normalized_search, normalized_title)
+
+                # 相似度阈值 80 以上才添加
+                if title_similarity >= 80:
+                    result: ResourceResult = {
+                        "source": "中文在线（书香陕西理工）",
+                        "title": item_title,
+                        "author": item_author,
+                        "publisher": item_publisher,
+                        "isbn": item_isbn,
+                        "link": f"https://shanxist.cahd.chineseall.cn/book/bookDetail?shId={item_shid}"
+                    }
+                    all_results.append(result)
+
+        unique_results: list[ResourceResult] = []
+        seen = set()
+        for item in all_results:
+            key = item["link"]
+            if key not in seen:
+                seen.add(key)
+                unique_results.append(item)
+
+        return json.dumps(unique_results, ensure_ascii=False)
+    except Exception as e:
+        logger.error(f"搜索失败: {str(e)}")
+        return json.dumps([], ensure_ascii=False)
+
+
 if __name__ == "__main__":
     print("=== 测试搜索电子资源 ===")
 
@@ -223,12 +317,14 @@ if __name__ == "__main__":
     result = search_cxstar_resource("Python编程从入门到实践","Eric Matthes")
     print(result)
 
-    result = search_digital_resource.invoke({
-        "publisher": "",
-        "title": "蛤蟆先生去看心理学医生",
-        "author": "罗伯特·戴博德",
-        "isbn": ""
-    })
-    
-    
+    result = search_chineseall_resource("机械设计手册","成大先")
     print(result)
+    
+    # result = search_digital_resource.invoke({
+    #     "publisher": "",
+    #     "title": "蛤蟆先生去看心理学医生",
+    #     "author": "罗伯特·戴博德",
+    #     "isbn": ""
+    # })    
+    
+    # print(result)
