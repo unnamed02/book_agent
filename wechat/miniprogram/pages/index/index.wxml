@@ -1,0 +1,95 @@
+<!--index.wxml-->
+<navigation-bar title="图书推荐助手" back="{{false}}" color="black" background="#FFF"></navigation-bar>
+
+<!-- 新会话按钮 -->
+<view wx:if="{{messages.length > 0}}" class="new-session-btn" bindtap="startNewSession">
+  <text class="new-session-icon">+</text>
+  <text class="new-session-text">新会话</text>
+</view>
+
+<view class="chat-container">
+  <!-- 消息列表 -->
+  <scroll-view
+    class="messages-scroll"
+    scroll-y
+    scroll-into-view="{{scrollToView}}"
+    scroll-with-animation="{{true}}"
+  >
+    <!-- 空状态 -->
+    <view wx:if="{{messages.length === 0}}" class="empty-state">
+      <view class="empty-icon">📚</view>
+      <view class="empty-title">你好！我是图书推荐助手</view>
+      <view class="empty-desc">告诉我你想读什么类型的书，我会为你推荐</view>
+    </view>
+
+    <!-- 消息列表 -->
+    <view wx:else class="messages-list">
+      <view
+        wx:for="{{messages}}"
+        wx:key="index"
+        class="message-item"
+        id="msg-{{index}}"
+      >
+        <!-- 用户消息 -->
+        <view wx:if="{{item.role === 'user'}}" class="message-user">
+          <view class="message-content user-content">
+            <text>{{item.content}}</text>
+          </view>
+        </view>
+
+        <!-- 助手消息 -->
+        <view wx:else class="message-assistant">
+          <view class="message-content assistant-content">
+            <markdown content="{{item.content}}" />
+          </view>
+        </view>
+      </view>
+
+      <!-- 加载状态 -->
+      <view wx:if="{{loading}}" class="message-item">
+        <view class="message-assistant">
+          <view class="message-content assistant-content loading-content">
+            <view class="loading-dots">
+              <view class="dot"></view>
+              <view class="dot"></view>
+              <view class="dot"></view>
+            </view>
+            <text class="loading-text">正在思考...</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+
+  <!-- 输入区域 -->
+
+</view>
+<view class="input-area">
+  <view class="input-wrapper">
+    <textarea
+      class="input-box"
+      value="{{input}}"
+      placeholder="输入消息..."
+      placeholder-class="placeholder-style"
+      bindinput="onInput"
+      confirm-type="send"
+      bindconfirm="sendMessage"
+      disabled="{{loading}}"
+      auto-height
+      fixed
+      disable-default-padding
+      maxlength="500"
+      cursor-spacing="20"
+    />
+  </view>
+  <view class="btn-wrapper">
+    <button
+      class="btn-send {{canSend ? 'btn-send-active' : ''}}"
+      bindtap="sendMessage"
+      disabled="{{!canSend || loading}}"
+      hover-class="btn-hover"
+    >
+      发送
+    </button>
+  </view>
+</view>

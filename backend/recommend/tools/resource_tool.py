@@ -6,6 +6,7 @@ import re
 import json
 from rapidfuzz import fuzz
 from typing import TypedDict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -24,38 +25,20 @@ def search_digital_resource(publisher: str, title: str, author: str, isbn: str) 
     """根据出版社、书名、作者、ISBN搜索数字资源"""
     logger.info(f"搜索电子资源 - 书名: {title}, 出版社: {publisher}, 作者: {author}, ISBN: {isbn}")
 
-    # 合并掌阅和畅想之星的搜索结果
-    zhangyue_list = json.loads(search_zhangyue_resource(title, author))
-    cxstar_list = json.loads(search_cxstar_resource(title, author, isbn))
-    chineseall_list = json.loads(search_chineseall_resource(title ,author,isbn))
+    # 使用线程池并发执行三个搜索任务
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        # 提交三个搜索任务
+        future_zhangyue = executor.submit(search_zhangyue_resource, title, author)
+        future_cxstar = executor.submit(search_cxstar_resource, title, author, isbn)
+        future_chineseall = executor.submit(search_chineseall_resource, title, author, isbn)
+
+        # 获取结果
+        zhangyue_list = json.loads(future_zhangyue.result())
+        cxstar_list = json.loads(future_cxstar.result())
+        chineseall_list = json.loads(future_chineseall.result())
 
     raw_result = json.dumps(zhangyue_list + cxstar_list + chineseall_list, ensure_ascii=False)
-    return filter_resources_with_llm(raw_result, title, author)
-
-
-def filter_resources_with_llm(raw_result: str, title: str, author: str) -> str:
-    """使用 LLM 过滤搜索结果，只保留相关的"""
-    try:
-        results = json.loads(raw_result)
-        if not results:
-            return raw_result
-
-        from langchain_openai import ChatOpenAI
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        prompt = f"""从以下JSON数组中，筛选出所有与《{title}》作者{author}相关的资源。
-搜索结果：
-{raw_result}
-
-
-只返回筛选后的JSON数组，保持原格式。"""
-
-        filtered = llm.invoke(prompt).content.strip()
-        filtered = re.sub(r'```json\s*|\s*```', '', filtered).strip()
-        json.loads(filtered)
-        return filtered
-    except:
-        return raw_result
-
+    return raw_result
 
 def search_zhangyue_resource(title: str, author: str = "", isbn: str = "") -> str:
     """搜索掌阅资源"""
@@ -94,9 +77,10 @@ def search_zhangyue_resource(title: str, author: str = "", isbn: str = "") -> st
 
                 # 使用 rapidfuzz 计算相似度（partial_ratio 适合部分匹配）
                 title_similarity = fuzz.partial_ratio(normalized_search, normalized_title)
-
+                author_similarity = fuzz.partial_ratio(author,author_text)
+                
                 # 相似度阈值 80 以上才添加
-                if title_similarity >= 80:
+                if title_similarity >= 80 and author_similarity >= 80:
                     result: ResourceResult = {
                         "source": "掌阅电子书平台",
                         "title": title_text,
@@ -329,11 +313,11 @@ if __name__ == "__main__":
     result = search_chineseall_resource("机械设计手册","成大先")
     print(result)
     
-    # result = search_digital_resource.invoke({
-    #     "publisher": "",
-    #     "title": "蛤蟆先生去看心理学医生",
-    #     "author": "罗伯特·戴博德",
-    #     "isbn": ""
-    # })    
+    result = search_digital_resource.invoke({
+        "publisher": "",
+        "title": "Python编程从入门到实践",
+        "author": "Eric Matthes",
+        "isbn": ""
+    })    
     
-    # print(result)
+    print(result)

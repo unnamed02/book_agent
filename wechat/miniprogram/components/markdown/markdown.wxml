@@ -1,0 +1,56 @@
+<!--components/markdown/markdown.wxml-->
+<view class="markdown-content">
+  <block wx:for="{{parsedContent}}" wx:key="index">
+    <!-- 标题 -->
+    <view wx:if="{{item.type === 'h1'}}" class="markdown-h1">{{item.content}}</view>
+    <view wx:elif="{{item.type === 'h2'}}" class="markdown-h2">{{item.content}}</view>
+    <view wx:elif="{{item.type === 'h3'}}" class="markdown-h3">{{item.content}}</view>
+
+    <!-- 段落 -->
+    <view wx:elif="{{item.type === 'p'}}" class="markdown-p">
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link">{{inline.text}}</text>
+      </block>
+    </view>
+
+    <!-- 列表 -->
+    <view wx:elif="{{item.type === 'ul'}}" class="markdown-ul">
+      <text class="markdown-bullet">• </text>
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+      </block>
+    </view>
+    <view wx:elif="{{item.type === 'ol'}}" class="markdown-ol">
+      <text class="markdown-number">{{index + 1}}. </text>
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+      </block>
+    </view>
+
+    <!-- 图片 -->
+    <view wx:elif="{{item.type === 'image'}}" class="markdown-image-wrapper">
+      <image
+        class="markdown-image"
+        src="{{item.src}}"
+        mode="widthFix"
+        binderror="onImageError"
+        lazy-load="{{true}}"
+      />
+    </view>
+
+    <!-- 代码块 -->
+    <view wx:elif="{{item.type === 'code'}}" class="markdown-code">
+      <text class="markdown-code-text">{{item.content}}</text>
+    </view>
+
+    <!-- 空行 -->
+    <view wx:elif="{{item.type === 'br'}}" class="markdown-br"></view>
+  </block>
+</view>
