@@ -1,7 +1,7 @@
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
 from recommend.tools.resource_tool import search_digital_resource
-from recommend.tools.shop_tool import search_shop_by_isbn
+# from recommend.tools.shop_tool import search_shop_by_isbn
 from recommend.tools.library_tool import search_library_collection
 import logging
 import json
@@ -47,7 +47,7 @@ def create_book_info_chain():
 
     # Step 1: 搜索豆瓣获取 URI
     def get_uri(x):
-        result = search_douban_book.invoke({"title": x["title"], "author": x["author"]})
+        result = search_douban_book.invoke({"title": x["title"], "author": x["author"],"use_llm_optimize": x["True"]})
         try:
             data = json.loads(result)
             books = data.get("books", [])
@@ -84,10 +84,11 @@ def create_book_info_chain():
             {"publisher": publisher, "title": title, "author": author, "isbn": isbn}
         ))
         if isbn:
-            tasks.append(asyncio.to_thread(
-                search_shop_by_isbn.invoke,
-                {"isbn": isbn}
-            ))
+            # tasks.append(asyncio.to_thread(
+            #     search_shop_by_isbn.invoke,
+            #     {"isbn": isbn}
+            # ))
+            tasks.append(asyncio.sleep(0, result="无购买信息"))
             tasks.append(asyncio.to_thread(
                 search_library_collection.invoke,
                 {"isbn": isbn, "title": title}
@@ -150,17 +151,6 @@ def create_book_info_chain():
         except:
             resource_text = '暂无资源'
 
-        # 格式化购买链接
-        shop_text = tools.get('shop', '[]')
-        try:
-            shops = json.loads(shop_text)
-            if shops:
-                shop_text = '\n'.join([f"\n[{s['source']}] [{s['title']}]({s['link']})  {s['price']}" for s in shops])
-            else:
-                shop_text = '暂无购买链接'
-        except:
-            shop_text = '暂无购买链接'
-
         # 格式化馆藏信息
         library_text = tools.get('library', '[]')
         try:
@@ -191,9 +181,6 @@ def create_book_info_chain():
 
 **📥 电子资源**：
 {resource_text}
-
-**🛒 购买链接**：
-{shop_text}
 
 
 ---"""

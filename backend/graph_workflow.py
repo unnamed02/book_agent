@@ -15,7 +15,7 @@ import asyncio
 
 from recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
 from recommend.tools.resource_tool import search_digital_resource
-from recommend.tools.shop_tool import search_shop_by_isbn, search_and_filter_book
+# from recommend.tools.shop_tool import search_shop_by_isbn, search_and_filter_book
 from recommend.tools.library_tool import search_library_collection
 from session.memory_manager import UserMemoryManager
 from session.conversation_manager import ConversationManager
@@ -464,7 +464,8 @@ JSON格式：
 格式要求：
 - 对话部分用自然语言，不要加"第一部分"、"第二部分"等标记
 - JSON部分不要用```包裹，直接输出
-- author字段只写作者名字，不要加"著"、"编"、"译"等后缀
+- author字段只写作者名字，不要加"著"、"编"、"译"等后缀、
+- title只要主标题，不要保留版本，分册名等形象
   * 正确：{{"author": "曹雪芹"}}
   * 错误：{{"author": "曹雪芹 著"}} 或 {{"author": "曹雪芹 著，高鹗 续"}}"""
 
@@ -929,7 +930,8 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
             ]
 
             if isbn:
-                tasks.append(asyncio.to_thread(search_shop_by_isbn.invoke, {"isbn": isbn}))
+                # tasks.append(asyncio.to_thread(search_shop_by_isbn.invoke, {"isbn": isbn}))
+                tasks.append(asyncio.sleep(0, result="[]"))
                 tasks.append(asyncio.to_thread(search_library_collection.invoke, {"isbn": isbn, "title": title}))
             else:
                 tasks.append(asyncio.sleep(0, result="[]"))
@@ -984,9 +986,6 @@ def _format_book_markdown(detail: Dict) -> str:
     # 格式化电子资源
     resource_text = _format_digital_resources(detail.get("digital_resources", "[]"))
 
-    # 格式化购买链接
-    shop_text = _format_shop_links(detail.get("shop_links", "[]"))
-
     # 格式化馆藏信息
     library_text = _format_library_info(detail.get("library_info", "[]"))
 
@@ -1012,9 +1011,6 @@ def _format_book_markdown(detail: Dict) -> str:
 **📥 电子资源**：
 {resource_text}
 
-**🛒 购买链接**：
-{shop_text}
-
 
 ---"""
 
@@ -1037,16 +1033,16 @@ def _format_digital_resources(resource_json: str) -> str:
         return '暂无资源'
 
 
-def _format_shop_links(shop_json: str) -> str:
-    """格式化购买链接"""
-    try:
-        shops = json.loads(shop_json)
-        if shops:
-            return '\n'.join([f"\n[{s['source']}] [{s['title']}]({s['link']})  {s['price']}" for s in shops])
-        else:
-            return '暂无购买链接'
-    except:
-        return '暂无购买链接'
+# def _format_shop_links(shop_json: str) -> str:
+#     """格式化购买链接"""
+#     try:
+#         shops = json.loads(shop_json)
+#         if shops:
+#             return '\n'.join([f"\n[{s['source']}] [{s['title']}]({s['link']})  {s['price']}" for s in shops])
+#         else:
+#             return '暂无购买链接'
+#     except:
+#         return '暂无购买链接'
 
 
 def _format_library_info(library_json: str) -> str:

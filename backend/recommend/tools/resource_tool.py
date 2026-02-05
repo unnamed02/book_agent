@@ -10,7 +10,6 @@ from typing import TypedDict
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
 class ResourceResult(TypedDict):
     """数字资源搜索结果的标准结构"""
     source: str      # 资源来源平台
@@ -28,8 +27,9 @@ def search_digital_resource(publisher: str, title: str, author: str, isbn: str) 
     # 合并掌阅和畅想之星的搜索结果
     zhangyue_list = json.loads(search_zhangyue_resource(title, author))
     cxstar_list = json.loads(search_cxstar_resource(title, author, isbn))
+    chineseall_list = json.loads(search_chineseall_resource(title ,author,isbn))
 
-    raw_result = json.dumps(zhangyue_list + cxstar_list, ensure_ascii=False)
+    raw_result = json.dumps(zhangyue_list + cxstar_list + chineseall_list, ensure_ascii=False)
     return filter_resources_with_llm(raw_result, title, author)
 
 
@@ -45,6 +45,7 @@ def filter_resources_with_llm(raw_result: str, title: str, author: str) -> str:
         prompt = f"""从以下JSON数组中，筛选出所有与《{title}》作者{author}相关的资源。
 搜索结果：
 {raw_result}
+
 
 只返回筛选后的JSON数组，保持原格式。"""
 
@@ -222,8 +223,18 @@ def search_chineseall_resource(title: str, author: str = "", isbn: str = "") -> 
     logger.info(f"开始搜索中文在线资源: {title}, 作者: {author}, ISBN: {isbn}")
     try:
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Content-Type": "application/json"
+            "Accept": "*/*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "zh-CN,zh;q=0.9",
+            "Content-Type": "application/json",
+            "Connection": "keep-alive",
+            "Origin": "https://shanxist.chineseall.cn",
+            "Referer": "https://shanxist.chineseall.cn/",
+            "Sec-Fetch-Dest": "empty",
+            "Sec-Fetch-Mode": "cors",
+            "Sec-Fetch-Site": "same-site",
+            "Sx-Token": "G14FvPx0gOXB76S7915I1o3125T1JaC0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
         }
         all_results: list[ResourceResult] = []
 
@@ -258,8 +269,6 @@ def search_chineseall_resource(title: str, author: str = "", isbn: str = "") -> 
         response = requests.post(api_url, json=payload, headers=headers, timeout=10)
         data = response.json()
 
-        print(data)
-        
         normalized_search = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', title.lower())
 
         # 解析返回的数据
@@ -285,12 +294,12 @@ def search_chineseall_resource(title: str, author: str = "", isbn: str = "") -> 
                 # 相似度阈值 80 以上才添加
                 if title_similarity >= 80:
                     result: ResourceResult = {
-                        "source": "中文在线（书香陕西理工）",
+                        "source": "书香陕西图书馆（中文在线）",
                         "title": item_title,
                         "author": item_author,
                         "publisher": item_publisher,
                         "isbn": item_isbn,
-                        "link": f"https://shanxist.cahd.chineseall.cn/book/bookDetail?shId={item_shid}"
+                        "link": f"https://shanxist.chineseall.cn/book/detail/{item_shid}"
                     }
                     all_results.append(result)
 
