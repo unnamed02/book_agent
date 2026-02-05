@@ -132,3 +132,9 @@ secrets/
 
 # Redis dumps
 dump.rdb
+
+# 微信小程序
+wechat/miniprogram/node_modules/
+wechat/miniprogram_npm/
+wechat/.DS_Store
+wechat/project.private.config.json
