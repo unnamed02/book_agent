@@ -5,27 +5,30 @@ page, view, scroll-view, textarea, button {
   box-sizing: border-box;
 }
 
+/* 1. 核心修复：修改 page 布局 */
 page {
-  height: 100%;
-  width: 100%;
+  height: 100vh;      /* 锁定视口高度 */
+  display: flex;      /* 开启 flex */
+  flex-direction: column; /* 纵向排列：导航栏在上，容器在下 */
   background: #f5f5f5;
+  overflow: hidden;   /* 严禁页面滚动 */
 }
 
 .chat-container {
-  height: 80vh;
+  height: 100%;      /* 必须是 100vh，确保占满整个视口 */
   display: flex;
   flex-direction: column;
   width: 100vw;
-  overflow: hidden;
+  overflow: hidden;   /* 严禁容器本身产生滚动条 */
 }
 
-/* 2. 消息滚动区域 */
+/* 2. 消息区域自适应填满中间 */
 .messages-scroll {
-  flex: 1;
+  flex: 1;            /* 关键：它会自动吃掉中间剩余的所有高度 */
   width: 100%;
-  padding: 32rpx 24rpx; /* 侧边稍微缩小一点 padding */
   overflow-y: auto;
-  overflow-x: hidden; /* 严禁横向溢出 */
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* 空状态 */
@@ -34,7 +37,7 @@ page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-top: 240rpx;
+  padding-top: 15vh;  /* 降低这个高度，不要用 240rpx 这种写死的 */
 }
 
 .empty-icon {
@@ -58,7 +61,9 @@ page {
   display: flex;
   flex-direction: column;
   gap: 32rpx;
-  width: 100%;
+  width: 96%;
+  padding-top: 32rpx;
+  margin: 0 auto;
 }
 
 .message-item {
@@ -137,13 +142,33 @@ page {
   white-space: pre-wrap;
 }
 
+/* Markdown 组件样式优化 */
+.assistant-content markdown,
+.assistant-content .markdown {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+
+.assistant-content markdown > view:first-child,
+.assistant-content .markdown > view:first-child {
+  margin-top: 0 !important;
+}
+
+.assistant-content markdown > view:last-child,
+.assistant-content .markdown > view:last-child {
+  margin-bottom: 0 !important;
+}
+
 /* 3. 输入区域 (锁定高度和宽度) */
 .input-area {
+  flex-shrink: 0;     /* 极其重要：防止因消息太多把输入框挤缩水或挤出屏幕 */
   display: flex;
   align-items: flex-end;
   background: #ffffff;
   border-top: 1rpx solid #eeeeee;
   padding: 20rpx 24rpx;
+  /* 自动适配 iPhone 全面屏底部的黑条高度 */
   padding-bottom: calc(20rpx + env(safe-area-inset-bottom));
   width: 100%;
 }

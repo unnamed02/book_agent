@@ -147,8 +147,19 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
 
 @app.get("/proxy-image")
 async def proxy_image(url: str):
+    """代理图片请求，主要用于豆瓣图片"""
     try:
-        response = requests.get(url, timeout=10)
-        return Response(content=response.content, media_type=response.headers.get('content-type', 'image/jpeg'))
-    except:
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
+            'Referer': 'https://book.douban.com/'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        logger.info(response)
+        response.raise_for_status()
+        return Response(
+            content=response.content,
+            media_type=response.headers.get('content-type', 'image/jpeg')
+        )
+    except Exception as e:
+        logger.error(f"代理图片失败: {url}, 错误: {str(e)}")
         return Response(status_code=404)

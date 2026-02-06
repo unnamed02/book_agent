@@ -143,14 +143,16 @@ Page({
         storageService.setUserId(data.user_id)
       }
     } else if (data.type === 'dialogue') {
-      // 对话内容
-      const content = data.content + '\n\n'
+      // 对话内容 - 处理图片代理
+      const processedContent = apiService.proxyImageUrls(data.content || '')
+      const content = processedContent + '\n\n'
       updateContent(content)
     } else if (data.type === 'books') {
-      // 书单
+      // 书单 - 处理图片代理
       const messages = this.data.messages
       const lastMessage = messages[messages.length - 1]
-      const newContent = lastMessage.content + data.content + '\n\n'
+      const processedContent = apiService.proxyImageUrls(data.content || '')
+      const newContent = lastMessage.content + processedContent + '\n\n'
       updateContent(newContent)
     } else if (data.type === 'status') {
       // 状态信息
@@ -169,8 +171,9 @@ Page({
       newContent += processedContent + '\n\n'
       updateContent(newContent)
     } else if (data.type === 'message') {
-      // 简单消息
-      updateContent(data.content || '')
+      // 简单消息 - 处理图片代理
+      const processedContent = apiService.proxyImageUrls(data.content || '')
+      updateContent(processedContent)
     } else if (data.type === 'done') {
       // 完成
       this.setData({ loading: false })

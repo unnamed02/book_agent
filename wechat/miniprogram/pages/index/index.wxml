@@ -62,34 +62,33 @@
   </scroll-view>
 
   <!-- 输入区域 -->
-
-</view>
-<view class="input-area">
-  <view class="input-wrapper">
-    <textarea
-      class="input-box"
-      value="{{input}}"
-      placeholder="输入消息..."
-      placeholder-class="placeholder-style"
-      bindinput="onInput"
-      confirm-type="send"
-      bindconfirm="sendMessage"
-      disabled="{{loading}}"
-      auto-height
-      fixed
-      disable-default-padding
-      maxlength="500"
-      cursor-spacing="20"
-    />
-  </view>
-  <view class="btn-wrapper">
-    <button
-      class="btn-send {{canSend ? 'btn-send-active' : ''}}"
-      bindtap="sendMessage"
-      disabled="{{!canSend || loading}}"
-      hover-class="btn-hover"
-    >
-      发送
-    </button>
+  <view class="input-area">
+    <view class="input-wrapper">
+      <textarea
+        class="input-box"
+        value="{{input}}"
+        placeholder="输入消息..."
+        placeholder-class="placeholder-style"
+        bindinput="onInput"
+        confirm-type="send"
+        bindconfirm="sendMessage"
+        disabled="{{loading}}"
+        auto-height
+        fixed
+        disable-default-padding
+        maxlength="500"
+        cursor-spacing="20"
+      />
+    </view>
+    <view class="btn-wrapper">
+      <button
+        class="btn-send {{canSend ? 'btn-send-active' : ''}}"
+        bindtap="sendMessage"
+        disabled="{{!canSend || loading}}"
+        hover-class="btn-hover"
+      >
+        发送
+      </button>
+    </view>
   </view>
 </view>
