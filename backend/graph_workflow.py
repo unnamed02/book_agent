@@ -302,27 +302,9 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
             # 没有找到馆藏
             response = f"很抱歉，在碑林区图书馆没有找到《{title}》的馆藏信息。\n\n您可以：\n1. 尝试使用不同的书名或关键词搜索\n2. 询问我其他相关的图书推荐"
         else:
-            # 找到馆藏，格式化输出
-            response_parts = [f"📚 为您找到《{title}》的馆藏信息：\n"]
-
-            for lib in library_data:
-                lib_title = lib.get('title', title)
-                pub_info = lib.get('pub_info', '')
-                call_number = lib.get('call_number', '')
-                location = lib.get('location', '')
-                status = lib.get('status', '')
-                total = lib.get('total', 0)
-                available = lib.get('available', 0)
-
-                response_parts.append(f"\n### {lib_title}\n")
-                if pub_info:
-                    response_parts.append(f"{pub_info}\n\n")
-                response_parts.append(f"**索书号**：{call_number}\n\n")
-                response_parts.append(f"**位置**：{location}\n\n")
-                response_parts.append(f"**状态**：{status} (馆藏{total}册，可借{available}册)\n\n")
-                response_parts.append("---\n")
-
-            response = "".join(response_parts)
+            # 找到馆藏，复用 _format_library_info 函数格式化输出
+            library_text = _format_library_info(json.dumps(library_data, ensure_ascii=False))
+            response = f"📚 为您找到《{title}》的馆藏信息：\n\n{library_text}"
 
         state["final_response"] = response
         state["dialogue_response"] = response
@@ -841,17 +823,6 @@ def _format_digital_resources(resource_json: str) -> str:
         return '暂无资源'
 
 
-# def _format_shop_links(shop_json: str) -> str:
-#     """格式化购买链接"""
-#     try:
-#         shops = json.loads(shop_json)
-#         if shops:
-#             return '\n'.join([f"\n[{s['source']}] [{s['title']}]({s['link']})  {s['price']}" for s in shops])
-#         else:
-#             return '暂无购买链接'
-#     except:
-#         return '暂无购买链接'
-
 
 def _format_library_info(library_json: str) -> str:
     """格式化馆藏信息"""
@@ -876,6 +847,7 @@ def _format_library_info(library_json: str) -> str:
                     lib_lines.append(f"{pub_info}")
 
                 lib_lines.append(
+                    f"出版信息: {pub_info}\n"
                     f"所在分馆: {library}\n"
                     f"索书号: {call_number} | {location} \n"
                     f"状态: {status} (馆藏{total}册，可借{available}册)\n"
