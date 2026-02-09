@@ -111,6 +111,12 @@ class ConversationManager:
 
         response = await llm.ainvoke(self.messages)
 
+        # 调试日志：打印响应类型和内容
+        logger.info(f"🔍 API响应类型: {type(response)}")
+        logger.info(f"🔍 API响应内容: {response}")
+        if hasattr(response, '__dict__'):
+            logger.info(f"🔍 API响应属性: {response.__dict__}")
+
         self.messages.append(AIMessage(content=response.content))
         self._trim_history()
 
