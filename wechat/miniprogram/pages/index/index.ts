@@ -36,10 +36,10 @@ Page({
     }
 
     // 可选：恢复消息历史
-    // const messages = storageService.getMessages()
-    // if (messages.length > 0) {
-    //   this.setData({ messages })
-    // }
+    const messages = storageService.getMessages()
+    if (messages.length > 0) {
+      this.setData({ messages })
+    }
   },
 
   // 输入框变化

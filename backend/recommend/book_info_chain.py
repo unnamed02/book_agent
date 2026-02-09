@@ -1,13 +1,12 @@
 from langchain_core.runnables import RunnablePassthrough, RunnableLambda
 from recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
 from recommend.tools.resource_tool import search_digital_resource
-# from recommend.tools.shop_tool import search_shop_by_isbn
 from recommend.tools.library_tool import search_library_collection
 import logging
 import json
 import asyncio
 from langchain_openai import ChatOpenAI
-    
+
 logger = logging.getLogger(__name__)
 
 
@@ -18,7 +17,7 @@ def filter_info_with_llm(raw_result: str, title: str, author: str) -> int:
         return raw_result
 
     logger.info(f"\n{raw_result} {title} {author} ***\n")
-    
+
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
     prompt = f"""从以下搜索结果中，筛选出与书名: {title} 作者：{author} 最相关的资源。
 
@@ -69,7 +68,7 @@ def create_book_info_chain():
 
     detail_chain = uri_chain.assign(detail=RunnableLambda(get_detail))
 
-    # Step 3: 并行调用资源、商城和图书馆工具
+    # Step 3: 并行调用资源和图书馆工具
     async def get_resources(x):
         detail = x.get("detail", {})
 
@@ -83,22 +82,15 @@ def create_book_info_chain():
             search_digital_resource.invoke,
             {"publisher": publisher, "title": title, "author": author, "isbn": isbn}
         ))
-        if isbn:
-            # tasks.append(asyncio.to_thread(
-            #     search_shop_by_isbn.invoke,
-            #     {"isbn": isbn}
-            # ))
-            tasks.append(asyncio.sleep(0, result="无购买信息"))
-            tasks.append(asyncio.to_thread(
-                search_library_collection.invoke,
-                {"isbn": isbn, "title": title}
-            ))
-        else:
-            tasks.append(asyncio.sleep(0, result="无购买信息"))
-            tasks.append(asyncio.sleep(0, result="[]"))
+
+        tasks.append(asyncio.to_thread(
+            search_library_collection.invoke,
+            {"title": title, "author": author}
+        ))
+    
 
         results = await asyncio.gather(*tasks)
-        return {"resource": results[0], "shop": results[1], "library": results[2]}
+        return {"resource": results[0], "library": results[1]}
 
     final_chain = detail_chain.assign(tools_result=RunnableLambda(get_resources))
 
@@ -158,7 +150,23 @@ def create_book_info_chain():
             if libraries:
                 lib_lines = []
                 for lib in libraries:
-                    lib_lines.append(f"\n索书号: {lib['call_number']} | {lib['floor']} {lib['location']} | {lib['status']} (馆藏{lib['total']}册，可借{lib['available']}册)")
+                    lib_title = lib.get('title', '')
+                    pub_info = lib.get('pub_info', '')
+                    call_number = lib.get('call_number', '')
+                    location = lib.get('location', '')
+                    library_name = lib.get('library', '')
+                    status = lib.get('status', '')
+                    total = lib.get('total', 0)
+                    available = lib.get('available', 0)
+
+                    if lib_title and pub_info:
+                        lib_lines.append(f"\n**{lib_title}**")
+                        lib_lines.append(f"{pub_info}")
+
+                    lib_lines.append(
+                        f"索书号: {call_number} | {library_name} {location} | {status} "
+                        f"(馆藏{total}册，可借{available}册)\n"
+                    )
                 library_text = '\n'.join(lib_lines)
             else:
                 library_text = '暂无馆藏\n\n[荐购此书](https://library.example.com/recommend)'
@@ -169,9 +177,11 @@ def create_book_info_chain():
         image_markdown = f"![{title}]({image})\n\n" if image else ""
 
         markdown = f"""{image_markdown}###  {title}
-**作者**：{author} \n
-**出版社**：{publisher} \n
-**ISBN**：{isbn}  \n
+**作者**：{author}
+
+**出版社**：{publisher}
+
+**ISBN**：{isbn}
 
 **推荐理由**：
 {summary}

@@ -84,15 +84,21 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 请判断查询类型：
 
 **查询类型判断**：
-   - 精确推荐（book_recommendation）：用户想要具体领域的图书推荐,询问书籍,查找书籍等，通过推荐3-5本书就可以满足需求
-        如：我想学习python/找一下红楼梦
-   - 宽泛推荐（general_chat）：用户的需求比较宽泛3-5本书无法满足要求，或者是与书/作者相关的问题
-        如：全民阅读中小学书单/党建书单/介绍一下杜定有
-   - 客服咨询（customer_service）：询问系统功能,使用方法,技术问题,投诉建议等
-   - 搜索书单（search_booklist）：用户直接提供书单,包含书名和作者的列表
+   - 找书（find_book）：用户想要查找特定的书籍，查询图书馆是否有这本书
+        关键词：找、查、有没有、搜索 + 具体书名
+        示例：找一下红楼梦/查一下如何阅读一本书/有没有三体/搜索一下活着
+   - 图书推荐（book_recommendation）：用户想要图书推荐，需要推荐书籍
+        关键词：推荐、想看、想学、书单
+        示例：我想学习python/推荐几本科幻小说/全民阅读书单/想看一些历史书
+   - 客服咨询（customer_service）：询问系统功能、使用方法、技术问题、投诉建议等
+        示例：怎么使用/系统有什么功能/如何借书
+
+重要提示：
+- 如果用户提到"找"、"查"、"有没有"等词，并且后面跟着具体的书名，应该判断为 find_book
+- 如果用户想要推荐或建议，应该判断为 book_recommendation
 
 返回格式：
-只返回查询类型对应的字符串，book_recommendation/general_chat/customer_service/search_booklist，不返回其他内容
+只返回查询类型对应的字符串，find_book/book_recommendation/customer_service，不返回其他内容
 
 """
 
@@ -108,7 +114,7 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
         clean_result = route_result.strip()
 
         # 验证返回的查询类型是否有效
-        valid_types = ["book_recommendation", "general_chat", "customer_service", "search_booklist"]
+        valid_types = ["find_book", "book_recommendation", "customer_service"]
 
         if clean_result in valid_types:
             state["query_type"] = clean_result
@@ -235,131 +241,99 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
 
 
 
-async def handle_general_chat(state: BookRecommendationState) -> BookRecommendationState:
+async def handle_find_book(state: BookRecommendationState) -> BookRecommendationState:
     """
-    节点: 处理一般聊天和宽泛推荐
+    节点: 处理找书请求（独立节点，不复用推荐流程）
 
-    处理以下情况：
-    1. 需求比较宽泛，需要更多书籍推荐
-    2. 与书籍/作者相关的一般性问题
-    3. 用户需求不明确
-    4. 一般闲聊
-
-    支持网络搜索以提供更准确的信息
+    直接查询图书馆馆藏并格式化输出
     """
-    logger.info("📍 节点: handle_general_chat")
+    logger.info("📍 节点: handle_find_book")
 
     conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
 
-    # 判断是否需要搜索
-    search_context = ""
+    # 使用 LLM 提取书名和作者
+    extract_prompt = f"""从用户的查询中提取书名和作者信息。
+
+用户查询：{user_query}
+
+请以 JSON 格式返回：
+{{
+    "title": "书名",
+    "author": "作者"
+}}
+
+如果没有明确的作者信息，author 字段返回空字符串。
+只返回 JSON，不要其他内容。"""
+
     try:
-        import os
-        # 检查是否配置了 Tavily API Key
-        if not os.getenv("TAVILY_API_KEY"):
-            logger.info("未配置 TAVILY_API_KEY，跳过搜索功能")
+        extract_result = await conversation_manager.ainvoke(
+            extract_prompt,
+            model="gpt-4o-mini",
+            temperature=0
+        )
+
+        # 解析提取结果
+        import json
+        book_info = json.loads(extract_result.strip())
+        title = book_info.get("title", "")
+        author = book_info.get("author", "")
+
+        logger.info(f"提取到书名: {title}, 作者: {author}")
+
+        if not title:
+            state["final_response"] = "抱歉，我没有理解您要找的书名，请提供更明确的书名信息。"
+            state["dialogue_response"] = state["final_response"]
+            return state
+
+        # 调用图书馆搜索工具
+        from recommend.tools.library_tool import search_library_collection
+
+        logger.info(f"正在搜索图书馆馆藏: {title} - {author}")
+        library_result = search_library_collection.invoke({
+            "title": title,
+            "author": author
+        })
+
+        # 解析搜索结果
+        library_data = json.loads(library_result)
+
+        if not library_data:
+            # 没有找到馆藏
+            response = f"很抱歉，在碑林区图书馆没有找到《{title}》的馆藏信息。\n\n您可以：\n1. 尝试使用不同的书名或关键词搜索\n2. 询问我其他相关的图书推荐"
         else:
-            try:
-                # 优先使用新版本
-                from langchain_tavily import TavilySearchResults  # type: ignore
-            except ImportError:
-                try:
-                    # 回退到旧版本
-                    from langchain_community.tools.tavily_search import TavilySearchResults  # type: ignore
-                except ImportError:
-                    logger.info("Tavily 搜索工具未安装")
-                    raise
+            # 找到馆藏，格式化输出
+            response_parts = [f"📚 为您找到《{title}》的馆藏信息：\n"]
 
-            # 创建 Tavily 搜索工具
-            search_tool = TavilySearchResults(max_results=3)
+            for lib in library_data:
+                lib_title = lib.get('title', title)
+                pub_info = lib.get('pub_info', '')
+                call_number = lib.get('call_number', '')
+                location = lib.get('location', '')
+                status = lib.get('status', '')
+                total = lib.get('total', 0)
+                available = lib.get('available', 0)
 
-            # 使用 LLM 判断是否需要搜索
-            decision_prompt = f"""判断以下问题是否需要网络搜索来获取最新或准确的信息。
+                response_parts.append(f"\n### {lib_title}\n")
+                if pub_info:
+                    response_parts.append(f"{pub_info}\n\n")
+                response_parts.append(f"**索书号**：{call_number}\n\n")
+                response_parts.append(f"**位置**：{location}\n\n")
+                response_parts.append(f"**状态**：{status} (馆藏{total}册，可借{available}册)\n\n")
+                response_parts.append("---\n")
 
-用户问题：{user_query}
+            response = "".join(response_parts)
 
-如果是以下情况，返回 "yes"：
-- 询问特定作者的生平、作品
-- 询问特定书籍的详细信息
-- 需要最新的书单推荐（如：2024年畅销书）
-- 询问时事相关的阅读推荐
-- 与最新政策相关
+        state["final_response"] = response
+        state["dialogue_response"] = response
 
-如果是以下情况，返回 "no"：
-- 一般性的闲聊
-- 模糊的推荐需求（如：推荐几本好书）
-- 系统使用问题
+        logger.info("✓ 找书响应生成完成")
 
-只返回 yes 或 no，不要其他内容。"""
-
-            decision = await conversation_manager.ainvoke(
-                decision_prompt,
-                model="gpt-4o-mini",
-                temperature=0
-            )
-
-            if decision.strip().lower() == "yes":
-                logger.info("🔍 需要网络搜索，正在使用 Tavily 搜索...")
-                try:
-                    # 提取搜索关键词
-                    search_query = user_query
-                    if "书单" in user_query or "推荐" in user_query:
-                        search_query = f"{user_query} 书单 2025"
-
-                    # 执行搜索
-                    search_results = search_tool.invoke(search_query)
-
-                    # 格式化搜索结果
-                    if search_results:
-                        formatted_results = []
-                        for result in search_results:
-                            if isinstance(result, dict):
-                                content = result.get("content", "")
-                                url = result.get("url", "")
-                                formatted_results.append(f"- {content[:200]}... (来源: {url})")
-
-                        if formatted_results:
-                            search_context = f"\n\n搜索结果参考：\n" + "\n".join(formatted_results) + "\n"
-                            logger.info(f"✓ Tavily 搜索完成，获取到 {len(formatted_results)} 条参考信息")
-
-                except Exception as e:
-                    logger.warning(f"Tavily 搜索失败，继续使用 LLM 知识: {e}")
-
-    except ImportError as e:
-        logger.info(f"Tavily 搜索工具未安装: {e}")
     except Exception as e:
-        logger.info(f"搜索功能不可用: {e}")
+        logger.error(f"找书处理失败: {e}", exc_info=True)
+        state["final_response"] = f"抱歉，查找时出现错误，请稍后重试。"
+        state["dialogue_response"] = state["final_response"]
 
-    # 使用对话管理器直接生成响应
-    chat_prompt = f"""你是一个专业且友好的图书推荐助手。请根据用户的问题提供帮助。
-
-用户问题：{user_query}
-{search_context}
-
-请注意：
-1. 如果用户需要书单推荐（如：全民阅读书单、党建书单等），请在最后提供详细的书单，包括书名和作者
-2. 如果用户询问作者或书籍信息，请提供准确的介绍
-3. 如果有搜索结果参考，请结合搜索结果提供更准确的信息
-4. 如果用户需求不够明确（如：推荐几本书），可以友好地询问更多细节，或者根据常见需求提供一些通用推荐
-5. 如果是一般闲聊，请友好回应
-
-回答要求：
-- 语气友好、专业
-- 如果推荐书籍，请使用格式：书名 - 作者
-- 内容要准确、有帮助
-- 如果使用了搜索结果，不要明确说明"根据搜索结果"，自然地融入答案中"""
-
-    response = await conversation_manager.ainvoke(
-        chat_prompt,
-        model="DeepSeek-V3.2",
-        temperature=0.7
-    )
-
-    state["final_response"] = response
-    state["dialogue_response"] = response
-
-    logger.info("✓ 一般聊天响应生成完成")
     return state
 
 
@@ -522,168 +496,6 @@ async def fetch_books_detail(state: BookRecommendationState) -> BookRecommendati
 
     return state
 
-async def search_booklist(state: BookRecommendationState) -> BookRecommendationState:
-    """
-    节点: 搜索书单 - 解析用户提供的书单并调用 douban_tool 查找基本信息，直接输出 CSV
-
-    用户直接提供书单（书名+作者），系统解析后使用 douban_tool 查找 ISBN，输出纯 CSV
-    """
-    logger.info("📍 节点: search_booklist")
-
-    conversation_manager = state["conversation_manager"]
-    user_query = state["user_query"]
-
-    # 使用 LLM 解析用户提供的书单
-    parse_prompt = f"""请从用户消息中提取书单信息，返回 JSON 格式的书籍列表。
-
-用户消息：
-{user_query}
-
-要求：
-1. 提取所有书籍的书名和作者
-2. 返回格式：{{"books": [{{"title": "书名", "author": "作者"}}]}}
-3. 如果无法提取，返回空列表：{{"books": []}}
-
-只返回 JSON，不要其他内容。"""
-
-    parse_result = await conversation_manager.ainvoke(
-        parse_prompt,
-        model="gpt-4o-mini",
-        temperature=0
-    )
-
-    # 解析 JSON
-    try:
-        clean_result = parse_result.strip()
-        if clean_result.startswith("```"):
-            clean_result = clean_result.split("```")[1]
-            if clean_result.startswith("json"):
-                clean_result = clean_result[4:]
-        clean_result = clean_result.strip()
-
-        book_data = json.loads(clean_result)
-        books = book_data.get("books", [])
-
-        if not books:
-            state["error"] = "无法从您的消息中提取书单信息，请提供书名和作者"
-            state["final_response"] = "无法从您的消息中提取书单信息，请提供书名和作者"
-            return state
-
-        logger.info(f"✓ 解析到 {len(books)} 本书籍")
-
-        # 使用 Markdown 表格格式
-        table_lines = [
-            "| 书名 | 作者 | ISBN |",
-            "| --- | --- | --- |"
-        ]
-
-        for idx, book in enumerate(books):
-            title = book["title"]
-            author = book["author"]
-
-            try:
-                # 频率控制：每次调用前等待0.2秒（第一次除外）
-                if idx > 0:
-                    logger.info("等待0.2秒，避免频率限制...")
-                    await asyncio.sleep(0.2)
-
-                # 直接调用商城 API 搜索图书（只用书名，不加作者）
-                logger.info(f"[{idx + 1}/{len(books)}] 正在搜索《{title}》...")
-                
-                import requests
-                api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
-                headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Content-Type": "application/json;charset=UTF-8"
-                }
-                payload = {
-                    "searchField": "searchAll",
-                    "searchContent": title,  # 只用书名搜索
-                    "page": 1,
-                    "rows": 10
-                }
-
-                response = requests.post(api_url, json=payload, headers=headers, timeout=10)
-                raw_data = response.text
-
-                # 提取所有搜索结果
-                import re
-                titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
-                isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
-                authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
-
-                if not titles:
-                    # 未找到，使用原始信息
-                    table_lines.append(f"| {title} | {author} | |")
-                    logger.warning(f"未找到《{title}》")
-                    continue
-
-                # 构建候选书籍列表（用于 LLM 筛选）
-                candidates = []
-                for i in range(min(len(titles), len(isbns), len(authors_list))):
-                    clean_title = re.sub(r'<[^>]+>', '', titles[i])
-                    clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
-                    candidates.append({
-                        "title": clean_title,
-                        "author": clean_author,
-                        "isbn": isbns[i]
-                    })
-
-                # 使用 LLM 筛选最匹配的书籍
-                logger.info(f"使用 LLM 筛选《{title}》的最佳匹配...")
-                filter_llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-                filter_prompt = f"""从以下搜索结果中，选择与目标书籍最匹配的一本。
-
-目标书籍：
-- 书名：{title}
-- 作者：{author}
-
-搜索结果：
-{json.dumps(candidates, ensure_ascii=False, indent=2)}
-
-请选择最匹配的书籍，只返回该书籍的索引（0-{len(candidates)-1}）。
-如果没有合适的匹配，返回 -1。
-
-只返回数字，不要其他内容。"""
-
-                filter_result = filter_llm.invoke(filter_prompt).content.strip()
-
-                try:
-                    selected_idx = int(filter_result)
-                    if 0 <= selected_idx < len(candidates):
-                        selected = candidates[selected_idx]
-                        actual_title = selected["title"]
-                        actual_author = selected["author"]
-                        isbn = selected["isbn"]
-
-                        table_lines.append(f"| {actual_title} | {actual_author} | {isbn} |")
-                        logger.info(f"✓ 获取《{title}》信息成功")
-                    else:
-                        # LLM 返回 -1，没有合适的匹配
-                        table_lines.append(f"| {title} | {author} | |")
-                        logger.warning(f"LLM 未找到《{title}》的合适匹配")
-                except ValueError:
-                    # LLM 返回格式错误，使用第一个结果
-                    logger.warning(f"LLM 返回格式错误，使用第一个结果")
-                    selected = candidates[0]
-                    table_lines.append(f"| {selected['title']} | {selected['author']} | {selected['isbn']} |")
-
-            except Exception as e:
-                logger.error(f"获取《{title}》信息失败: {e}")
-                # 失败时也添加到表格，ISBN 为空
-                table_lines.append(f"| {title} | {author} | |")
-
-        # 直接设置最终响应（Markdown 表格格式）
-        state["final_response"] = "\n".join(table_lines)
-        logger.info(f"✓ 生成表格数据完成，共 {len(books)} 本书")
-
-    except Exception as e:
-        logger.error(f"搜索书单失败: {e}")
-        state["error"] = f"搜索书单失败: {str(e)}"
-        state["final_response"] = f"搜索书单失败: {str(e)}"
-
-    return state
-
 
 async def format_final_response(state: BookRecommendationState) -> BookRecommendationState:
     """
@@ -781,7 +593,7 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "customer_service" | "general_chat" | "recommend" | "search_booklist"
+        "customer_service" | "recommend" | "find_book"
     """
     query_type = state.get("query_type", "book_recommendation")
 
@@ -789,15 +601,11 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "customer_service":
         return "customer_service"
 
-    # 如果是搜索书单，直接路由到搜索书单节点
-    if query_type == "search_booklist":
-        return "search_booklist"
+    # 如果是找书，直接路由到找书节点
+    if query_type == "find_book":
+        return "find_book"
 
-    # 如果是宽泛推荐/一般聊天，路由到一般聊天节点
-    if query_type == "general_chat":
-        return "general_chat"
-
-    # 精确的图书推荐需求，进入推荐流程
+    # 图书推荐需求，进入推荐流程
     return "recommend"
 
 
@@ -932,7 +740,7 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
             if isbn:
                 # tasks.append(asyncio.to_thread(search_shop_by_isbn.invoke, {"isbn": isbn}))
                 tasks.append(asyncio.sleep(0, result="[]"))
-                tasks.append(asyncio.to_thread(search_library_collection.invoke, {"isbn": isbn, "title": title}))
+                tasks.append(asyncio.to_thread(search_library_collection.invoke, {"title": title, "author": author}))
             else:
                 tasks.append(asyncio.sleep(0, result="[]"))
                 tasks.append(asyncio.sleep(0, result="[]"))
@@ -1052,14 +860,31 @@ def _format_library_info(library_json: str) -> str:
         if libraries:
             lib_lines = []
             for lib in libraries:
+                # 新格式：包含 title, pub_info, call_number, location, status, total, available
+                title = lib.get('title', '')
+                pub_info = lib.get('pub_info', '')
+                library = lib.get('library', '')
+                call_number = lib.get('call_number', '')
+                location = lib.get('location', '')
+                status = lib.get('status', '')
+                total = lib.get('total', 0)
+                available = lib.get('available', 0)
+
+                # 如果有多个版本，显示书名和出版信息
+                if title and pub_info:
+                    lib_lines.append(f"\n**{title}**")
+                    lib_lines.append(f"{pub_info}")
+
                 lib_lines.append(
-                    f"\n索书号: {lib['call_number']} | {lib['floor']} {lib['location']} | {lib['status']} "
-                    f"(馆藏{lib['total']}册，可借{lib['available']}册)"
+                    f"所在分馆: {library}\n"
+                    f"索书号: {call_number} | {location} \n"
+                    f"状态: {status} (馆藏{total}册，可借{available}册)\n"
                 )
             return '\n'.join(lib_lines)
         else:
             return '暂无馆藏\n\n[荐购此书](https://library.example.com/recommend)'
-    except:
+    except Exception as e:
+        logger.error(f"格式化馆藏信息失败: {e}")
         return '暂无馆藏\n\n[荐购此书](https://library.example.com/recommend)'
 
 
@@ -1113,8 +938,7 @@ def create_recommendation_graph() -> StateGraph:
     # 添加节点
     workflow.add_node("route", route_query)
     workflow.add_node("customer_service", handle_customer_service)
-    workflow.add_node("general_chat", handle_general_chat)
-    workflow.add_node("search_booklist", search_booklist)
+    workflow.add_node("find_book", handle_find_book)
     workflow.add_node("load_context", load_user_context)
     workflow.add_node("update_prefs", update_user_preferences)
     workflow.add_node("recommend", generate_book_recommendations)
@@ -1131,20 +955,16 @@ def create_recommendation_graph() -> StateGraph:
         route_by_type,
         {
             "customer_service": "customer_service",
-            "general_chat": "general_chat",
-            "recommend": "load_context",
-            "search_booklist": "search_booklist"
+            "find_book": "find_book",
+            "recommend": "load_context"
         }
     )
 
     # 客服分支直接结束
     workflow.add_edge("customer_service", END)
 
-    # 一般聊天分支直接结束
-    workflow.add_edge("general_chat", END)
-
-    # 搜索书单分支直接结束
-    workflow.add_edge("search_booklist", END)
+    # 找书分支直接结束
+    workflow.add_edge("find_book", END)
 
     # load_context → recommend（直接进入详细推荐流程）
     workflow.add_edge("load_context", "recommend")
@@ -1233,16 +1053,7 @@ async def stream_recommendation_workflow(
             logger.info(f"🔄 节点完成: {node_name}")
 
             # 根据节点发送不同事件
-            if node_name == "search_booklist":
-                # 搜索书单完成，直接返回 CSV
-                yield {
-                    "type": "message",
-                    "content": node_state["final_response"]
-                }
-                yield {"type": "done"}
-                return
-
-            elif node_name == "customer_service":
+            if node_name == "customer_service":
                 # 客服响应
                 yield {
                     "type": "message",
@@ -1251,8 +1062,8 @@ async def stream_recommendation_workflow(
                 yield {"type": "done"}
                 return
 
-            elif node_name == "general_chat":
-                # 一般聊天响应
+            elif node_name == "find_book":
+                # 找书响应：直接返回结果
                 yield {
                     "type": "message",
                     "content": node_state["final_response"]

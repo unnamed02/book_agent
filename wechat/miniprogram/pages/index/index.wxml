@@ -1,5 +1,5 @@
 <!--index.wxml-->
-<navigation-bar title="图书推荐助手" back="{{false}}" color="black" background="#FFF"></navigation-bar>
+<navigation-bar title="AI馆员" back="{{false}}" color="black" background="#FFF"></navigation-bar>
 
 <!-- 新会话按钮 -->
 <view wx:if="{{messages.length > 0}}" class="new-session-btn" bindtap="startNewSession">
@@ -17,9 +17,9 @@
   >
     <!-- 空状态 -->
     <view wx:if="{{messages.length === 0}}" class="empty-state">
-      <view class="empty-icon">📚</view>
-      <view class="empty-title">你好！我是图书推荐助手</view>
-      <view class="empty-desc">告诉我你想读什么类型的书，我会为你推荐</view>
+      <image class="empty-icon-img" src="../../images/bg.png" mode="aspectFit"></image>
+      <view class="empty-title">您好！我是碑林区图书馆AI馆员</view>
+      <view class="empty-desc">告诉我您想读什么类型的书，我会为您推荐</view>
     </view>
 
     <!-- 消息列表 -->
