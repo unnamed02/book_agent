@@ -275,7 +275,7 @@ function App() {
           }}>
             <Space>
               <Avatar icon={<BookOutlined />} style={{ background: '#1677ff' }} />
-              <Title level={4} style={{ margin: 0 }}>图书推荐助手</Title>
+              <Title level={4} style={{ margin: 0 }}>碑林区图书馆AI馆员</Title>
             </Space>
             {messages.length > 0 && (
               <Tooltip title="清除当前会话，开始新对话">

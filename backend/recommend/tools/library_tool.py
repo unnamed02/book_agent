@@ -1,102 +1,115 @@
 from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
 import logging
 import json
-import re
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import quote
 
 logger = logging.getLogger(__name__)
 
 @tool
-def search_library_collection(isbn: str, title: str) -> str:
+def search_library_collection(title: str , author : str) -> str:
     """
     查询图书馆馆藏信息
 
     Args:
-        isbn: 图书ISBN
         title: 书名
+        author: 作者
 
     Returns:
         JSON格式的馆藏信息
     """
 
     try:
-        # 生成多个模拟数据
-        all_results = [
-            {
-                "call_number": "TP312/1234",
-                "floor": "3楼",
-                "location": "计算机图书阅览区",
-                "status": "可借",
-                "total": 2,
-                "available": 1
-            },
-            {
-                "call_number": "TP312/1234-2",
-                "floor": "4楼",
-                "location": "自然科学阅览室",
-                "status": "可借",
-                "total": 1,
-                "available": 1
-            },
-            {
-                "call_number": "TP312/1234-3",
-                "floor": "2楼",
-                "location": "社科图书借阅区",
-                "status": "在馆",
-                "total": 1,
-                "available": 0
-            },
-            {
-                "call_number": "I247/5678",
-                "floor": "5楼",
-                "location": "文学图书借阅区",
-                "status": "可借",
-                "total": 3,
-                "available": 2
-            },
-            {
-                "call_number": "G634/9012",
-                "floor": "3楼",
-                "location": "教育类图书区",
-                "status": "可借",
-                "total": 2,
-                "available": 1
-            }
-        ]
+        # 第一步：搜索图书，获取 bookrecno
+        # q0=书名, q1=作者
+        search_url = f"http://112.46.235.64:8082/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&searchWay0=title&searchWay1=author&searchWay2=marc&q0={quote(title)}&q1={quote(author)}&logical0=AND&logical1=AND&logical2=AND&f_curlibcode=BEILIN"
 
-        # 使用LLM判断是否应该有馆藏
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        check_prompt = f"""判断《{title}》是否可能在图书馆有馆藏。
-如果是特别小众、新出版（2024-2025年）、或非常专业的书籍，返回"无"。
-否则返回"有"。
-只返回"有"或"无"，不要其他内容。"""
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+        }
 
-        should_have = llm.invoke(check_prompt).content.strip()
+        response = requests.get(search_url, headers=headers, timeout=30)
+        response.encoding = 'utf-8'
 
-        if "无" in should_have:
+        # 使用 BeautifulSoup 解析 HTML，提取图书信息
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # 提取图书基本信息：bookrecno、书名、出版信息
+        books_info = {}
+
+        # 查找所有 sendToLineOut 区域（每本书一个）
+        send_areas = soup.find_all('div', class_='sendToLineOut')
+
+        for area in send_areas:
+            # 提取 bookrecno
+            book_input = area.find('input', {'name': 'bookIdList', 'type': 'hidden'})
+            if not book_input or not book_input.get('value'):
+                continue
+
+            bookrecno = book_input['value']
+
+            # 提取书名和出版信息
+            em_con = area.find('div', class_='sendToEmCon')
+            if em_con:
+                p_tags = em_con.find_all('p')
+                book_title = p_tags[0].get_text(strip=True) if len(p_tags) > 0 else ''
+                pub_info = p_tags[1].get_text(strip=True) if len(p_tags) > 1 else ''
+
+                books_info[bookrecno] = {
+                    'title': book_title,
+                    'pub_info': pub_info
+                }
+
+        bookrecnos = list(books_info.keys())
+
+        print(f"搜索URL: {search_url}")
+        print(f"找到的图书: {books_info}")
+
+        if not bookrecnos:
+            logger.info(f"未找到《{title}》的馆藏信息")
             return json.dumps([], ensure_ascii=False)
 
-        # 生成馆藏信息
-        llm2 = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
-        prompt = f"""参考以下模板，为《{title}》(ISBN: {isbn})生成1-2条图书馆馆藏记录。
-要求：
-1. 根据书名生成合适的索书号(call_number)，如计算机类用TP开头，文学类用I开头等
-2. 随机生成status：可借、在馆、借出等
-3. 保持其他字段格式不变
+        logger.info(f"找到 {len(bookrecnos)} 本图书: {bookrecnos}")
 
-模板：
-{json.dumps(all_results[:2], ensure_ascii=False, indent=2)}
+        # 第二步：获取馆藏详情
+        holdings_url = f"http://112.46.235.64:8082/opac3/book/holdingPreviews?bookrecnos={','.join(bookrecnos)}&curLibcodes=BEILIN&return_fmt=json"
+        holdings_response = requests.get(holdings_url, headers=headers, timeout=30)
+        holdings_data = holdings_response.json()
 
-只返回JSON数组，不要其他内容。"""
+        # 转换为统一格式
+        results = []
+        for bookrecno, holdings in holdings_data.get('previews', {}).items():
+            # 获取该书的基本信息
+            book_info = books_info.get(bookrecno, {})
 
-        result = llm2.invoke(prompt).content.strip()
-        result = re.sub(r'```json\s*|\s*```', '', result).strip()
+            for holding in holdings:
+                # 只返回碑林区图书馆的馆藏
+                if holding.get('curlib') == 'BEILIN':
+                    results.append({
+                        "pub_info": book_info.get('pub_info', ''),
+                        "call_number": holding.get('callno', ''),
+                        "location": holding.get('curlocalName', ''),
+                        "library": holding.get('curlibName', ''),
+                        "status": "可借" if holding.get('loanableCount', 0) > 0 else "在馆",
+                        "total": holding.get('copycount', 0),
+                        "available": holding.get('loanableCount', 0),
+                        "barcode": holding.get('barcode', ''),
+                        "bookrecno": bookrecno
+                    })
 
-        try:
-            json.loads(result)
-            return result
-        except:
-            return json.dumps(all_results[:1], ensure_ascii=False)
+        logger.info(f"找到 {len(results)} 条馆藏记录")
+        return json.dumps(results, ensure_ascii=False)
+
     except Exception as e:
         logger.error(f"查询馆藏失败: {str(e)}")
-        return json.dumps({}, ensure_ascii=False)
+        return json.dumps([], ensure_ascii=False)
+
+
+if __name__ == "__main__":
+    print("=== 搜索馆藏图书 ===")
+    result = search_library_collection.invoke({"title": "如何阅读一本书","author": ""})
+    print(result)
+    
+    
+

@@ -29,6 +29,7 @@ page {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+  background-color: #f5f5f5;
 }
 
 /* 空状态 */
@@ -37,11 +38,13 @@ page {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding-top: 15vh;  /* 降低这个高度，不要用 240rpx 这种写死的 */
+  width: 100%;
+  height: 100%;
 }
 
-.empty-icon {
-  font-size: 128rpx;
+.empty-icon-img {
+  width: 256rpx;
+  height: 256rpx;
   margin-bottom: 32rpx;
 }
 
