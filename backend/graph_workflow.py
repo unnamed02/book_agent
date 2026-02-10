@@ -257,7 +257,6 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     "author": "作者"
 }}
 
-如果没有明确的作者信息，author 字段返回空字符串。
 只返回 JSON，不要其他内容。"""
 
     try:
@@ -293,18 +292,19 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
 
         results = await asyncio.gather(*tasks)
 
-        digital_resources = results[0],
+        digital_resources = results[0]
         library_info = results[1]
         
         resource_text = _format_digital_resources(digital_resources)
         library_text = _format_library_info(library_info)
 
         
-        response = f"""{title}
-**📍 馆藏信息**：
+        response = f"""# {title} {author}
+
+** 馆藏信息**：
 {library_text}
 
-**📥 电子资源**：
+** 电子资源**：
 {resource_text}
 
 ---"""
@@ -833,7 +833,6 @@ def _format_library_info(library_json: str) -> str:
                     lib_lines.append(f"{pub_info}")
 
                 lib_lines.append(
-                    f"出版信息: {pub_info}\n"
                     f"所在分馆: {library}\n"
                     f"索书号: {call_number} | {location} \n"
                     f"状态: {status} (馆藏{total}册，可借{available}册)\n"
