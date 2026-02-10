@@ -1,0 +1,5008 @@
+http://112.46.235.64:8082/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_curlibcode=BEILIN
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+		
+		<script type="text/javascript">
+			var $$opac_bookcover = "http://book-resource.dataesb.com/websearch/metares";
+			var ctx = "/opac3";
+		</script>
+		
+		
+		
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/reset_pc.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/public.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/index.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/popCon.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/page.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/browse.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/bookRec.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/jquery.pagination.css" type="text/css" media="all">
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/choseAttr.css" type="text/css" media="all">
+		
+
+
+
+
+
+
+
+
+
+
+
+
+<script src="/opac3/media/js/jquery/jquery-3.7.1.min.js" type="text/javascript" ></script>
+<script src="/opac3/media/js/jquery/jquery-migrate-3.5.0.min.js" type="text/javascript" ></script>
+
+		<script src="/opac3/media/pro2018/js/placeholderfriend.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/opac3/media/pro2018/js/public.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/opac3/media/pro2018/js/index.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/opac3/media/pro2018/js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/opac3/media/pro2018/js/distpicker.data.js" type="text/javascript" charset="utf-8"></script>
+		<script src="/opac3/media/pro2018/js/distpicker.js" type="text/javascript" charset="utf-8"></script>
+	 	<script src="/opac3/media/pro2018/js/main.js" type="text/javascript" charset="utf-8"></script>
+	 	<script src="/opac3/media/pro2018/js/jquery.pagination.min.js" type="text/javascript" charset="utf-8"></script>
+	 	<script src="/opac3/media/pro2018/js/jquery.SuperSlide.2.1.1.js" type="text/javascript" charset="utf-8"></script>
+		
+			<script src="/opac3/media/pro2018/js/scrolltopcontrol.js" type="text/javascript" charset="utf-8"></script>
+		
+		<script src="/opac3/media/pro2018/js/high.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript" src="/opac3/media/js/jquery/jquery.cookie.js"></script>
+		<script type="text/javascript" src="/opac3/media/js/common/common.js"></script>
+		<script type="text/javascript" src="/opac3/media/js/common/bookcover.js"></script>
+		<script type="text/javascript" src="/opac3/media/js/common/banned.js"></script>
+		<script type="text/javascript" src="/opac3/media/pro2018/js/menuChoose.js" charset="utf-8"></script>
+		
+		
+			
+			
+				<script type="text/javascript" src="/opac3/media/js/i18n/message_zh.js"></script>
+			
+		
+		
+		<!-- 国际化支持 -->
+		<script type="text/javascript" src="/opac3/media/js/common/i18nUtil.js"></script>
+
+		<link rel="shortcut icon" href="/opac3/media/images/favicon.ico" type="image/vnd.microsoft.icon" /> 
+		<link rel="icon" href="/opac3/media/images/favicon.ico" type="image/vnd.microsoft.icon" />
+		
+			
+			
+				<title></title>
+			
+		
+		<!-- 使用jqueryui引用的js和css -->
+		
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- jQuery UI 依赖 -->
+<script>$.uiBackCompat = true;</script> <!-- 关键：启用旧版API兼容 -->
+<link rel="stylesheet" type="text/css" href="/opac3/media/js/jquery/jquery-ui-1.14.1.css">
+<script type="text/javascript" src="/opac3/media/js/jquery/jquery-ui-1.14.1.min.js"></script>
+		<!-- meta keywords, etc -->
+		
+
+
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+<!--#以上代码IE=edge告诉IE使用最新的引擎渲染网页，chrome=1则可以激活Chrome Frame.-->
+<meta http-equiv="X-UA-Compatible" content="IE=edge">  
+<!--以上代码告诉IE浏览器，IE8/9及以后的版本都会以最高版本IE来渲染页面。  -->
+<meta name="keywords" content="opac, 图创, interlib, 图书检索, 借书, , 西安市公共图书馆集群信息化管理平台" />
+
+		<meta name="referrer" content="same-origin" />
+	</head>
+	
+	<body class="themeGf bgWhite" style="overflow-x:hidden;">
+
+		
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+
+
+
+
+<style>
+<!--
+.selected {
+	font-weight: bold;
+}
+-->
+.n-model-wrapper{
+	width:100%;
+	height:100%;
+	background-color: black;
+	filter: alpha(Opacity=40);
+	-moz-opacity: 0.4;
+    opacity: 0.4;
+	position: fixed;
+	left:0;
+	top:0;
+	z-index: 999;
+	display: none;
+}
+.n-model-content{
+	width:800px;
+	height:600px;
+	background-color: white;
+	position: fixed;
+	left:40%;
+	top:150px;
+	margin-left:-250px;
+	z-index: 1000;
+	border-radius:10px;
+	font-size: 14px;
+	display: none;
+}
+.n-model-prompt{
+	height:560px;
+	box-sizing: border-box;
+	overflow-y: auto;
+}
+.n-model-prompt li{
+	line-height: 35px;
+	padding:0 30px;
+}
+.n-model-prompt h3 {
+    height: 50px;
+    line-height: 50px;
+    text-align: center;
+    background-color: #EEEEEE;
+    margin: 0;
+    border-radius:10px;
+}
+.n-model-close{
+	height:40px;
+	text-align: center;
+}
+</style>
+
+<script>
+    $(document).ready(function() {
+        // 原始字符串
+        var resourceStr = "";
+        if(resourceStr==null || resourceStr == ''){resourceStr = "/opac3/media/css/aiSupport.css,/opac3/media/js/common/aiSupport.js";}
+        // 分割字符串为数组
+        var resources = resourceStr.split(',');
+
+        // 遍历资源数组
+        $.each(resources, function(index, url) {
+            // 判断资源类型（JS/CSS）
+            if (url.endsWith('.js')) {
+                // 动态创建script标签
+                var script = document.createElement('script');
+                script.src = url+'?v='+Date.now();
+                script.async = false; // 保证按顺序加载
+                $('body').append(script);
+            } else if (url.endsWith('.css')) {
+                // 动态创建link标签
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.type = 'text/css';
+                link.href = url+'?v='+Date.now();
+                $('head').append(link);
+            }
+        });
+    });
+
+</script>
+		
+
+
+
+
+
+
+
+
+
+
+
+<style>
+	.bHeadArea{
+		border-bottom-width: 2px;
+		border-bottom-style: solid;
+	}
+	/*.logoArea{
+		padding: 8px 0;
+		margin-top: unset;
+	}*/
+	/*.headerArea{
+		width: 100%;
+		height: 78px;
+		background: #fff;
+		position: relative;
+	}*/
+	/*.headeRight{
+		height: 50px;
+		position: absolute;
+		right:160px;
+		top: 10px;
+	}*/
+	/*.navRt{
+		font-size: 14px;
+		margin-right: 16px;
+		height: 56px;
+		vertical-align: unset;
+		padding-left: unset;
+		margin-left: unset;
+		position: relative;
+	}*/
+	.perOpCon{
+		position: absolute;
+		width: 118px;
+		z-index: 2;
+		background-color: #FFF;
+		border: 1px solid #d8d8d8;
+		display: none;
+	}
+	.perOpUl li,.langOpUl li,.brMenuUl li{
+		text-align: center;
+		height: 39px;
+		line-height: 39px;
+		position: relative;
+	}
+	.perOpUl li a,.langOpUl li a,.brMenuUl li a{
+		font-size: 14px;
+		display: block;
+		border-bottom: 1px solid #d8d8d8;
+	}
+	.perOpUl li:hover{
+		background: #f1f1f1;
+	}
+
+	.perOpIcon,.themColor{
+		width: 20px;
+		height: 20px;
+		background-repeat: no-repeat;
+		position: absolute;
+		left:12px ;
+		top: 50%;
+		margin-top: -10px;
+	}
+
+	.perMes{
+		background-image: url(/opac3/media/pro2018/images/hd-per01.png);
+	}
+
+	.perLike{
+		background-image: url(/opac3/media/pro2018/images/hd-per02.png);
+	}
+
+	.perOut{
+		background-image: url(/opac3/media/pro2018/images/hd-per03.png);
+	}
+
+	.perThe{
+		background-image: url(/opac3/media/pro2018/images/hd-per04.png);
+	}
+
+	.perMesNum{
+		font-size: 12px;
+		color: #fff;
+		height: 16px;
+		line-height: 16px;
+		padding:0 4px;
+		position: absolute;
+		right:12px;
+		top: 50%;
+		margin-top: -8px;
+		background: #907d66;
+		-webkit-border-radius: 1px;
+		-moz-border-radius: 1px;
+		-ms-border-radius: 1px;
+		-o-border-radius: 1px;
+		border-radius: 1px;
+	}
+	table.borTableIn td{
+		line-height: unset !important;
+		vertical-align: middle;
+	}
+	.menuOpCon{
+		width: 118px;
+		left: 0;
+		background: #fff;
+		border: 1px solid #d8d8d8;
+		position: absolute;
+		top: 64px;
+		z-index: 2;
+		display: none;
+	}
+	.menuOpCon li{
+		width: 100%;
+	}
+	
+	.simpleArea{
+		/*width: 88px;*/
+		margin-left:20px;
+		cursor: pointer;
+		display: inline-block;
+	}
+	.simpleArea a{
+		display: block;
+		font-size: 14px;
+		color:#FFFFFF;
+	}
+	.conIn{
+		display: flex;
+		align-items: center;
+		justify-content: center;
+
+	}
+
+	
+	/*@media screen and (min-width: 1024px) and (max-width: 1440px) {
+		.bkInfoMenu {
+			margin-left: 470px !important;
+		}
+	}*/
+	@media screen and (min-width: 2056px) {
+		.bkInfoMenu {
+			margin-left: -20px !important;
+		}
+	}
+	
+</style>
+
+<script type="text/javascript">
+	function changeLang(lang) {
+		$.cookie("org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE", lang, {path:"/"});
+		document.location.reload();
+	}
+	//检查是否登录
+	
+	$(document).ready(function(){
+		$(".perIconArea").bind("click",function(){
+			
+			
+			
+			
+			
+			
+			$("#loginFrame").attr("src", '/opac3/reader/login?loginFlag=dialog');
+			
+			
+		});
+		$(".popDel").bind("click", function () {
+			$('#rdPasswd').val("");
+			$("#loginmsg").html("");
+		});
+	});
+	
+
+	
+	
+
+	//判断是否登入 2018-12-11
+	function isLogin(){
+		var flag = false;
+		var readerInfo = "";
+		if(readerInfo != null && readerInfo.length > 0){
+			flag = true;
+		}
+		return flag;
+	}
+
+	//RSS订阅点击事件 2018-12-11
+	function rssUrl(){
+		var flag = isLogin();
+		if(flag){
+			$(".menuTher").attr('href', '/opac3/rss/goPage');
+		} else {
+			loginTo('/opac3/rss/goPage');
+		}
+	}
+
+	function changeSearchWay(op){
+		$("#searchWay").val(op);
+	}
+
+	function reSearch() {
+		var qword = $("#q").val();
+		if(qword!=""&&bannedHashSet.contains(qword)){
+			alert("您的检索词中包含不当词汇，请更换或删除敏感词");
+			return;
+		}
+		var $navPageBaseURL = $("#navPageBaseURL").text();
+		var q = encodeURIComponent($("#q").val());
+		if(q == "") {
+			alert("请输入检索词.");
+			return;
+		}
+		q = "marc:" + q;
+		var baseURL = "/opac3/search?";
+		var targetURL = baseURL + $navPageBaseURL + "&research.q=" + q;
+		document.location.href = targetURL;
+	}
+
+	function loginTo(toPage){
+		$("#toPageUrl").val(toPage);
+		var res =false;
+		$.ajax({
+			type:'get',
+			dataType:'json',
+			async : false,
+			url:'/opac3/reader/getReaderInfo?return_fmt=json',
+			success:function(data){
+				if(data.reader==null||data.reader=='undefined'){
+					var reader = "";
+					var rdLoginId = "";
+					var rdEmail = "";
+					if(reader != null && (rdLoginId == null || rdLoginId == '' || rdEmail == null || rdEmail == '')){
+						window.location.href="/opac3/reader/improveInformation";
+					}else{
+						$(".perIconArea").trigger("click");
+					}
+				}else{
+					if(toPage!=""){
+						window.location.href = toPage;
+					}
+					res = true;
+				}
+			},
+			error: function(){
+				
+				
+				
+				$(".perIconArea").trigger("click");
+				
+				
+			}
+		});
+		return res;
+	}
+	function checkLogin(){
+		return loginTo("");
+	}
+
+	function advsearch() {
+		var total = $('input:checkbox[name="curlibcode"]').size();
+		var checkNum = $('input:checkbox[name="curlibcode"]:checked').size();
+		if(total == checkNum){
+			$("#libcodeTable input[name='curlibcode']").attr("checked", false);
+		}else{
+			if(checkNum>50){
+				alert("所选分馆不能超过50个");
+				return;
+			}
+		}
+
+		var qword0 = $("#q0").val();
+		var qword1 = $("#q1").val();
+		var qword2 = $("#q2").val();
+		if((qword0!=""&&bannedHashSet.contains(qword0))||
+				(qword1!=""&&bannedHashSet.contains(qword1))||
+				(qword2!=""&&bannedHashSet.contains(qword2))){
+			alert("您的检索词中包含不当词汇，请更换或删除敏感词");
+			return;
+		}
+
+		$("#adSearchForm").submit();
+	}
+
+	
+	function search(view) {
+		$("#view").val(view);
+		var qword = $("#q").val();
+		if(qword!=""&&bannedHashSet.contains(qword)){
+			alert("您的检索词中包含不当词汇，请更换或删除敏感词");
+			return;
+		}
+		$("#searchForm").submit();
+	}
+	
+
+	$(document).ready(function(){
+		$(".toggleNavBtn").click(function(){
+			$(".bkInfoMenu").toggle();
+		});
+		$('#add_btn').click(function(){
+			$("#searchDiv3").show();
+		});
+
+		setTimeout(function(){
+			$("#add_btn").addClass("addhighBtn");
+		},500);
+
+		var q0 = "如何阅读一本书";
+		var searchWay0 = "title";
+		var logical0 = "AND"
+		var q1 = "";
+		var searchWay1 = "author";
+		var logical1 = "AND"
+		var q2 = "";
+		var searchWay2 = "marc";
+		var marcformat = "";
+		if(q0){
+			$("#adSearchForm input[name='q0']").val(q0);
+		}
+		if(searchWay0){
+			$("#adSearchForm select[name='searchWay0']").val(searchWay0);
+		}
+		if(logical0){
+			$("#adSearchForm select[name='logical0']").val(logical0);
+		}
+		if(q1){
+			$("#adSearchForm input[name='q1']").val(q1);
+		}
+		if(searchWay1){
+			$("#adSearchForm select[name='searchWay1']").val(searchWay1);
+		}
+		if(logical1){
+			$("#adSearchForm select[name='logical1']").val(logical1);
+		}
+		if(q2){
+			$("#adSearchForm input[name='q2']").val(q2);
+		}
+		if(searchWay2){
+			$("#adSearchForm select[name='searchWay2']").val(searchWay2);
+		}
+		if(marcformat){
+			$("#adSearchForm select[name='marcformat']").val(marcformat);
+		}
+
+		$.ajax({
+			type:'get',
+			dataType:'json',
+			async : false,
+			url:'/opac3/websearch/bookSearch?cmdACT=simpleSearch&xsl=booktype&return_fmt=json',
+			success:function(data){
+				if(data.pubdateYears){
+					var starttime = "";
+					var endtime = "";
+					for(var i in data.pubdateYears) {
+						var option = "<option value='"+data.pubdateYears[i]+"'>"+data.pubdateYears[i]+"</option>";
+						$("#pubtime_start").append(option);
+						$("#pubtime_end").append(option);
+					}
+					if(starttime){
+						$("#pubtime_start").val(starttime);
+					}
+					if(endtime){
+						$("#pubtime_end").val(endtime);
+					}
+				}
+				if(data.booktypes){
+					var booktype = "";
+					for(var i in data.booktypes) {
+						var option = "<option value='" + data.booktypes[i].typeNo + "'>" + data.booktypes[i].typeName + "</option>";
+						$("#search_booktype").append(option);
+					}
+					if(booktype){
+						$("#search_booktype").val(booktype);
+					}
+				}
+			},
+			error: function(){
+				//do something
+			}
+		});
+
+		$(".bkInfoMenu li").hover(function () {
+			$(this).find(".menuOpCon").show();
+		},function () {
+			$(this).find(".menuOpCon").hide();
+		});
+
+		var currentUrl = window.location.href;
+		$(".secondPageNavLi a").each(function () {
+			var aHref = $(this).attr("href");
+			if(currentUrl.indexOf(aHref)>=0){
+				$(".secondPageNavLi").removeClass("thNavCur");
+				$(this).parents(".secondPageNavLi").addClass("thNavCur");
+			}
+		});
+
+		var $li = $(".hdScondMenu").find("li").length;
+		if ($li === 0) {
+			$(".hdScondMenu").hide();
+		}
+	});
+
+	function zhchangeLang() {
+		var lang = $("#zhlang").val();
+		if(lang == ""){
+			return;
+		}
+		/**
+		 var currentURL = document.location.href;
+		 var langParam = "&lang=" + lang;
+		 if(currentURL.indexOf("?") < 0) {
+		langParam = "?lang=" + lang;
+	}
+		 document.location.href = currentURL + langParam;
+		 */
+		$.cookie("org.springframework.web.servlet.i18n.CookieLocaleResolver.LOCALE", lang, {path:"/"});
+		document.location.reload();
+	}
+
+</script>
+
+<div class="headerArea bHeadArea thBHeadArea">
+	<div class=" 
+				conIn clearfix" >
+		<div  class="logoArea headIcon">
+			
+			
+			<a href='/opac3/index'>
+				
+				
+					
+					
+						<img src='/opac3/faq/getImage/1901 ' alt="logo" class="headIcon" 
+						
+						
+							
+						
+						>
+					
+					
+				
+				
+			</a>
+		</div>
+		<a href="javascript:;" class="toggleNavBtn"></a>
+		<ul class="bkInfoMenu headIcon"
+				
+					
+					
+						style="margin-left: 0"
+					
+				
+			>
+			
+				<li class="secondPageNavLi"><a class="secondPageNavLink" href="/opac3/index">首页</a></li>
+			
+			
+			
+				
+				
+					
+						
+							
+							
+								<li class="secondPageNavLi 1">
+									<i class="curSecondLine"></i>
+									<a class="secondPageNavLink" href="/opac3/search?searchType=browse">
+										
+											
+											
+												资源检索
+											
+										
+									</a>
+									
+										<ul class="hdScondMenu">
+											
+												
+													<li class="hdScondLi">
+														<a href="/opac3/search?searchType=browse" class="hdScondLink">
+															
+																
+																
+																	资源检索
+																
+															
+														</a>
+													</li>
+												
+											
+												
+													<li class="hdScondLi">
+														<a href="/opac3/browse/xueke/all" class="hdScondLink">
+															
+																
+																
+																	浏览期刊
+																
+															
+														</a>
+													</li>
+												
+											
+										</ul>
+									
+								</li>
+							
+						
+					
+						
+							
+							
+								<li class="secondPageNavLi 2">
+									<i class="curSecondLine"></i>
+									<a class="secondPageNavLink" href="/opac3/recommend/custom">
+										
+											
+											
+												荐购图书
+											
+										
+									</a>
+									
+										<ul class="hdScondMenu">
+											
+												
+													<li class="hdScondLi">
+														<a href="/opac3/recommend/custom" class="hdScondLink">
+															
+																
+																
+																	自定义荐购
+																
+															
+														</a>
+													</li>
+												
+											
+												
+													<li class="hdScondLi">
+														<a href="/opac3/recommend/pbatch" class="hdScondLink">
+															
+																
+																
+																	荐购书单
+																
+															
+														</a>
+													</li>
+												
+											
+										</ul>
+									
+								</li>
+							
+						
+					
+						
+							
+							
+								<li class="secondPageNavLi 3">
+									<i class="curSecondLine"></i>
+									<a class="secondPageNavLink" href="/opac3/recommend/guessYouLike">
+										
+											
+											
+												图书推荐
+											
+										
+									</a>
+									
+								</li>
+							
+						
+					
+						
+							
+							
+								<li class="secondPageNavLi 4">
+									<i class="curSecondLine"></i>
+									<a class="secondPageNavLink" href="/opac3/reader/space">
+										
+											
+											
+												个人图书馆
+											
+										
+									</a>
+									
+								</li>
+							
+						
+					
+
+					
+
+					
+						<select name="lang" id="zhlang" onchange="zhchangeLang()" style="font-family: Arial;font-size: 13.3333px; font-style: normal; font-weight: 400; outline: 0;">
+							<option value="">语言</option>
+							
+								<option value="zh">中文</option>
+							
+							
+							
+							
+							
+							
+						</select>
+					
+				
+			
+
+		</ul>
+		
+			
+			
+
+				<div class="headeRight headIcon">
+					<div class="vertLine headIcon mobileHide"></div>
+					
+						<div class="peropAreaFix headIcon navRt" style="margin-top: -10px;">
+							<a style="cursor: pointer" class="loginBtn">
+								<div class="perIconArea">
+									<i class="personIcon headIcon hdRtIcon"></i>
+									<span>登录</span>
+									
+								</div>
+							</a>
+							
+						</div>
+					
+					
+					
+						
+
+						<div class="langArea headIcon" style="display: none;">
+							<div class="langIconArea">
+								<i class="headIcon hdRtIcon"></i>
+								<span class="langFont headIcon">
+					
+						
+						
+						
+						
+						
+						中文
+					
+					</span>
+								<i class="langDown headIcon"></i>
+							</div>
+							<div class="langCon">
+								<i class="upSan"></i>
+								<ul class="langOpUl">
+									
+										<li class="curLang">
+											<a href="javascript:changeLang('zh');">中文</a>
+										</li>
+									
+									
+									
+									
+									
+									
+								</ul>
+							</div>
+						</div>
+					
+				</div>
+				
+				<div class="simpleArea mobileHide">
+					
+						
+						
+						
+						
+						
+						
+						<a href="/opac3/index?type=simple" >简化版</a>
+					
+				</div>
+			
+		
+
+		<script>
+
+			
+		</script>
+	</div>
+</div>
+
+
+
+	<div class="headSearchArea thHeadSearchArea"
+	
+		
+		
+			style="display: none;"
+		
+		
+	
+>
+		<div class="container">
+			<form name="searchForm" id="searchForm"
+					
+						
+						
+							action="/opac3/search"
+						
+					
+				  method="get">
+				<div class="brHdSreach ">
+					<div class="brHdSreachIn headIcon">
+						<div class="searchType sigSearchType disInlineBk">
+							<div class="choseType sigChoseType">
+							<span class="choseFont sigChoseFont">
+								
+									
+									
+										
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											
+												
+													
+													
+														任意词
+													
+												
+											
+										
+									
+								
+							</span>
+								<i class="searDown sigSearDown headIcon"></i>
+							</div>
+							<ul class="searchTypeUl sigSearchTypeUl" style="z-index: 99;">
+								<li class="marc sTypeCur "><a href="javascript:changeSearchWay('');">
+									
+										
+										
+											任意词
+										
+									
+								</a></li>
+								<li class="title  "><a href="javascript:changeSearchWay('title');">题名</a></li>
+								<li class="isbn  "><a href="javascript:changeSearchWay('isbn');">ISBN/ISSN</a></li>
+								<li class="author  "><a href="javascript:changeSearchWay('author');">著者</a></li>
+								<li class="subject  "><a href="javascript:changeSearchWay('subject');">主题词</a></li>
+								
+									<li class="publisher  "><a href="javascript:changeSearchWay('publisher');">出版社</a></li>
+								
+								
+									<li class="class  "><a href="javascript:changeSearchWay('class');">分类号</a></li>
+									<li class="orderno  "><a href="javascript:changeSearchWay('orderno');">订购号</a></li>
+									
+									
+										<li class="title200a  "><a href="javascript:changeSearchWay('title200a');">正题名</a></li>
+									
+									<li class="callno  "><a href="javascript:changeSearchWay('callno');">索书号</a></li>
+									
+								
+							</ul>
+						</div>
+						
+							
+							
+								<input type="text" placeholder="快速搜索图书 " class="brHdSreachInp" value="如何阅读一本书" id="q"
+									   name="q"
+									   onkeydown="if(event.keyCode==13)searchButton.focus();"/>
+								<input type="hidden" name="searchWay" id="searchWay"
+										
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											
+											value=""
+										
+								/>
+								<input type="hidden" name="searchSource" value="reader" />
+								<input type="hidden" id="scWay" name="scWay" value="dim" />
+								<input type="hidden" id="view" name="view" />
+								
+									<input type="hidden" name="hasholding" value="1" />
+								
+								<button class="brSreachBtn" name="searchButton"
+										onclick="search('')"><i class="brSreachIcon"></i></button>
+							
+						
+
+					</div>
+					<div class="overHide brSearMeth">
+						<a href="javascript:reSearch();" class="brHSearch brResSer  ">
+							在结果中检索<i class=" searLine headIcon"></i>
+						</a>
+						<a href="javascript:void(0);" class="brHSearch  brHSearchOp">
+							高级检索<i class="libBookOpIcon hightSDown headIcon"></i>
+						</a>
+					</div>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<div class="hignConArea" style="display: block;">
+		<form name="adSearchForm" id="adSearchForm" action='/opac3/search' method="get">
+			<div class="container ">
+				<div class="highSearArea">
+					<div class="highSearIn">
+						<a href="javascript:void(0)" class="highSearchUp">基本检索<i class="libBookOpIcon libBookUp headIcon"></i></a>
+						<div class="highSearchLine clearfix">
+							<div class="highSmCon">
+								<input id="q0" name="q0" type="text" class="headIcon highSearchInp " placeholder="请输入相关检索词" />
+							</div>
+							<div class="highSmCon">
+								<select name="searchWay0" class="headIcon highSearchSel">
+									<option value="marc">
+										
+											
+											
+												任意词
+											
+										
+									</option>
+									<option value="title">题名</option>
+									<option value="title200a">正题名</option>
+									<option value="isbn">ISBN/ISSN</option>
+									<option value="author">著者</option>
+									<option value="subject">主题词</option>
+									<option value="class">分类号</option>
+									<option value="ctrlno">控制号</option>
+									<option value="orderno">订购号</option>
+									<option value="publisher">出版社</option>
+									<option value="callno">索书号</option>
+									<option value="pubplace">出版地</option>
+									<option value="level">阅读等级</option>
+									
+								</select>
+							</div>
+						</div>
+						<div class="addSearchArea">
+							<div class="highSearchLine clearfix">
+								<div class="highSmCon">
+									<select name="logical0" class="headIcon addhighSel">
+										<option value="AND">与</option>
+										<option value="OR">或</option>
+										<option value="NOT">非</option>
+									</select>
+								</div>
+								<div class="highSmCon">
+									<input id="q1" name="q1" type="text" class="headIcon highSearchInp " placeholder="请输入相关检索词" />
+								</div>
+								<div class="highSmCon">
+									<select name="searchWay1" class="headIcon highSearchSel">
+										<option value="marc">
+											
+												
+												
+													任意词
+												
+											
+										</option>
+										<option value="title">题名</option>
+										<option value="isbn">ISBN/ISSN</option>
+										<option value="author">著者</option>
+										<option value="subject">主题词</option>
+										<option value="class">分类号</option>
+										<option value="ctrlno">控制号</option>
+										<option value="orderno">订购号</option>
+										<option value="publisher">出版社</option>
+										<option value="callno">索书号</option>
+										<option value="pubplace">出版地</option>
+										
+									</select>
+								</div>
+
+							</div>
+
+							<div class="highSearchLine clearfix" id="searchDiv3"  style="display: none;" >
+								<div class="highSmCon">
+									<select name="logical1" class="headIcon addhighSel">
+										<option value="AND">与</option>
+										<option value="OR">或</option>
+										<option value="NOT">非</option>
+									</select>
+								</div>
+								<div class="highSmCon">
+									<input type="text" id="q2" name="q2" class="headIcon highSearchInp " placeholder="请输入相关检索词" />
+								</div>
+								<div class="highSmCon">
+									<select name="searchWay2" class="headIcon highSearchSel">
+										<option value="marc">
+											
+												
+												
+													任意词
+												
+											
+										</option>
+										<option value="title">题名</option>
+										<option value="isbn">ISBN/ISSN</option>
+										<option value="author">著者</option>
+										<option value="subject">主题词</option>
+										<option value="class">分类号</option>
+										<option value="ctrlno">控制号</option>
+										<option value="orderno">订购号</option>
+										<option value="publisher">出版社</option>
+										<option value="callno">索书号</option>
+										<option value="pubplace">出版地</option>
+										
+									</select>
+								</div>
+
+							</div>
+
+						</div>
+						<div class="ctrlAddArea">
+							<a href="javascript:void(0)" class="headIcon" style="" id="add_btn"></a>
+							<div class="headIcon">
+								<div class="highSmCon">
+									<select name="booktype" id="search_booktype" class="headIcon highSearchSel">
+										<option value="">文献类型</option>
+									</select>
+								</div>
+								<div class="highSmCon">
+									<select name="marcformat" class="headIcon highSearchSel">
+										<option value="">语言种类</option>
+										<option value="CNMARC">中文</option>
+										<option value="USMARC">西文</option>
+									</select>
+								</div>
+								<div class="highSmCon">
+									<select name="startPubdate" id="pubtime_start" class="headIcon addhighSel">
+										<option value="">出版年</option>
+									</select>
+									<span class="centerLine">~</span>
+									<select name="endPubdate" id="pubtime_end" class="headIcon addhighSel">
+										<option value="">出版年</option>
+									</select>
+								</div>
+							</div>
+							<a href="javascript:$('#adSearchForm')[0].reset();" class="clearHighArea thClearHighArea headIcon"><i class="clearHighBtn  headIcon"></i>清除输入内容</a>
+						</div>
+
+						<a href="javascript:advsearch()" class="highSearchBtn thighSearchBtn">
+							<i class="highIcon headIcon"></i>
+							搜索
+						</a>
+						<input type="hidden" name="searchSource" value="reader" />
+						<div class="justCond">
+							<label>
+								<input type="checkbox" name="hasholding" value="1" class="headIcon"
+										
+											checked="checked"
+										
+								/>
+								<span class="fontColor9 headIcon">只搜索有馆藏的记录</span>
+							</label>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+
+	<script>
+		
+	</script>
+
+
+
+
+	<!-- 登录弹出框 -->
+	<div class="loginPopArea">
+		<div class="popMask" style="z-index:2;"></div>
+		<div class="popIn loginPopIn" >
+			<a href="javascript:void(0)" class="popDel"></a>
+			<input type="hidden" id="reader" name="reader" value=""/>
+			<input type="hidden" id="data" name="data" />
+			<input type="hidden" id="toPageUrl" name="toPageUrl" />
+			<!-- <div id="faqbg"></div>-->
+			<div id="loginDialog" class="loginPInCon" title="登录我的图书馆" align="center" valign="top">
+				<iframe id="loginFrame" name="loginFrame" frameborder="0" scrolling="no" width="100%" height="100%"></iframe>
+			</div>
+		</div>
+	</div>
+
+
+		
+
+
+
+
+
+
+
+
+
+
+
+
+
+<title>检索结果</title>
+<link rel="stylesheet" href="/opac3/media/pro2018/css/browse.css" type="text/css" media="all">
+<link rel="stylesheet" href="/opac3/media/zTree/v3/css/zTreeStyle/zTreeStyle.css" type="text/css">
+<link rel="stylesheet" href="/opac3/media/layui/css/layui.css" type="text/css" media="all">
+<link rel="stylesheet" href="/opac3/media/pro2018/css/theme/themeGf.css" type="text/css" media="all">
+<script src="/opac3/media/js/markdown-it/markdown-it.min.js/"></script>
+<meta name="referrer" content="unsafe-url">
+
+
+<style>
+	.cityH{
+	   margin-top: 8%;
+	}
+	.tips {
+		position: fixed;
+		bottom: 50%;
+		left: 50%;
+		padding: 15px 20px;
+		color: #fff;
+		background: rgba(0, 0, 0, .8);
+		border-radius: 10px;
+	}
+	.libBookImgA{
+		width:80px;height:80px;display:block;background:#fff;text-align:center;position:relative;overflow:hidden;
+	}
+	.iconicImg{
+		width: 100%;height: 100%;position: absolute;left: 0;top: 0;right: 0;bottom: 0;margin: auto;object-fit:contain;
+	}
+	.specialBtn{
+		padding: 5px 8px;
+    	background: #65d0e6;
+    	color: #fff;
+    	border: 1px solid #c3c4c5;
+    	cursor: pointer;
+	}
+	.opDataChart{
+		margin-left: 30px;
+	}
+	a.secondPageNavLink:hover{
+		color: #fff;
+	}
+
+	.hw_opt_area0 {
+		position: absolute;
+		right: 120px;
+		top: 14px;
+		display: block;
+	}
+
+	.hw_opt_area0 input {
+		height: 25px;
+		font-size: 12px;
+		line-height: 25px;
+	}
+
+	.hw_opt_area {
+		position: absolute;
+		right: 12px;
+		top: 14px;
+		display: block;
+	}
+
+	.hide{
+		display:none;
+	}
+
+	.gdhydx_link {
+		background: #f3f392;
+		color: #000;
+		padding: 4px 6px;
+		border-radius: 8px;
+		border: 1px solid #f2f3f4;
+	}
+
+	#cadalDiv table tr td{
+		vertical-align: middle;
+	}
+</style>
+<script src="/opac3/media/pro2018/build/dist/echarts.js"></script>
+
+
+
+
+
+
+
+
+
+
+
+<span id="navPageBaseURL" style="display:none;">searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND</span>
+
+<span id="baseURL" style="display:none;">rows=10&hasholding=1&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND</span>
+
+
+
+
+
+
+
+
+
+
+<script>
+	var $glc = "P2SXS029038";
+</script>
+<script>
+	var $ctx = "/opac3";
+	var map = {};
+	
+	
+	var key = "ACA03";
+	var value = "1";
+	map[key] = value;
+	
+	var key = "BEILIN";
+	var value = "3";
+	map[key] = value;
+	
+	var key = "WEIYANG";
+	var value = "1";
+	map[key] = value;
+	
+	var key = "XAPL";
+	var value = "1";
+	map[key] = value;
+	
+	var key = "999";
+	var value = "0";
+	map[key] = value;
+	
+	var key = "999";
+	var value = "0";
+	map[key] = value;
+	
+	var key = "999";
+	var value = "0";
+	map[key] = value;
+	
+	var key = "999";
+	var value = "0";
+	map[key] = value;
+	
+	
+	var facetBaseURL = "searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND";
+
+
+	
+
+
+</script>
+<script src="/opac3/media/zTree/v3/js/jquery.ztree.core.min.js"></script>
+	
+		
+		
+		
+			<script src="/opac3/media/pro2018/js/zTreeLibArea.js"></script>
+		
+	
+
+<script src="/opac3/media/layui/layui.js"></script>
+
+<script type="text/javascript">
+$("body").addClass("bgWhite");
+
+if('' == '1' || 'standard'=='search_result_iframe_item') {
+    $(".headerArea").hide();
+    $(".headSearchArea").hide();
+    $(".hignConArea").hide();
+}
+//发送邮件
+function sendEmail($clickButton){
+	var email = $clickButton.parent().siblings("input[name='email']").first().val();
+	if(email=="" || email.length==0) {
+		alert("请输入邮箱地址");
+		return ;
+	}
+	var reg = /^([a-z0-9_\.-]+)@([\da-z\.-]+)\.([a-z\.]{2,6})$/;
+	if(!reg.test(email)) {
+		alert("请输入正确的邮箱地址");
+		return ;
+	}
+
+	var bookList = $clickButton.parent().siblings("input[name='bookIdList']").first().val();
+	var subject = $clickButton.parent().siblings("input[name='subject']").first().val();
+	var postdata = {
+		"displayType" : "full",
+		"destination" : "email",
+		"email" : email,
+		"subject" : subject,
+		"bookIdList" : bookList
+	};
+	var postUrl = "/opac3/api/book/onlineBookListSendToEmail";
+	//先禁止一下提交按钮
+	$clickButton.attr("disabled", "disabled");
+	$.ajax({
+		url : postUrl,
+		type : "POST",
+		data : postdata,
+		dataType : "text",
+		error : function(x,s,e) {
+			alert("操作失败，请重试。");
+		}
+	}).done(function(result){
+		$clickButton.removeAttr("disabled");
+		if(result == "1") {
+			alert("发送邮件成功，请注意查看您的邮箱!");
+			$clickButton.parent().siblings("input[name='email']").first().val("");
+			$(".emailArea").hide();	//发送成功后隐藏
+		} else if(result == "0"){
+			alert("发送邮件失败，请检查您的邮件设置!");
+		} else {
+			var ret = eval(result);
+			alert(ret);
+		}
+	});
+}
+//添加收藏
+function addPrivateCollection(bookrecno){
+    var checking = checkLogin();
+    if(checking){
+		//通过样式判断是否选删除
+		var isDeleteAction = false;
+		var url = "/opac3/privateCollection/add/"+bookrecno+"";
+		if ($("#likeid_"+bookrecno).hasClass("thHasLikeIcon")) {
+			url = "/opac3/privateCollection/delete?bookrecnoList="+bookrecno+"";	//取消收藏url
+			isDeleteAction = true;
+		}
+		//先实现样式改善体验
+		if (isDeleteAction == false) {
+			$("#likeid_"+bookrecno).attr("title","取消收藏");
+			$("#likeid_"+bookrecno).removeClass("thLikeIcon").addClass("thHasLikeIcon");
+		}else{
+			$("#likeid_"+bookrecno).attr("title","收藏");
+			$("#likeid_"+bookrecno).removeClass("thHasLikeIcon").addClass("thLikeIcon");
+		}
+
+        if (isDeleteAction == true) {	//删除动作的，给个提示
+            var isEnable = confirm("确定取消收藏吗？");
+            if (!isEnable) {
+                return;
+            }
+        }
+
+        //作个标识，防止多次点击样式变乱
+        var dataSign = $("#likeid_"+bookrecno).attr("data_sign");
+        if(dataSign == 1) {
+            alert("操作过于频繁，请稍后尝试！")
+            return;
+        }
+        $("#likeid_"+bookrecno).attr("data_sign",1);
+
+        $.ajax({
+            type:"post",
+            url:url,
+            success:function(result){
+                $("#likeid_"+bookrecno).attr("data_sign",0);		//修改标识
+            },
+            error:function(){
+                $("#likeid_"+bookrecno).attr("data_sign",0);		//修改标识
+                if (isDeleteAction == true) {
+                    $("#likeid_"+bookrecno).attr("title","取消收藏");
+                    $("#likeid_"+bookrecno).parent().addClass("hasLiked");
+                }else{
+                    $("#likeid_"+bookrecno).attr("title","收藏");
+                    $("#likeid_"+bookrecno).parent().removeClass("hasLiked");
+                }
+                alert("后台发生错误!");
+            }
+        });
+    }
+}
+//复制到剪切板
+function copy2clipboard(txt,type){
+	var board=$("#clipboard");
+	board.show();
+	board.val(txt);
+	board.select(); //选择对象
+	document.execCommand("Copy"); //执行浏览器复制命令
+	board.hide();
+	if(type==0){
+		alert("引文已复制。在粘贴到您的文章之后，请再检查一遍引文格式的准确性。");
+	}else if(type==1){
+		alert("链接已复制");
+	}
+	//隐藏
+	$(".urlArea,.citaArea").hide();
+}
+
+// 路径配置
+require.config({
+    paths: {
+          echarts: '/opac3/media/pro2018/build/dist'
+    }
+});
+ // 使用
+require(
+    [
+        'echarts',
+        'echarts/chart/bar' // 使用柱状图就加载bar模块，按需加载
+    ],
+    function (ec) {
+        var timeStatisticArr = new Array();
+      	var mainCategories = new Array();
+        
+   		mainCategories.push("2014年");
+   		timeStatisticArr.push("2");
+    	
+   		mainCategories.push("2019年");
+   		timeStatisticArr.push("1");
+    	
+        // 基于准备好的dom，初始化echarts图表
+        var myChart = ec.init(document.getElementById('trendForm')); 
+        var option = {
+        	grid: {
+        		x: 0,
+        		y: 0,
+        		x2: 20,
+        		y2: 30,
+        		borderWidth: 0
+        	},
+            tooltip: {
+                //trigger: 'axis'
+            },
+            xAxis : [
+                {
+                	type : 'category',
+                    splitLine: {
+                    	show: false
+                    },
+                    axisLine: {
+                    	show: true,
+                    	lineStyle: {
+                    		color: '#000'
+                    	}
+                    },
+                    axisLabel: {
+                    	show: true,
+                    	textStyle: {
+                    		color: '#333'
+                    	}
+                    },
+                    axisTick: {
+                    	show: false
+                    },
+                    data : mainCategories
+                }
+            ],
+            yAxis : [
+                {
+                    type : 'value',
+                    splitLine: {
+                    	show: false
+                    },
+                    axisLine: {
+                    	show: false
+                    },
+                    axisLabel: {
+                    	show: false
+                    }
+                }
+            ],
+            color: ['#db0000'],
+            series : [
+                {
+                    "name":"书目数量",
+                    "type":"bar",
+                    barWidth: 20,
+                    "data":timeStatisticArr
+                }
+            ]
+        };
+
+        // 为echarts对象加载数据 
+        myChart.setOption(option); 
+    }
+);
+
+
+function searchInReult(){
+	var s = $(".resSchInp").val().trim();
+	if(s != ""){
+		$("#q").val(s);
+		reSearch();
+	}
+}
+
+//排序
+function sortby() {
+	var sortWay = $("#sort-options").val();
+	var sortOrder = sortWay.indexOf('_asc')==-1?'desc':'asc';
+	sortWay = sortWay.replace('_asc','');
+	document.location.href = "search?searchType=standard&isFacet=true&view=standard&rows=10&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND" + "&sortWay=" + sortWay + "&sortOrder=" + sortOrder;
+	console.log("跳转url",document.location.href)
+	return false;
+}
+function sortBy(sortWay) {
+	var sortOrder = sortWay.indexOf('_asc')==-1?'desc':'asc';
+	sortWay = sortWay.replace('_asc','');
+	document.location.href = "search?searchType=standard&isFacet=true&view=standard&rows=10&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND" + "&sortWay=" + sortWay + "&sortOrder=" + sortOrder;
+	console.log("跳转url",document.location.href)
+	return false;
+}
+//排序
+function reSortOrder() {
+	var sortWay = $("#sortWay").val();
+	var sortOrder = $("#sortOrder").val();
+	document.location.href = "search?searchType=standard&isFacet=true&view=standard&rows=10&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND" + "&sortWay=" + sortWay + "&sortOrder=" + sortOrder;
+	console.log("跳转url",document.location.href)
+
+}
+function reSortOrder(op){
+	document.location.href = "search?searchType=standard&isFacet=true&view=standard&rows=10&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND" + "&sortWay=" + op + "&sortOrder=desc";
+	console.log("跳转url",document.location.href)
+
+}
+
+//是否有馆藏选择
+function holdingFilterSearch() {
+	var checker = $("#holdingChecker:checked").val();
+	if(checker&&checker=='1'){
+	    document.location.href = "/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&hasholding=1";
+	}else{
+        document.location.href = "/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND";
+    }
+
+}
+function getBookrecnos() {
+	var bookrecnos = new Array();
+	$(".collBkNumArea[bookrecno]").each(function(index) {
+		bookrecnos.push($(this).attr("bookrecno"));
+	});
+	if(bookrecnos.length==0){
+		$("img[bookrecno]").each(function(index) {
+			bookrecnos.push($(this).attr("bookrecno"));
+		});
+	}
+	return bookrecnos;
+}
+function getCallnos(bookrecnos) {
+	$.ajax({
+		type: "GET",
+		url: "/opac3/book/callnos",
+		data: {
+			"bookrecnos": bookrecnos.join(",")
+		},
+		dataType: "xml",//这里要用xml,如果用html,则在IE下无法解析这个数据
+		success: function(xml){
+			insertCallnos(xml);
+		}
+	});
+}
+function insertCallnos(data) {
+	var records = $(data).find("record");
+	records.each(function(index){
+		var bookrecno = $(this).find("bookrecno").text();
+		var callnos = $(this).find("callno");
+		var callnoArray = new Array();
+		callnos.each(function(j){
+			if($(this).text()) {
+				callnoArray.push($(this).text());
+			}
+		});
+		var callnoInfo = callnoArray.join(",");
+		if(callnoInfo.length > 30) {
+			callnoInfo = callnoInfo.substring(0, 30) + "...";
+		}
+		if(callnoInfo.length>0){
+			$("div[bookrecno='" + bookrecno + "'] .callnosSpan").html(callnoInfo);
+		}
+	});
+}
+
+function getCollections(bookrecnos) {
+    $.ajax({
+        type: "GET",
+        url: "/opac3/privateCollection/checkExisting",
+        data: {
+            "bookrecnos": bookrecnos
+        },
+        traditional: true,
+        dataType: "json",//这里要用xml,如果用html,则在IE下无法解析这个数据
+        success: function(data){
+           	if(data){
+                for(var j in data){
+                    var bookrecno = data[j];
+                    if(!$("#likeid_"+bookrecno).hasClass("thHasLikeIcon")){
+                        $("#likeid_"+bookrecno).removeClass("thLikeIcon").addClass("thHasLikeIcon");
+                        $("#likeid_"+bookrecno).attr("title","取消收藏");
+                    }
+				}
+			}
+        }
+    });
+}
+$(function() {
+	var bookrecnos = getBookrecnos();
+	if(getRdid()!=""){
+	    getCollections(bookrecnos);
+	}
+	getCallnos(bookrecnos);
+	
+	//发送邮件处理
+	$(".headIcon.emBtn.thEmBtn").click(function(){
+		sendEmail($(this));
+	});
+});
+
+function getRdid() {
+	var rdid = "";
+	
+	return rdid;
+}
+
+function downloadAccessories(data,bookrecno){
+	
+	
+	
+}
+
+//读取显示隐藏趋势图的cookie信息
+$(document).ready(function(){
+	//隐藏头部的“在结果中搜索”
+	$(".brResSer").hide();
+
+	//如果没有输入关键词，则为“全部”
+	var keyWord = $("#keyWord").text();
+	if(keyWord.trim() == ""){
+		$("#keyWord").text("全部");
+	}
+
+	$(".hasDownGrp").hover(function(){
+		$(this).find(".schResGrpUl").show();
+	},function(){
+		$(this).find(".schResGrpUl").hide();
+	});
+
+	var selectSortWay = 'score';
+	var selectSortType = 'desc';
+	if(selectSortWay=="score" || selectSortWay=="loannum_sort"){
+		$(".schResGrp01 .sGrpChosedIn").text($(".li_"+selectSortWay).text().trim());
+	}else{
+		if(selectSortType=="asc"){
+			$(".schResGrp02 .sGrpChosedIn").text($(".li_"+selectSortWay+"_asc").text().trim());
+		}else{
+			$(".schResGrp02 .sGrpChosedIn").text($(".li_"+selectSortWay).text().trim());
+		}
+	}
+
+    //设置菜单选中
+    /*if("standard"=="browse") {
+        $(".bkInfoMenu > li").eq(1).addClass("thNavCur");
+    }*/
+
+    //设置左侧悬浮
+    var oTop = $(".preciseFilter").offset().top;
+    var sTop = 0;
+    $(window).scroll(function(){
+        sTop = $(this).scrollTop();
+        if(sTop >= oTop){
+            $(".preciseFilter").css({
+                position: 'fixed',
+                top: '0',
+                height: '100%',
+                overflow: 'auto'
+            });
+        }else{
+            $(".preciseFilter").css({ position: 'static'});
+        }
+    });
+
+    //加载分页
+	var pageCount = 7;
+	if($(window).width() < 1023){
+		pageCount = 3;
+	}
+    $("#pagination3").pagination({
+        currentPage: 1,
+        totalPage: 1,
+        isShow: true,
+        count: pageCount,
+        homePageText: "首页",
+        endPageText: "尾页",
+        prevPageText: "上一页",
+        nextPageText: "下一页",
+        callback: function(current) {
+            window.location.href = '/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&page='+current+'';
+            $("#current3").text(current);
+        }
+    });
+	var chartCookie = $.cookie('chartCookie');
+	var libcode="P2SXS029038";
+	if(libcode=="P2SC028016"){
+		chartCookie = "show";
+	}
+	if(libcode!="EGD0755036" && libcode!="P2SC028016" && libcode!="P1SC028206"){
+		$(".headSearchArea .container .brHdSreach .brSearMeth").append("<a href=\"javascript:displayChart('chartCtnr');\" class=\"opDataChart\"><i class=\"headIcon\"></i><span id=\"opDataChart\">隐藏趋势图</span></a>");
+	}
+	if(chartCookie!=null){
+		if(chartCookie=='hide'){
+			$("#display").html("&nbsp;"+getI18nMsg("chartI18n.showChart"));//显示趋势图
+			$("#opDataChart").html(getI18nMsg("chartI18n.showChart"));//显示趋势图
+			$("#chartCtnr").hide(0);
+			$("#btnDiv").attr("align","left");
+		}else{
+			$("#display").html(getI18nMsg("chartI18n.hideChart")+"&nbsp;");
+			$("#opDataChart").html(getI18nMsg("chartI18n.hideChart"));
+		}
+	}else{
+		if("1"=="0"){
+			$("#display").html("&nbsp;"+getI18nMsg("chartI18n.showChart"));//显示趋势图
+			$("#opDataChart").html(getI18nMsg("chartI18n.showChart"));//显示趋势图
+			$("#chartCtnr").hide(0);
+			$("#btnDiv").attr("align","left");
+			
+		}else{
+			$("#display").html(getI18nMsg("chartI18n.hideChart")+"&nbsp;");
+			$("#opDataChart").html(getI18nMsg("chartI18n.hideChart"));
+			$("#chartCtnr").show(0);
+		}
+	}
+
+	var classFacetCookie = $.cookie('classFacetCookie');
+	if(classFacetCookie!=null){
+		if(classFacetCookie=='hide'){
+			$("#block").html("&nbsp;"+getI18nMsg("searchResultI18n.showClassFacet"));//显示
+			$("#classFacetDiv").hide(0);
+			$("#sohDiv").attr("align","left");
+		}else{
+			$("#block").html(getI18nMsg("searchResultI18n.hideClassFacet")+"&nbsp;");
+		}
+	}else{
+		if("P2SXS029038"=="ESH021039"){
+			$("#block").html("&nbsp;"+getI18nMsg("searchResultI18n.showClassFacet"));//显示
+			$("#classFacetDiv").hide(0);
+			$("#sohDiv").attr("align","left");
+		}else{
+			$("#block").html(getI18nMsg("searchResultI18n.hideClassFacet")+"&nbsp;");
+		}
+	}
+
+	//二维码的显示
+    //加载二维码
+    $(".bookEqImg").hover(function() {
+        var code = $(this).find("img").attr("code");
+        $(this).find(".eqBigShow").show();
+        if(code){
+            var codeUrl = "/opac3/reader/qrCodeImage?qrcode="+code+"&logo=0&auto=1";
+            $(this).find("img").attr("src", codeUrl);
+        }
+    }, function() {
+        $(this).find(".eqBigShow").hide();
+    });
+
+	
+
+	
+});
+//当馆藏为空时，判断该书目是否在订购中，如果是则提示
+$(function() {
+
+
+//如果有光盘，显示提示“含光盘”，方便读者预订
+
+	showAttachment(getBookrecnos());
+
+});
+
+function showAttachment(bookrecnos){
+	$.ajax({
+			type: "GET",
+			url: "/opac3/book/getAttachments",
+			data: {
+				"bookrecnos": bookrecnos.join(",")
+			},
+			dataType: "json",
+			success: function(data){
+				for(var i in data) {
+					var bookrecno = data[i];
+					$("span[id='attachment_" + bookrecno + "']").show();
+				}
+			}
+	});
+}
+
+function getOrderStatus(bookrecnos) {
+	$.ajax({
+		type: "GET",
+		url: "/opac3/book/orderStatus",
+		data: {
+			"bookrecnos": bookrecnos.join(",")
+		},
+		dataType: "json",//这里要用xml,如果用html,则在IE下无法解析这个数据
+		success: function(data){
+			for(var i in data) {
+				var bookrecno = data[i];
+				$("div[bookrecno='" + bookrecno + "'] span.biblios_ordering").show();
+			}
+		}
+	});
+}
+function getReservationCount(bookrecnos) {
+	$.ajax({
+		type: "GET",
+		url: "/opac3/book/currentReservationCount",
+		data: {
+			"bookrecnos": bookrecnos.join(",")
+		},
+		dataType: "json",
+		success: function(data){
+			for (var i=0;i<bookrecnos.length;i++){
+				var bookrecno = bookrecnos[i];
+				var count = data[bookrecno];
+				$("div[bookrecno='" + bookrecno + "'] span.reservation_count").html('预约登记人次（'+count+"）");
+			}
+		}
+	});
+}
+function bookDetail(bookrecno,index,flag){
+	var base = encodeURIComponent("searchType=standard&isFacet=false&view=standard&ro=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&rows=1");
+	if("P2SXS029038"=="U1YN0871005"){
+		base = "";
+	}
+	var url = "/opac3/book/"+bookrecno+"?index="+index+"&globalSearchWay=&searchKeyword="+encodeURIComponent("")+"&base="+base;
+	if(flag==1){
+		window.open(url);
+	}else if(flag==0){
+		window.location.href=url;
+	}
+}
+
+
+//加入书单处理	begin
+
+var globleBookrecnoValue = "";				//全局的书目变量，装载点击加入书单的当前书目
+function setGlobleBookrecnoValueAndCheckLogin(bookrecno) {
+    if(!checkLogin()) {
+        //取消弹出框显示
+        $(".addBkLiPopArea").hide();
+        $('html,body').removeClass('overHide');
+    }
+	globleBookrecnoValue = bookrecno;
+}
+//书单保存
+function saveItemsToBookList() {
+    if(checkLogin()) {
+        var bookListId = $(".thAddNewCho").attr("lid");
+        var bookItemStr = globleBookrecnoValue;
+        if(bookItemStr == "") {
+            alert('请选择图书.');
+            return;
+        }
+        $.ajax({
+            type: "post",
+            url: "/opac3/booklistitem/save",
+            data: {
+                "bookListId": bookListId,
+                "bookListItems": bookItemStr
+            },
+            dataType: "xml",//这里要用xml,如果用html,则在IE下无法解析这个数据
+            success: function(data){
+                var state = $(data).find("state").text();
+                if(state == "1") {
+                    alert("保存成功!");
+                    $(".addBkLiPopArea").hide();
+                    $('html,body').removeClass('overHide');	//要加这个，不然页面不能滚动
+                } else {
+                    alert("保存失败!");
+                }
+            }
+        });
+    }else{
+        $(".addBkLiPopArea").hide();
+        $('html,body').removeClass('overHide');	//要加这个，不然页面不能滚动
+    }
+}
+
+
+function newBookList(){
+    if(checkLogin()) {
+        if($("#new_listName").val()=="")
+        {
+            alert("书单名称不能为空！");
+            return;
+        }
+        $.ajax({
+            type:"post",
+            url:"/opac3/booklist/save",
+            data:{
+                "listName": $("#new_listName").val(),
+                //"description": $("#new_description").val(),
+                "privacy": $("input[name='new_privacy']:checked").val()
+            },
+            dataType:"xml",
+            success:function(data){
+                var state=$(data).find("state").text();
+                if(state=="2"){
+                    alert("已添加过该书单");
+                    $("#new_listName").val("");
+                }else if(state=="1"){
+                    var bookListId=$(data).find("bookListId").text();
+                    $(".thAddNewCho").removeClass("thAddNewCho");
+                    $(".myBkUl").append('<li class="thAddNewCho" lid="'+bookListId+'"><a href="javascript:void(0)">'+
+                        $("#new_listName").val()+'</a><i class="addNewCho"></i></li>');
+                    $("#new_listName").val("");
+                    //重新运行一下
+                    $('.myBkUl li').click(function(){
+                        $(this).addClass('thAddNewCho').siblings('').removeClass('thAddNewCho');
+                    });
+                }else{
+                    alert("创建书单或者加入书单失败！");
+                }
+            }
+        });
+    }else{
+        $(".addBkLiPopArea").hide();
+    }
+}
+//加入书单处理	end
+
+
+//预约处理		begin
+
+//根据书目获取相应馆代码，再回写进<select>
+function getLibcodeSimpleInfoList(bookrecnoNum,prelendOrloan,isRedirect){
+	//是否登录
+    var check = checkLogin();
+    if (!check) {
+        return;
+    }
+
+    if(!bookrecnoNum){
+        return;
+	}
+
+    if (prelendOrloan == 1) {
+        $("#reservationBut").attr("bookrecnoNum", bookrecnoNum);	//预约的书目号
+    } else if (prelendOrloan == 0){
+		$("#loanBookBut").attr("bookrecnoNum",bookrecnoNum);		//预借的书目号
+    }
+
+    var getLibUrl = "/opac3/book/getLibcodeSimpleInfoList";
+	var reqData = {"bookrecno":bookrecnoNum,"return_fmt":"json"};
+    $.post(getLibUrl,reqData,function(data){
+        if (data && data.libcodeSimpleInfoList){
+            var libcodeSimpleInfoList = data.libcodeSimpleInfoList;
+            var readLibCode = "";
+            var optionHtml = "";
+        	for (var i = 0;i < libcodeSimpleInfoList.length;i++){
+        	    var isCheck = readLibCode == libcodeSimpleInfoList[i].libcode?" selected":"";
+				optionHtml += '<option value="'+libcodeSimpleInfoList[i].libcode+'"'+isCheck+' >'+libcodeSimpleInfoList[i].simpleName+'</option>';
+			}
+            if (prelendOrloan == 1) {
+				$("#reservationLibcode").html(optionHtml);		//预约的
+				
+            } else if (prelendOrloan == 0){
+				$("#prelendLibcode").html(optionHtml);		//预借的
+				
+            }
+		}
+	});
+}
+
+//预约
+function reservationBook() {
+    //获取原先放入的bookrecno值
+    var bookrecno = $("#reservationBut").attr("bookrecnoNum");
+    if (!bookrecno || bookrecno == "undefined") {
+        return;
+    }
+
+    if(!checkLogin()) {
+        $(".appPopArea").hide();
+        $('html,body').removeClass('overHide');	//要加这个，不然页面不能滚动
+        return;
+    }
+
+    //防止重复单击
+    $("#reservationBut").attr("disabled","disabled");
+
+    var libcode = jQuery("#reservationLibcode").val();
+    if(libcode == "") {
+        alert('请选择一个分馆!');
+        return;
+    }
+
+    var rdlib = "";
+    //本馆读者
+    if(rdlib==libcode){
+        document.location.href = '/opac3/reservation/canReservationList/' +
+			libcode + '/' + bookrecno+'';
+    }else{
+        //非本馆读者需要判断分馆是否允许进行馆际预约
+        jQuery.ajax({
+            type:"get",
+            url:"/opac3/reservation/isLibCanGlobalReserve/"+libcode+"",
+            dataType:"json",
+            success:function(data){
+                if(data){
+                    document.location.href = '/opac3/reservation/canReservationList/' +
+						libcode + '/' + bookrecno+'';
+                }else{
+                    alert('您选择的分馆不允许外馆读者预约');
+                    $("#reservationBut").removeAttr("disabled");	//去除不可点击
+                }
+            }
+        });
+    }
+}
+
+function reservationBookHuawei() {
+	$('html,body').removeClass('overHide');	//要加这个，不然页面不能滚动
+	//获取原先放入的bookrecno值
+	var bookrecno = $("#reservationBut").attr("bookrecnoNum");
+	if (!bookrecno || bookrecno == "undefined") {
+		return;
+	}
+
+	if(!checkLogin()) {
+		$(".appPopArea").hide();
+		return;
+	}
+
+	//防止重复单击
+	$("#reservationBut").attr("disabled","disabled");
+
+	var libcode = jQuery("#reservationLibcode").val();
+	if(libcode == "") {
+		alert('请选择一个分馆!');
+		return;
+	}
+
+	var rdlib = "";
+	//本馆读者
+	if(rdlib==libcode){
+		var rurl = '/opac3/reservation/canReservationList/' + libcode + '/' + bookrecno+'' +
+				'?return_fmt=json';
+		dealResercationHuaWei(rurl)
+	}else{
+		//非本馆读者需要判断分馆是否允许进行馆际预约
+		jQuery.ajax({
+			type:"get",
+			url:"/opac3/reservation/isLibCanGlobalReserve/"+libcode+"",
+			dataType:"json",
+			success:function(data){
+				if(data){
+					var rurl = '/opac3/reservation/canReservationList/' + libcode + '/' + bookrecno+'' +
+							'?return_fmt=json';
+					dealResercationHuaWei(rurl)
+				}else{
+					alert('您选择的分馆不允许外馆读者预约');
+					$("#reservationBut").removeAttr("disabled");	//去除不可点击
+				}
+			}
+		});
+	}
+}
+
+function dealResercationHuaWei(url) {
+	$.ajax({
+		type: "get",
+		url: url,
+		dataType: "json",
+		success: function(data) {
+			if (data) {
+				if (isEmpty(data.message)) {
+					var barcode = data.holdingList[0].barcode;
+					var pickupcode = data.pickupLocalMap[0].localcode;
+					$.ajax({
+						type: "get",
+						url: "/opac3/reservation/doReservation?return_fmt=json",
+						data: {
+							barcode: barcode,
+							pickupLocal: pickupcode,
+							furl: "/opac3/reservation/currentReservationList"
+						},
+						dataType: "json",
+						success: function(data) {
+							if (data) {
+								if (data.isReservationSuc) {
+									$(".appSucPopArea").show();
+								} else {
+									alert(data.message + " " + data.messages);
+								}
+							} else {
+								alert("服务端异常");
+							}
+						}
+					});
+				} else {
+					alert(data.message)
+				}
+			} else {
+				alert("服务端异常")
+			}
+		}
+	});
+}
+//预约处理		end
+
+//ele是元素，text是文本，改变指定元素value值
+function changeText(ele,text){
+    ele.value = text;
+}
+
+//预借处理		begin
+function prelendBook(isRedirect) {
+    //获取原先放入的bookrecno值
+    var bookrecno = $("#loanBookBut").attr("bookrecnoNum");
+    if (!bookrecno || bookrecno == "undefined") {
+        return;
+    }
+    if(!checkLogin()) {
+        $(".loanPopArea").hide();
+        return;
+    }
+    var libcode = $("#prelendLibcode").val();
+    if(!libcode) {
+
+        if ($("#prelendLibcode option").length < 1) {
+            alert("没有可用馆藏");
+            return;
+        } else {
+			alert('请选择一个分馆!');
+			return;
+        }
+    }
+	if ("P2SXS029038" == 'EGD0755036') {
+		$(".loanPopArea").hide();
+		$("#loanBookBut").val("确认");
+		addPrelendBookList(bookrecno,libcode,isRedirect);
+	}else{
+		document.location.href = '/opac3/prelend/canPrelendList/' +
+			libcode + '/' + bookrecno +'';
+	}
+}
+//预借处理	end
+
+var logRec = true;
+$(function() {
+    //信息推送
+    $.getScript("http://api.interlib.com.cn:8586/InterlibCommonService/media/centerservice.js").done(function(){
+        try {
+            if (logRec) {
+                var baseParam = "searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND";
+                baseParam+="&numFound=3";
+                pushResultData(1,"P2SXS029038",baseParam);
+                showAD();
+            }
+
+            logRec = false;
+        } catch (e) {
+            console.error(e)
+        }
+    });
+});
+
+
+var loadedFlag = false;
+function ebookSearch(){
+    if ($(".rightTabUl > .rightTabLi").eq(0).hasClass("tabCur")) {
+    	if(!loadedFlag){
+            $.ajax({
+                type:"GET",
+                url:"/opac3/ebook/ubook/search",
+                data:{keyword:"%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6"},
+                dataType:"json",
+                success:function(data){
+                    loadedFlag = true;
+                    if(data.data){
+                        for(var i in data.data){
+                            var title = data.data[i].title;
+                            var author = data.data[i].author;
+                            var publisher = data.data[i].publisher;
+                            var pubdate = data.data[i].pubdate;
+                            var summary = data.data[i].summary;
+                            author = author?author+" ":"";
+                            publisher = publisher?publisher+" ":"";
+                            pubdate = pubdate?pubdate+" ":"";
+                            summary = summary?summary+" ":"";
+
+                            var border = "";
+                            if(i==0){
+                                border = " notBorder";
+                            }
+                            var ebookContent = "<li class=\"libBookLi"+border+"\">\n" +
+                                "<div class=\"rankLiIn clearfix\">\n" +
+                                "<a class=\"libBookImg\">\n" +
+                                "<img class=\"iconic\" width=\"84\" src=\"https://ebook.3eol.com.cn/epubfolder/"+data.data[i].image_url+"\" >\n" +
+                                "</a>\n" +
+                                "<div class=\"libBookDet\">\n" +
+                                "<a href=\"javascript:void();\" class=\"libBookDetNm\">\n" +
+                                title +
+                                "</a>\n" +
+                                "<div class=\"libBookDetIn\">\n" +
+                                "<p>"+author+publisher+pubdate+"</p>\n" +
+                                "<div class=\"collBkNumArea\"><p class=\"collBkNumLine\">"+summary+"</p></div>\n" +
+                                "</div>\n" +
+								"</div>\n" +
+                                "<div class=\"opRightArea\" style=\"display: none;\">\n" +
+                                "<a href=\"javascript:void(0);\"  class=\"opRightIcon  borIcon thEqIcon bookEqImg\">\n" +
+                                "<div class=\"eqBigShow\">\n" +
+                                "<i class=\"eqBigUpSnIcon\"></i>\n" +
+                                "<p>扫码看电子书</p>\n" +
+                                "<img width=\"112px\" code=\""+encodeURIComponent(data.data[i].qcode)+"\" />\n" +
+                                "</div>\n" +
+                                "</a>\n" +
+                                "</div>\n" +
+                                "</div>\n" +
+                                "</li>";
+                            $("#ebookList > .libBookUl").append(ebookContent);
+                        }
+                        //加载二维码
+                        $(".bookEqImg").hover(function() {
+                            var code = $(this).find("img").attr("code");
+                            $(this).find(".eqBigShow").show();
+                            if(code){
+                                var codeUrl = "/opac3/reader/qrCodeImage?qrcode="+code+"&logo=0&auto=1";
+                                $(this).find("img").attr("src", codeUrl);
+                            }
+                        }, function() {
+                            $(this).find(".eqBigShow").hide();
+                        });
+                        $('#ebookList > .libBookUl .libBookLi').each(function(index, el) {
+                            $(this).hover(function () {
+                                $(this).addClass('hasHover');
+                                $(this).find('.opRightArea').show();
+                            }, function () {
+                                $(this).removeClass('hasHover');
+                                if (!$(this).hasClass('lock')) {
+                                    $(this).find('.opRightArea').hide();
+                                }
+                            });
+                        });
+                    }
+                }
+            });
+		}
+        $(".rightTabUl > .rightTabLi").eq(0).removeClass("tabCur");
+        $(".rightTabUl > .rightTabLi").eq(1).addClass("tabCur");
+        $(".brConRight > .searchKey").hide();
+        $(".brConRight > .bkRankArea").hide();
+        $(".brConRight > .box").hide();
+        $("#ebookList").show();
+	}
+}
+function libSearch(){
+    if (!$(".rightTabUl > .rightTabLi").eq(0).hasClass("tabCur")) {
+        $(".rightTabUl > .rightTabLi").eq(0).addClass("tabCur");
+        $(".rightTabUl > .rightTabLi").eq(1).removeClass("tabCur");
+        $(".brConRight > .searchKey").show();
+        $(".brConRight > .bkRankArea").show();
+        $(".brConRight > .box").show();
+        $("#ebookList").hide();
+    }
+}
+
+function loadFacet(){
+    // 浏览左边
+    $('.brConLeftBot .acFilterArea').each(function(index, el) {
+        $(this).find('.libClsUl li').each(function(index, el) {
+            var libLen = $(this).parents('.acFilterArea').find('.libClsUl li').length;
+            // console.log(libLen);
+            if (libLen <= 5) {
+                $(this).parents('.acFilterArea').find('.moreDate').hide();
+            }else{
+                $(this).parents('.acFilterArea').find('.moreDate').show();
+            }
+            if (index < 5) {
+                $(this).parents('.acFilterArea').find('.libClsUl li').eq(index).show();
+            }
+
+            // 更多
+            $(this).parents('.acFilterArea').find('.moreDate').click(function(){
+                $(this).hide();
+                $(this).parents('.acFilterArea').find('.libClsUl li').show();
+            });
+
+        });
+
+        $(this).find('.acFilterTop').click(function(){
+            if (!$(this).hasClass('hasTog')) {
+                $(this).addClass('hasTog');
+                $(this).find('.brFilterBtn').removeClass('hasBrFlterDown');
+                $(this).parents('.acFilterArea').find('.actLibArea').stop(true).slideDown();
+
+
+                $(this).parents('.acFilterArea').find('.libClsUl li').hide();
+                $(this).parents('.acFilterArea').find('.libClsUl li').each(function(index, el) {
+                    var libLen = $(this).parents('.acFilterArea').find('.libClsUl li').length;
+                    // console.log(libLen);
+                    if (libLen <= 5) {
+                        $(this).parents('.acFilterArea').find('.moreDate').hide();
+                    }else{
+                        $(this).parents('.acFilterArea').find('.moreDate').show();
+                    }
+                    if (index < 5) {
+                        $(this).parents('.acFilterArea').find('.libClsUl li').eq(index).show();
+                    }
+                    if (index < 5) {
+                        $(this).parents('.acFilterArea').find('.libClsUl li').eq(index).show();
+                    }
+                });
+
+            } else{
+                $(this).removeClass('hasTog');
+                $(this).find('.brFilterBtn').addClass('hasBrFlterDown');
+                $(this).parents('.acFilterArea').find('.actLibArea').stop(true).slideUp('fast');
+            };
+        });
+    });
+}
+
+
+
+//-->
+</script>
+
+
+	
+	
+		<div class="bookTrendArea" id="chartCtnr">
+			<div class="bookTrendAreaIn">
+				<div class="bookTrndTit thBookTrndTit "><i class="rankIcon thRankIcon headIcon"></i>图书出版年份趋势</div>
+				<div class="trendFormArea clearfix">
+					<span class="trendFormUnit">年份</span>
+					<div id="trendForm" class="trendForm"  style="width:872px;height:128px;"></div>
+				</div>
+			</div>
+		</div>
+	
+
+
+	
+	
+
+	<div class="container brCon">
+	
+	<div class="brConLeftMask"></div>
+	<div class="brConLeft">
+		
+		<div class="preciseFilter" >
+			<div class="retrScreen" style="position: absolute;">
+				<i class="retrIcon retrIcon01"></i>
+				<span>检索筛选</span>
+			</div>
+		
+		 <div class="brConLeftTop" style="display: none;">
+		 	<div class="brConTit">精准筛选</div>
+
+				<div class="libLiter">
+					<ul class="literUl">
+					<!-- ClassLevel Facet Limit -->
+		       		
+
+					<!-- Libcode Facet Limit -->
+					
+		       		
+			       		
+						<li class="literLi">
+							<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND" title="图书馆" style="width: 96%;">
+								<span class="ellipsisOne libClsDet">碑林区图书馆</span>
+								<i class="brDelIcon headIcon"></i>
+							</a>
+						</li>
+		           	
+		           	
+
+		           	
+
+		           	<!-- Subject Facet Limit -->
+		           	
+		           	<!-- Author Facet Limit -->
+		           	
+		           	<!-- Pubdate Facet Limit -->
+		           	
+		           	<!-- Booktype Facet Limit -->
+		           	
+		           	<!-- Language Facet Limit -->
+		           	
+
+		           	<!-- EditWay Facet Limit -->
+		           	
+		           	<!-- Intime Facet Limit -->
+		           	
+		           	</ul>
+				</div>
+				<div class="filterRetBtn">
+					<a href='/opac3/search?q=&searchWay=' class="filterClear">清除</a>
+					<!-- <a href="#" class="filterAdd thFilterAdd">继续添加</a> -->
+				</div>
+
+		 </div>
+		 
+		 <div class="brConLeftBot">
+			 
+
+			 
+				 <div class="acFilterArea">
+					 <div class="acFilterTop hasTog thAcFilterTop" id="hasTog">
+						 
+							 
+							 
+								 图书馆
+							 
+						 
+
+						 <a href="javascript:void(0);" class="brFilterBtn"></a>
+					 </div>
+					 <!-- 陈列式展现图书馆多层级分馆结构 -->
+					 
+                        
+                        
+							<div class="actLibArea ztree" id="tree" style="width:200px; overflow:auto;">
+							</div>
+                        
+                     
+                     <!-- 树形展现图书馆多层级分馆结构 -->
+				 </div>
+			 
+
+			<!-- 所在馆藏位置分面 -->
+			
+		 	<div class="acFilterArea">
+		 		<div class="acFilterTop hasTog thAcFilterTop">
+					馆藏地点<a href="javascript:void(0);" class="brFilterBtn"></a>
+				</div>
+				 <div class="actLibArea">
+					 <ul class="libClsUl">
+						 
+						 
+							 
+							 
+							 
+								 
+									 
+									 
+										 <li>
+											 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_curlocal=AC_TSYL"
+												title='图书阅览 (3)'>
+												 <span class='ellipsisOne libClsDet'>图书阅览 (3)</span>
+											 </a>
+										 </li>
+									 
+							 
+						 
+							 
+							 
+							 
+								 
+									 
+									 
+										 <li>
+											 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_curlocal=ACA0302"
+												title='太乙路街道分馆阅览室 (1)'>
+												 <span class='ellipsisOne libClsDet'>太乙路街道分馆阅览室 (1)</span>
+											 </a>
+										 </li>
+									 
+							 
+						 
+							 
+							 
+							 
+								 
+									 
+									 
+										 <li>
+											 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_curlocal=AF_TSJY01"
+												title='中文图书借阅一区 (1)'>
+												 <span class='ellipsisOne libClsDet'>中文图书借阅一区 (1)</span>
+											 </a>
+										 </li>
+									 
+							 
+						 
+							 
+							 
+							 
+								 
+									 
+									 
+										 <li>
+											 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_curlocal=jq027"
+												title='丰盛园社区分馆 (1)'>
+												 <span class='ellipsisOne libClsDet'>丰盛园社区分馆 (1)</span>
+											 </a>
+										 </li>
+									 
+							 
+						 
+					 </ul>
+					 
+				  </div>
+          	</div>
+			
+
+			
+	     	<div class="acFilterArea">
+		 		<div class="acFilterTop hasTog thAcFilterTop">
+					中图法分类<a href="javascript:void(0);" class="brFilterBtn"></a>
+				</div>
+				<div class="actLibArea">
+					<ul class="libClsUl">
+						
+						
+							
+							
+								
+								<li>
+									<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_class1=g"
+									   title='G 文化、科学、教育、体育 (3)'>
+							<span class='ellipsisOne libClsDet'>
+								G 文化、科学、教育、体育 (3)
+							</span>
+									</a>
+								</li>
+							
+						
+					</ul>
+					
+				</div>
+          	</div>
+			
+
+	          
+
+			
+
+			
+			 
+			
+
+
+			
+		 	<div class="acFilterArea">
+		 		<div class="acFilterTop hasTog thAcFilterTop">
+					文献类型<a href="javascript:void(0);" class="brFilterBtn"></a>
+				</div>
+				<div class="actLibArea">
+				<ul class="libClsUl">
+              	
+					
+					
+						
+						
+							<li>
+								<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_booktype=1" title=''>
+									<span class='ellipsisOne libClsDet'>图书 (3)</span>
+								</a>
+							</li>
+						
+				
+            	</ul>
+				
+			</div>
+          	</div>
+			
+
+			
+			 <div class="acFilterArea">
+				 <div class="acFilterTop hasTog thAcFilterTop">
+					 出版日期<a href="javascript:void(0);" class="brFilterBtn"></a>
+				 </div>
+				 <div class="actLibArea">
+				 	<div class="choseTmArea">
+		 				<input type="text" name="startPubDate" value="" placeholder="开始年份 "/>-<input type="text" name="endPubDate" value="" placeholder="结束年份" />
+		 				<button type="button" style="background-color: #2f8e8e;border: 1px solid #2f8e8e;color: #fff;margin-top: 1px;" onclick="pubDateLimitSearch()">查找</button>
+			 		 </div>
+					 <ul class="libClsUl pubDate">
+						 
+							 
+							 
+								 
+								 
+									 <li>
+										 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_pubdate=2014"
+											title='2014 (2)'>
+											 <span class='ellipsisOne libClsDet'>2014 (2)</span>
+										 </a>
+									 </li>
+								 
+						 
+							 
+							 
+								 
+								 
+									 <li>
+										 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_pubdate=2019"
+											title='2019 (1)'>
+											 <span class='ellipsisOne libClsDet'>2019 (1)</span>
+										 </a>
+									 </li>
+								 
+						 
+					 </ul>
+					 
+				 </div>
+			 </div>
+			
+
+		
+			<div class="acFilterArea">
+				<div class="acFilterTop hasTog thAcFilterTop">
+					著者<a href="javascript:void(0);" class="brFilterBtn"></a>
+				</div>
+				<div class="actLibArea">
+					<ul class="libClsUl">
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%28%E7%BE%8E%29%E8%8E%AB%E6%8F%90%E9%BB%98%C2%B7j.+%E8%89%BE%E5%BE%B7%E5%8B%92%EF%BC%8C%28%E7%BE%8E%29%E6%9F%A5%E5%B0%94%E6%96%AF%C2%B7%E8%8C%83%E5%A4%9A%E4%BC%A6%E8%91%97"
+										   title='(美)莫提默·j. 艾德勒，(美)查尔斯·范多伦著 (3)'>
+											<span class='ellipsisOne libClsDet'>(美)莫提默·j. 艾德勒，(美)查尔斯·范多伦著 (3)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E6%9C%B1%E8%A1%A3"
+										   title='朱衣 (3)'>
+											<span class='ellipsisOne libClsDet'>朱衣 (3)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E9%83%9D%E6%98%8E%E4%B9%89"
+										   title='郝明义 (3)'>
+											<span class='ellipsisOne libClsDet'>郝明义 (3)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E9%83%9D%E6%98%8E%E4%B9%89%EF%BC%8C%E6%9C%B1%E8%A1%A3%E8%AF%91"
+										   title='郝明义，朱衣译 (3)'>
+											<span class='ellipsisOne libClsDet'>郝明义，朱衣译 (3)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E6%9F%A5%E5%B0%94%E6%96%AF%C2%B7%E8%8C%83%E5%A4%9A%E4%BC%A6"
+										   title='查尔斯·范多伦 (2)'>
+											<span class='ellipsisOne libClsDet'>查尔斯·范多伦 (2)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E8%8E%AB%E6%8F%90%E9%BB%98%C2%B7j.+%E8%89%BE%E5%BE%B7%E5%8B%92"
+										   title='莫提默·j. 艾德勒 (2)'>
+											<span class='ellipsisOne libClsDet'>莫提默·j. 艾德勒 (2)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E8%8C%83%E5%A4%9A%E4%BC%A6"
+										   title='范多伦 (1)'>
+											<span class='ellipsisOne libClsDet'>范多伦 (1)</span>
+										</a>
+									</li>
+								
+						
+							
+							
+								
+								
+									<li>
+										<a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_author=%E9%98%BF%E5%BE%B7%E5%8B%92"
+										   title='阿德勒 (1)'>
+											<span class='ellipsisOne libClsDet'>阿德勒 (1)</span>
+										</a>
+									</li>
+								
+						
+					</ul>
+					
+						<a href="javascript:void(0)" class="moreDate">显示更多 <i class="libBookOpIcon libBookDown headIcon"></i></a>
+					
+				</div>
+			</div>
+		
+
+			 
+				 <div class="acFilterArea">
+					 <div class="acFilterTop hasTog thAcFilterTop">
+						 主题
+						 <a href="javascript:void(0);" class="brFilterBtn"></a>
+					 </div>
+					 <div class="actLibArea">
+						 <ul class="libClsUl">
+							 
+								 
+								 
+									 
+									 
+										 <li>
+											 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_subject=%E8%AF%BB%E4%B9%A6%E6%96%B9%E6%B3%95"
+												title='读书方法 (1)'>
+												 <span class='ellipsisOne libClsDet'>读书方法 (1)</span>
+											 </a>
+										 </li>
+									 
+							 
+						 </ul>
+						 
+					 </div>
+				 </div>
+			 
+
+			 
+
+			 
+
+			 
+
+			 
+				 <div class="acFilterArea">
+					 <div class="acFilterTop hasTog thAcFilterTop">
+						 资源类型<a href="javascript:void(0);" class="brFilterBtn"></a>
+					 </div>
+					 <div class="actLibArea">
+						 <ul class="libClsUl">
+							 
+								 
+								 
+								 
+								 
+									 <li>
+										 <a href="/opac3/search?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND&f_isDcSource=n" title=''>
+											 <span class='ellipsisOne libClsDet'>纸质资源 (2)</span>
+										 </a>
+									 </li>
+								 
+							 
+						 </ul>
+					 </div>
+				 </div>
+			 
+
+			 
+
+			 
+				 <div class="acFilterArea">
+					 <div class="acFilterTop hasTog thAcFilterTop">
+						 新到时间
+						 <a href="javascript:void(0);" class="brFilterBtn"></a>
+					 </div>
+					 <div class="actLibArea">
+						 <ul class="libClsUl">
+							 
+							 
+								 
+								 
+								 
+							 
+								 
+								 
+								 
+							 
+								 
+								 
+								 
+							 
+								 
+								 
+								 
+							 
+								 
+								 
+								 
+							 
+						 </ul>
+					 </div>
+				 </div>
+			 
+
+		 </div>
+		</div>
+	</div>
+	<div class="brConRight rightDetArea">
+		<div class="searchKeyArea">
+			<div class="overHide disInlineBk searchKeyDet">
+				<div class="flLeft schWord">
+					<p><span>检索条件：</span>
+						<span id="keyWord">
+						
+						
+						<b class="searchKeyFont">如何阅读一本书</b>
+						(
+								题名
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+								
+							)
+						
+						
+						
+						</span>
+					</p>
+				</div>
+			</div>
+			
+			<div class="overHide resSchArea">
+				<div class="flLeft  resSchLf">
+					<input type="text" placeholder="在结果中检索" onkeydown="if(event.keyCode==13)searchInResult.focus();" class=" resSchInp"/>
+				</div>
+				<div class="flLeft resSchRt"><input type="button" id="searchInResult" name="searchInResult" onclick="searchInReult()" value="确定"/></div>
+			</div>
+		</div>
+		<div class="schResInfo">
+			<span class="schResNum">检索结果共有<i class="color50 schResNumIn">3</i>条</span>
+			<div class="schResOpArea">
+				<div class="disInlineBk  schResGrp hasDownGrp schResGrp01">
+					<div class="schResGrpChosed">
+						<i class="sGrpIcon sGrpIcon01"></i>
+						<span class="sGrpChosedIn">匹配度排行</span>
+					</div>
+					<ul class="schResGrpUl" style="display: none;">
+						<li class="li_score"><a href="javascript:sortBy('score');">匹配度排行</a></li>
+						<li class="li_loannum_sort"><a href="javascript:sortBy('loannum_sort');">热门度排行</a></li>
+					</ul>
+				</div>
+				<div class="disInlineBk  schResGrp hasDownGrp schResGrp02">
+					<div class="schResGrpChosed">
+						<i class="sGrpIcon sGrpIcon01"></i>
+						<span class="sGrpChosedIn">出版/发布时间</span>
+					</div>
+					<ul class="schResGrpUl" style="display: none;">
+						<li class="li_pubdate_sort"><a href="javascript:sortBy('pubdate_sort');">出版日期(降序)</a></li>
+						<li class="li_pubdate_sort_asc"><a href="javascript:sortBy('pubdate_sort_asc');">出版日期</a></li>
+						<li class="li_title_sort_asc"><a href="javascript:sortBy('title_sort_asc');">题名</a></li>
+						<li class="li_title_sort"><a href="javascript:sortBy('title_sort');">题名 (降序)</a></li>
+						<li class="li_callno_sort_asc"><a href="javascript:sortBy('callno_sort_asc');">索书号</a></li>
+						<li class="li_callno_sort"><a href="javascript:sortBy('callno_sort');">索书号 (降序)</a></li>
+						<li class="li_pinyin_sort_asc"><a href="javascript:sortBy('pinyin_sort_asc');">题名拼音</a></li>
+						<li class="li_pinyin_sort"><a href="javascript:sortBy('pinyin_sort');">题名拼音 (降序)</a></li>
+						<li class="li_renewnum_sort"><a href="javascript:sortBy('renewnum_sort');">续借次数</a></li>
+						<li class="li_title200Weight"><a href="javascript:sortBy('title200Weight');">题名权重</a></li>
+						<li class="li_title200aWeight"><a href="javascript:sortBy('title200aWeight');">正题名权重</a></li>
+					</ul>
+				</div>
+				<div class="disInlineBk  schResGrp  schResGrp03">
+					<div class="schResGrpChosed"
+							
+					>
+						<label class="schResLab">
+							<input type="checkbox"  onchange="javascript:holdingFilterSearch();"
+								   checked="checked" value="1" id="holdingChecker" style="vertical-align: middle"/>
+							<label for="holdingChecker"><span class="sGrpChosedIn">在馆记录</span></label>
+						</label>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="bkRankArea">
+				<!-- <br><p class="rankPage">页数1</p>-->
+            	<div class="resFilterBtn"><i class="retrIcon retrIconMb"></i>检索筛选</div>
+				<ul class="libBookUl">
+					
+				  	
+				  	
+				  	<li class="libBookLi notBorder" >
+						<div class="rankLiIn">
+							<div class="rankInCon clearfix">								
+								<div class="overHide ">
+									<span class="libBookDetNm mbLibBookNum">1</span>
+									<span class="ebkType">
+
+
+
+
+
+												图书
+
+
+									</span>
+									<a
+
+
+
+
+
+												href="javascript:bookDetail(901698434,1,1);"
+
+
+										class="libBookDetNm">
+										如何阅读一本书
+											
+									</a>								
+								</div>
+								<div  class="bkHeadCon">
+									<a
+
+
+
+
+
+												href="javascript:bookDetail(901698434,1,1);"
+
+
+												class="libBookImg libBookImgA">
+										<img class='iconic iconicImg' isbn="978-7-100-10618-4" bookrecno="901698434" width="84"
+		                              	src="/opac3/media/pro2018/images/book-default.jpg" alt="如何阅读一本书"
+		                              	onerror="this.src='/opac3/media/pro2018/images/book-default.jpg'" />
+									</a>
+									<div class="libBookDet">								
+										<div class="libBookDetIn">
+											<div class="overHide libBkDetIn">
+												<p class="flLeft ellipsisOne libBkDetCon">
+													<span class="libBkDetTit">
+													  
+														  
+															
+																责任者
+															
+													  
+													</span>
+													<a href="/opac3/search?searchWay=author&q=%E8%8E%AB%E6%8F%90%E9%BB%98%C2%B7J.+%E8%89%BE%E5%BE%B7%E5%8B%92%2C%E6%9F%A5%E5%B0%94%E6%96%AF%C2%B7%E8%8C%83%E5%A4%9A%E4%BC%A6" target="_blank" class="color33 layerTip" id="name-1">
+													莫提默·J. 艾德勒,查尔斯·范多伦
+													</a>
+												</p>
+												<p class="flLeft ellipsisOne libBkDetCon"> 
+													<span class="libBkDetTit">出版信息</span>
+													<a href="/opac3/search?searchWay=publisher&q=%E5%95%86%E5%8A%A1%E5%8D%B0%E4%B9%A6%E9%A6%86" target="_blank" class="color33 layerTip" id="name1"> 
+														商务印书馆
+													</a>
+													
+													,2014
+													
+												</p>
+											</div>
+											<div class="ellipsisOne easyCon">														
+												<span class="layerTip" id="book_summary_901698434" bookrecno="901698434" meta_isbn="978-7-100-10618-4"></span>
+												<p class="flLeft ellipsisOne libBkDetCon">
+													<span class="libBkDetTit">ISBN</span>
+													978-7-100-10618-4
+												</p>
+											</div>
+
+												<div class="bkDetTab">
+												<div class="bkDetTabHead">
+													<ul class="bkDetTabUl">
+														<li class="flLeft bkDetTabLi">
+															<i class="headIcon bkDetIcon bkDetIcon01"></i>
+															<a href="javascript:;" id="holdingPreviews_H_A_901698434">馆藏信息</a>
+															<i class="curLine"></i>
+														</li>
+														<li class="flLeft bkDetTabLi simpleDetail" bookrecno="901698434">
+															<i class="headIcon bkDetIcon bkDetIcon02"></i>
+															
+																
+																
+																	<a href="javascript:;">图书信息</a>
+																
+															
+															<i class="curLine"></i>
+														</li>
+														
+															
+														
+														
+														
+															<li class="flLeft bkDetTabLi simpleDetail hide" id="book_ebook_901698434">
+																<i class="headIcon bkDetIcon bkDetIcon03"></i>
+																<a href="#ebook_901698434"  name="汇雅电子书" checker="978-7-100-10618-4" recno="901698434" bookname="如何阅读一本书">电子图书</a>
+																<i class="curLine"></i>
+															</li>
+														
+
+														
+														<li class="flLeft bkDetTabLi accessories" meta_isbn="978-7-100-10618-4" bookrecno="901698434" style="display: none;">
+															<i class="headIcon bkDetIcon bkDetIcon04"></i>
+															<a href="javascript:;">随书附盘</a>
+														</li>
+														
+													</ul>
+												</div>												
+											</div>
+
+										</div>														
+									</div>
+								</div>
+
+
+									
+									
+									
+									
+									
+										<div class="opRightArea">
+											
+												
+												
+													
+												
+											
+											
+											<a href="javascript:void(0);" class="opRightIcon borIcon thEqIcon bookEqImg">
+												<div class="eqBigShow" style="display: none;">
+													<i class="eqBigUpSnIcon"></i>
+													<p>扫二维码，手机查看</p>
+													<img width="112px" code="http://112.46.235.64:8082/opac3/m/book/901698434"/>
+												</div>
+											</a>
+											
+											<a href="javascript:void(0);" onmousedown="getLibcodeSimpleInfoList(901698434,0)"
+												
+													
+													title="预借"
+												
+											   class="opRightIcon  borIcon thBorIcon bookLoan" style="display: none;"></a>
+											<a href="javascript:void(0);" onmousedown="getLibcodeSimpleInfoList(901698434,1)" title="预约"  class="opRightIcon  orderIcon thOrderIcon appointBook" style="display: none;"></a>
+											
+											<a href="javascript:addPrivateCollection('901698434');" id="likeid_901698434" class="opRightIcon thLikeIcon" title="收藏" ></a>
+											
+											<a href="javascript:void(0);" onmousedown="setGlobleBookrecnoValueAndCheckLogin(901698434)"
+													
+														
+														title="加入书单"
+													
+											   class="opRightIcon addliIcon thAddliIcon addToBkLi"></a>
+											<a href="javascript:bookDetail(901698434,1,1);" class="opRightIcon shareIcon thShareIcon" title="在新窗口中打开"></a>
+											<a href="javascript:void(0);" class="opRightIcon moreIcon thMoreIcon" title="更多"></a>
+											<a href="javascript:void(0);" class="opRightIcon delMoreIcon thDelmoreIcon"></a>
+											
+										</div>
+									
+								
+
+								
+							</div>
+
+							<div class="bkDetTabCon">
+								<div class="bkDetTabIn">
+									<div class="collBkNumArea" bookrecno="901698434"  booktype="1" id="holdingPreview_901698434">
+										<iframe id="seriesOrderIFrame_901698434" width="100%" frameborder="0"></iframe>
+									</div>
+								</div>
+								<div class="bkDetTabIn" style="display:none">
+									<div class="collBkNumLine" bookrecno="901698434" id="bookSimpleInfo_901698434">
+										<iframe id="bookSimpleDetailIFrame_901698434" width="100%" frameborder="0">
+										</iframe>
+									</div>
+								</div>
+
+								<div class="hyEbook" style="display: none;">
+									<div>
+									</div>
+								</div>
+
+								<div class="bkDetTabIn" style="display: none;">
+									<div id="dcSourceInlib_901698434">
+										馆内电子资源 ：<a href="">点击查看电子书</a>
+									</div>
+								</div>
+
+								<div class="bkDetTabIn" style="display:none">
+									<ul class="libBookStatu" id="ebook_901698434">
+										<li class='collBkNumLine' id="ebook_default_901698434"><span style="color:#666; font-weight:700">暂无电子资源</span></li>
+									</ul>
+								</div>
+								<div class="bkDetTabIn" style="padding:0px;border:0px;display:none"></div>
+
+
+
+							</div>
+							<div class="clearfix">
+								<div class="headIcon cloudArea" id="cloudArea_901698434">
+								</div>
+								<div class="clearfix flRight">
+									
+								</div>
+							</div>
+
+						</div>
+						<div class="moreOpArea">
+							<ul class="sendToUl  clearfix">
+			 	 				<li class="notBorderLf">
+			 	 					<a href="javascript:void(0);" class="themeOneColor openCita">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon01"></i>
+			 	 						<span>复制引文</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="javascript:void(0);" class="themeOneColor openUrl">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon02 sdLinkIcon"></i>
+			 	 						<span>永久链接</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="/opac3/book/901698434?view=simple&flag=printer" class="themeOneColor" target="_blank">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon03"></i>
+			 	 						<span>打印</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="javascript:$('#bookIdList').val('901698434');" class="themeOneColor openEmial">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon04"></i>
+			 	 						<span>Email</span>
+			 	 					</a>
+			 	 				</li>
+			 	 			</ul>
+
+			 	 			<div class="sendToLineOut">
+			 	 				<div class="sendToLineIn citaArea">
+				 	 				<div class="sendToLineCon">
+				 	 					<div class="sendToConIn">
+				 	 						莫提默·J. 艾德勒,查尔斯·范多伦.如何阅读一本书.商务印书馆,2014.			 	 				
+					 	 				</div>
+					 	 				<a href="javascript:copy2clipboard('莫提默·J. 艾德勒,查尔斯·范多伦.如何阅读一本书.商务印书馆,2014.',0);" class="copeLine"><i class="headIcon copeConIcon"></i>复制引文到剪贴板</a>
+					 	 				<p>在粘贴到您的文章之前，请再检查一遍引文格式的准确性。 </p>
+				 	 				</div>
+				 	 			 </div>
+				 	 			 <div class="sendToLineIn urlArea">
+				 	 			 	<div class="sendToLineCon ">
+				 	 					<div class="sendToConIn">
+				 	 						http://112.46.235.64:8082/opac3/book/901698434			 	 					
+					 	 				</div>
+					 	 				<a href="javascript:copy2clipboard('http://112.46.235.64:8082/opac3/book/901698434',1);" class="copeLine"><i class="headIcon copeConIcon"></i>复制引文到剪贴板</a>
+				 	 				</div>
+				 	 			 </div>
+				 	 			 <div class="sendToLineIn emailArea">
+				 	 			 	<div class="sendToLineCon" >
+				 	 					<div class="sendToEmCon">
+					 	 					<p>如何阅读一本书</p>
+					 	 					<p>莫提默·J. 艾德勒,查尔斯·范多伦.商务印书馆,2014.</p>
+					 	 					<a class="copeLine"></a>
+					 	 				</div>
+					 	 				<div class="sendInpArea">
+					 	 					<input type="text" name="email" placeholder="请输入邮件地址" class="headIcon emInp" />
+											<input type="hidden" name="subject" class="formGorpInp" placeholder="邮件主题:" />
+											<input type="hidden"  name="bookIdList" value="901698434" />
+											<input type="hidden" name="destination" value="email" />
+					 	 					<span><button type="button" class="headIcon emBtn thEmBtn"><i class="headIcon emSdIcon"></i>发送</button></span>
+					 	 				</div>
+				 	 				</div>
+				 	 			 </div>
+			 	 			</div>
+			 	 			
+						</div>
+					</li>
+				  
+				  	
+				  	
+				  	<li class="libBookLi " >
+						<div class="rankLiIn">
+							<div class="rankInCon clearfix">								
+								<div class="overHide ">
+									<span class="libBookDetNm mbLibBookNum">2</span>
+									<span class="ebkType">
+
+
+
+
+
+												图书
+
+
+									</span>
+									<a
+
+
+
+
+
+												href="javascript:bookDetail(901679244,2,1);"
+
+
+										class="libBookDetNm">
+										如何阅读一本书
+											
+									</a>								
+								</div>
+								<div  class="bkHeadCon">
+									<a
+
+
+
+
+
+												href="javascript:bookDetail(901679244,2,1);"
+
+
+												class="libBookImg libBookImgA">
+										<img class='iconic iconicImg' isbn="978-7-100-10618-4" bookrecno="901679244" width="84"
+		                              	src="/opac3/media/pro2018/images/book-default.jpg" alt="如何阅读一本书"
+		                              	onerror="this.src='/opac3/media/pro2018/images/book-default.jpg'" />
+									</a>
+									<div class="libBookDet">								
+										<div class="libBookDetIn">
+											<div class="overHide libBkDetIn">
+												<p class="flLeft ellipsisOne libBkDetCon">
+													<span class="libBkDetTit">
+													  
+														  
+															
+																责任者
+															
+													  
+													</span>
+													<a href="/opac3/search?searchWay=author&q=%E8%8E%AB%E6%8F%90%E9%BB%98%C2%B7J.+%E8%89%BE%E5%BE%B7%E5%8B%92%2C%E6%9F%A5%E5%B0%94%E6%96%AF%C2%B7%E8%8C%83%E5%A4%9A%E4%BC%A6" target="_blank" class="color33 layerTip" id="name-2">
+													莫提默·J. 艾德勒,查尔斯·范多伦
+													</a>
+												</p>
+												<p class="flLeft ellipsisOne libBkDetCon"> 
+													<span class="libBkDetTit">出版信息</span>
+													<a href="/opac3/search?searchWay=publisher&q=%E5%95%86%E5%8A%A1%E5%8D%B0%E4%B9%A6%E9%A6%86" target="_blank" class="color33 layerTip" id="name2"> 
+														商务印书馆
+													</a>
+													
+													,2014
+													
+												</p>
+											</div>
+											<div class="ellipsisOne easyCon">														
+												<span class="layerTip" id="book_summary_901679244" bookrecno="901679244" meta_isbn="978-7-100-10618-4"></span>
+												<p class="flLeft ellipsisOne libBkDetCon">
+													<span class="libBkDetTit">ISBN</span>
+													978-7-100-10618-4
+												</p>
+											</div>
+
+												<div class="bkDetTab">
+												<div class="bkDetTabHead">
+													<ul class="bkDetTabUl">
+														<li class="flLeft bkDetTabLi">
+															<i class="headIcon bkDetIcon bkDetIcon01"></i>
+															<a href="javascript:;" id="holdingPreviews_H_A_901679244">馆藏信息</a>
+															<i class="curLine"></i>
+														</li>
+														<li class="flLeft bkDetTabLi simpleDetail" bookrecno="901679244">
+															<i class="headIcon bkDetIcon bkDetIcon02"></i>
+															
+																
+																
+																	<a href="javascript:;">图书信息</a>
+																
+															
+															<i class="curLine"></i>
+														</li>
+														
+															
+														
+														
+														
+															<li class="flLeft bkDetTabLi simpleDetail hide" id="book_ebook_901679244">
+																<i class="headIcon bkDetIcon bkDetIcon03"></i>
+																<a href="#ebook_901679244"  name="汇雅电子书" checker="978-7-100-10618-4" recno="901679244" bookname="如何阅读一本书">电子图书</a>
+																<i class="curLine"></i>
+															</li>
+														
+
+														
+														<li class="flLeft bkDetTabLi accessories" meta_isbn="978-7-100-10618-4" bookrecno="901679244" style="display: none;">
+															<i class="headIcon bkDetIcon bkDetIcon04"></i>
+															<a href="javascript:;">随书附盘</a>
+														</li>
+														
+													</ul>
+												</div>												
+											</div>
+
+										</div>														
+									</div>
+								</div>
+
+
+									
+									
+									
+									
+									
+										<div class="opRightArea">
+											
+												
+												
+													
+												
+											
+											
+											<a href="javascript:void(0);" class="opRightIcon borIcon thEqIcon bookEqImg">
+												<div class="eqBigShow" style="display: none;">
+													<i class="eqBigUpSnIcon"></i>
+													<p>扫二维码，手机查看</p>
+													<img width="112px" code="http://112.46.235.64:8082/opac3/m/book/901679244"/>
+												</div>
+											</a>
+											
+											<a href="javascript:void(0);" onmousedown="getLibcodeSimpleInfoList(901679244,0)"
+												
+													
+													title="预借"
+												
+											   class="opRightIcon  borIcon thBorIcon bookLoan" style="display: none;"></a>
+											<a href="javascript:void(0);" onmousedown="getLibcodeSimpleInfoList(901679244,1)" title="预约"  class="opRightIcon  orderIcon thOrderIcon appointBook" style="display: none;"></a>
+											
+											<a href="javascript:addPrivateCollection('901679244');" id="likeid_901679244" class="opRightIcon thLikeIcon" title="收藏" ></a>
+											
+											<a href="javascript:void(0);" onmousedown="setGlobleBookrecnoValueAndCheckLogin(901679244)"
+													
+														
+														title="加入书单"
+													
+											   class="opRightIcon addliIcon thAddliIcon addToBkLi"></a>
+											<a href="javascript:bookDetail(901679244,2,1);" class="opRightIcon shareIcon thShareIcon" title="在新窗口中打开"></a>
+											<a href="javascript:void(0);" class="opRightIcon moreIcon thMoreIcon" title="更多"></a>
+											<a href="javascript:void(0);" class="opRightIcon delMoreIcon thDelmoreIcon"></a>
+											
+										</div>
+									
+								
+
+								
+							</div>
+
+							<div class="bkDetTabCon">
+								<div class="bkDetTabIn">
+									<div class="collBkNumArea" bookrecno="901679244"  booktype="1" id="holdingPreview_901679244">
+										<iframe id="seriesOrderIFrame_901679244" width="100%" frameborder="0"></iframe>
+									</div>
+								</div>
+								<div class="bkDetTabIn" style="display:none">
+									<div class="collBkNumLine" bookrecno="901679244" id="bookSimpleInfo_901679244">
+										<iframe id="bookSimpleDetailIFrame_901679244" width="100%" frameborder="0">
+										</iframe>
+									</div>
+								</div>
+
+								<div class="hyEbook" style="display: none;">
+									<div>
+									</div>
+								</div>
+
+								<div class="bkDetTabIn" style="display: none;">
+									<div id="dcSourceInlib_901679244">
+										馆内电子资源 ：<a href="">点击查看电子书</a>
+									</div>
+								</div>
+
+								<div class="bkDetTabIn" style="display:none">
+									<ul class="libBookStatu" id="ebook_901679244">
+										<li class='collBkNumLine' id="ebook_default_901679244"><span style="color:#666; font-weight:700">暂无电子资源</span></li>
+									</ul>
+								</div>
+								<div class="bkDetTabIn" style="padding:0px;border:0px;display:none"></div>
+
+
+
+							</div>
+							<div class="clearfix">
+								<div class="headIcon cloudArea" id="cloudArea_901679244">
+								</div>
+								<div class="clearfix flRight">
+									
+								</div>
+							</div>
+
+						</div>
+						<div class="moreOpArea">
+							<ul class="sendToUl  clearfix">
+			 	 				<li class="notBorderLf">
+			 	 					<a href="javascript:void(0);" class="themeOneColor openCita">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon01"></i>
+			 	 						<span>复制引文</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="javascript:void(0);" class="themeOneColor openUrl">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon02 sdLinkIcon"></i>
+			 	 						<span>永久链接</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="/opac3/book/901679244?view=simple&flag=printer" class="themeOneColor" target="_blank">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon03"></i>
+			 	 						<span>打印</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="javascript:$('#bookIdList').val('901679244');" class="themeOneColor openEmial">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon04"></i>
+			 	 						<span>Email</span>
+			 	 					</a>
+			 	 				</li>
+			 	 			</ul>
+
+			 	 			<div class="sendToLineOut">
+			 	 				<div class="sendToLineIn citaArea">
+				 	 				<div class="sendToLineCon">
+				 	 					<div class="sendToConIn">
+				 	 						莫提默·J. 艾德勒,查尔斯·范多伦.如何阅读一本书.商务印书馆,2014.			 	 				
+					 	 				</div>
+					 	 				<a href="javascript:copy2clipboard('莫提默·J. 艾德勒,查尔斯·范多伦.如何阅读一本书.商务印书馆,2014.',0);" class="copeLine"><i class="headIcon copeConIcon"></i>复制引文到剪贴板</a>
+					 	 				<p>在粘贴到您的文章之前，请再检查一遍引文格式的准确性。 </p>
+				 	 				</div>
+				 	 			 </div>
+				 	 			 <div class="sendToLineIn urlArea">
+				 	 			 	<div class="sendToLineCon ">
+				 	 					<div class="sendToConIn">
+				 	 						http://112.46.235.64:8082/opac3/book/901679244			 	 					
+					 	 				</div>
+					 	 				<a href="javascript:copy2clipboard('http://112.46.235.64:8082/opac3/book/901679244',1);" class="copeLine"><i class="headIcon copeConIcon"></i>复制引文到剪贴板</a>
+				 	 				</div>
+				 	 			 </div>
+				 	 			 <div class="sendToLineIn emailArea">
+				 	 			 	<div class="sendToLineCon" >
+				 	 					<div class="sendToEmCon">
+					 	 					<p>如何阅读一本书</p>
+					 	 					<p>莫提默·J. 艾德勒,查尔斯·范多伦.商务印书馆,2014.</p>
+					 	 					<a class="copeLine"></a>
+					 	 				</div>
+					 	 				<div class="sendInpArea">
+					 	 					<input type="text" name="email" placeholder="请输入邮件地址" class="headIcon emInp" />
+											<input type="hidden" name="subject" class="formGorpInp" placeholder="邮件主题:" />
+											<input type="hidden"  name="bookIdList" value="901679244" />
+											<input type="hidden" name="destination" value="email" />
+					 	 					<span><button type="button" class="headIcon emBtn thEmBtn"><i class="headIcon emSdIcon"></i>发送</button></span>
+					 	 				</div>
+				 	 				</div>
+				 	 			 </div>
+			 	 			</div>
+			 	 			
+						</div>
+					</li>
+				  
+				  	
+				  	
+				  	<li class="libBookLi " >
+						<div class="rankLiIn">
+							<div class="rankInCon clearfix">								
+								<div class="overHide ">
+									<span class="libBookDetNm mbLibBookNum">3</span>
+									<span class="ebkType">
+
+
+
+
+
+												图书
+
+
+									</span>
+									<a
+
+
+
+
+
+												href="javascript:bookDetail(901748034,3,1);"
+
+
+										class="libBookDetNm">
+										如何阅读一本书
+											
+									</a>								
+								</div>
+								<div  class="bkHeadCon">
+									<a
+
+
+
+
+
+												href="javascript:bookDetail(901748034,3,1);"
+
+
+												class="libBookImg libBookImgA">
+										<img class='iconic iconicImg' isbn="978-7-100-17114-4" bookrecno="901748034" width="84"
+		                              	src="/opac3/media/pro2018/images/book-default.jpg" alt="如何阅读一本书"
+		                              	onerror="this.src='/opac3/media/pro2018/images/book-default.jpg'" />
+									</a>
+									<div class="libBookDet">								
+										<div class="libBookDetIn">
+											<div class="overHide libBkDetIn">
+												<p class="flLeft ellipsisOne libBkDetCon">
+													<span class="libBkDetTit">
+													  
+														  
+															
+																责任者
+															
+													  
+													</span>
+													<a href="/opac3/search?searchWay=author&q=%E9%98%BF%E5%BE%B7%E5%8B%92%2C%E8%8C%83%E5%A4%9A%E4%BC%A6" target="_blank" class="color33 layerTip" id="name-3">
+													阿德勒,范多伦
+													</a>
+												</p>
+												<p class="flLeft ellipsisOne libBkDetCon"> 
+													<span class="libBkDetTit">出版信息</span>
+													<a href="/opac3/search?searchWay=publisher&q=%E5%95%86%E5%8A%A1%E5%8D%B0%E4%B9%A6%E9%A6%86" target="_blank" class="color33 layerTip" id="name3"> 
+														商务印书馆
+													</a>
+													
+													,2019
+													
+												</p>
+											</div>
+											<div class="ellipsisOne easyCon">														
+												<span class="layerTip" id="book_summary_901748034" bookrecno="901748034" meta_isbn="978-7-100-17114-4"></span>
+												<p class="flLeft ellipsisOne libBkDetCon">
+													<span class="libBkDetTit">ISBN</span>
+													978-7-100-17114-4
+												</p>
+											</div>
+
+												<div class="bkDetTab">
+												<div class="bkDetTabHead">
+													<ul class="bkDetTabUl">
+														<li class="flLeft bkDetTabLi">
+															<i class="headIcon bkDetIcon bkDetIcon01"></i>
+															<a href="javascript:;" id="holdingPreviews_H_A_901748034">馆藏信息</a>
+															<i class="curLine"></i>
+														</li>
+														<li class="flLeft bkDetTabLi simpleDetail" bookrecno="901748034">
+															<i class="headIcon bkDetIcon bkDetIcon02"></i>
+															
+																
+																
+																	<a href="javascript:;">图书信息</a>
+																
+															
+															<i class="curLine"></i>
+														</li>
+														
+															
+														
+														
+														
+															<li class="flLeft bkDetTabLi simpleDetail hide" id="book_ebook_901748034">
+																<i class="headIcon bkDetIcon bkDetIcon03"></i>
+																<a href="#ebook_901748034"  name="汇雅电子书" checker="978-7-100-17114-4" recno="901748034" bookname="如何阅读一本书">电子图书</a>
+																<i class="curLine"></i>
+															</li>
+														
+
+														
+														<li class="flLeft bkDetTabLi accessories" meta_isbn="978-7-100-17114-4" bookrecno="901748034" style="display: none;">
+															<i class="headIcon bkDetIcon bkDetIcon04"></i>
+															<a href="javascript:;">随书附盘</a>
+														</li>
+														
+													</ul>
+												</div>												
+											</div>
+
+										</div>														
+									</div>
+								</div>
+
+
+									
+									
+									
+									
+									
+										<div class="opRightArea">
+											
+												
+												
+													
+												
+											
+											
+											<a href="javascript:void(0);" class="opRightIcon borIcon thEqIcon bookEqImg">
+												<div class="eqBigShow" style="display: none;">
+													<i class="eqBigUpSnIcon"></i>
+													<p>扫二维码，手机查看</p>
+													<img width="112px" code="http://112.46.235.64:8082/opac3/m/book/901748034"/>
+												</div>
+											</a>
+											
+											<a href="javascript:void(0);" onmousedown="getLibcodeSimpleInfoList(901748034,0)"
+												
+													
+													title="预借"
+												
+											   class="opRightIcon  borIcon thBorIcon bookLoan" style="display: none;"></a>
+											<a href="javascript:void(0);" onmousedown="getLibcodeSimpleInfoList(901748034,1)" title="预约"  class="opRightIcon  orderIcon thOrderIcon appointBook" style="display: none;"></a>
+											
+											<a href="javascript:addPrivateCollection('901748034');" id="likeid_901748034" class="opRightIcon thLikeIcon" title="收藏" ></a>
+											
+											<a href="javascript:void(0);" onmousedown="setGlobleBookrecnoValueAndCheckLogin(901748034)"
+													
+														
+														title="加入书单"
+													
+											   class="opRightIcon addliIcon thAddliIcon addToBkLi"></a>
+											<a href="javascript:bookDetail(901748034,3,1);" class="opRightIcon shareIcon thShareIcon" title="在新窗口中打开"></a>
+											<a href="javascript:void(0);" class="opRightIcon moreIcon thMoreIcon" title="更多"></a>
+											<a href="javascript:void(0);" class="opRightIcon delMoreIcon thDelmoreIcon"></a>
+											
+										</div>
+									
+								
+
+								
+							</div>
+
+							<div class="bkDetTabCon">
+								<div class="bkDetTabIn">
+									<div class="collBkNumArea" bookrecno="901748034"  booktype="1" id="holdingPreview_901748034">
+										<iframe id="seriesOrderIFrame_901748034" width="100%" frameborder="0"></iframe>
+									</div>
+								</div>
+								<div class="bkDetTabIn" style="display:none">
+									<div class="collBkNumLine" bookrecno="901748034" id="bookSimpleInfo_901748034">
+										<iframe id="bookSimpleDetailIFrame_901748034" width="100%" frameborder="0">
+										</iframe>
+									</div>
+								</div>
+
+								<div class="hyEbook" style="display: none;">
+									<div>
+									</div>
+								</div>
+
+								<div class="bkDetTabIn" style="display: none;">
+									<div id="dcSourceInlib_901748034">
+										馆内电子资源 ：<a href="">点击查看电子书</a>
+									</div>
+								</div>
+
+								<div class="bkDetTabIn" style="display:none">
+									<ul class="libBookStatu" id="ebook_901748034">
+										<li class='collBkNumLine' id="ebook_default_901748034"><span style="color:#666; font-weight:700">暂无电子资源</span></li>
+									</ul>
+								</div>
+								<div class="bkDetTabIn" style="padding:0px;border:0px;display:none"></div>
+
+
+
+							</div>
+							<div class="clearfix">
+								<div class="headIcon cloudArea" id="cloudArea_901748034">
+								</div>
+								<div class="clearfix flRight">
+									
+								</div>
+							</div>
+
+						</div>
+						<div class="moreOpArea">
+							<ul class="sendToUl  clearfix">
+			 	 				<li class="notBorderLf">
+			 	 					<a href="javascript:void(0);" class="themeOneColor openCita">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon01"></i>
+			 	 						<span>复制引文</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="javascript:void(0);" class="themeOneColor openUrl">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon02 sdLinkIcon"></i>
+			 	 						<span>永久链接</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="/opac3/book/901748034?view=simple&flag=printer" class="themeOneColor" target="_blank">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon03"></i>
+			 	 						<span>打印</span>
+			 	 					</a>
+			 	 				</li>
+			 	 				<li>
+			 	 					<a href="javascript:$('#bookIdList').val('901748034');" class="themeOneColor openEmial">
+			 	 						<i class="sendToIcon headIcon thBkSdIcon04"></i>
+			 	 						<span>Email</span>
+			 	 					</a>
+			 	 				</li>
+			 	 			</ul>
+
+			 	 			<div class="sendToLineOut">
+			 	 				<div class="sendToLineIn citaArea">
+				 	 				<div class="sendToLineCon">
+				 	 					<div class="sendToConIn">
+				 	 						阿德勒,范多伦.如何阅读一本书.商务印书馆,2019.			 	 				
+					 	 				</div>
+					 	 				<a href="javascript:copy2clipboard('阿德勒,范多伦.如何阅读一本书.商务印书馆,2019.',0);" class="copeLine"><i class="headIcon copeConIcon"></i>复制引文到剪贴板</a>
+					 	 				<p>在粘贴到您的文章之前，请再检查一遍引文格式的准确性。 </p>
+				 	 				</div>
+				 	 			 </div>
+				 	 			 <div class="sendToLineIn urlArea">
+				 	 			 	<div class="sendToLineCon ">
+				 	 					<div class="sendToConIn">
+				 	 						http://112.46.235.64:8082/opac3/book/901748034			 	 					
+					 	 				</div>
+					 	 				<a href="javascript:copy2clipboard('http://112.46.235.64:8082/opac3/book/901748034',1);" class="copeLine"><i class="headIcon copeConIcon"></i>复制引文到剪贴板</a>
+				 	 				</div>
+				 	 			 </div>
+				 	 			 <div class="sendToLineIn emailArea">
+				 	 			 	<div class="sendToLineCon" >
+				 	 					<div class="sendToEmCon">
+					 	 					<p>如何阅读一本书</p>
+					 	 					<p>阿德勒,范多伦.商务印书馆,2019.</p>
+					 	 					<a class="copeLine"></a>
+					 	 				</div>
+					 	 				<div class="sendInpArea">
+					 	 					<input type="text" name="email" placeholder="请输入邮件地址" class="headIcon emInp" />
+											<input type="hidden" name="subject" class="formGorpInp" placeholder="邮件主题:" />
+											<input type="hidden"  name="bookIdList" value="901748034" />
+											<input type="hidden" name="destination" value="email" />
+					 	 					<span><button type="button" class="headIcon emBtn thEmBtn"><i class="headIcon emSdIcon"></i>发送</button></span>
+					 	 				</div>
+				 	 				</div>
+				 	 			 </div>
+			 	 			</div>
+			 	 			
+						</div>
+					</li>
+				  
+				</ul>
+				<input type="text" vlaue="" id="clipboard" style="display: none" />
+			</div>
+	<div class="box">
+		<div div id="pagination3" class="page">
+
+		</div>
+	</div>
+
+		<div id="ebookList" class="bkRankArea" style="display: none;">
+			<ul class="libBookUl">
+			</ul>
+		</div>
+			
+	</div>
+</div>
+
+
+	
+
+
+
+
+
+
+
+
+
+<!-- 预借弹出框 -->
+<div class="loanPopArea" >
+	<div class="popMask"></div>
+	<div class="popIn appPopIn">
+		<a href="javascript:void(0)" class="popDel"></a>
+		<div class="appInCon">
+			<div class="mesTopLine clearfix notBord">
+				<p class="mesTit thMesTit flLeft"><span>
+					
+						
+						预借图书</span>
+					
+				</p>
+			</div>
+			<div class="fromGrop">
+				<span class="formGorpTit">选择分馆：</span>
+				<select name="prelendLibcode" id="prelendLibcode" class="formGorpInp formGorpSel">
+					
+						
+						
+							
+						
+					
+				</select>
+				<i class="formPoi">*</i>
+			</div>
+			<div class="formConfir">
+				<input id="loanBookBut" type="button" value="确认" onmousedown="changeText(this,'处理中...')" class="addPrelendBookshelf formConfirBtn  thForConfirBtn" onclick="prelendBook()"/>
+			</div>
+		</div>
+	</div>
+</div>
+
+<!-- 提示信息 -->
+<div class="tips" style="display: none;">
+	<p>加入成功</p>
+</div>
+<!-- 预借成功弹出框 -->
+<div class="loanSucPopArea" id="prelendTab">
+    <div class="popMask"></div>
+    <div class="popIn loanSucPopIn" style="top: 40%;">
+        <a href="javascript:void(0)" class="popDel" onclick="javascript:$('#prelendTab').hide();"></a>
+        <div class="loanSucPInCon">
+            <h5 class="loanSucFont resultTips" ></h5>
+            <p class="loanSucHint success_tips"></p>
+            <a href="javascript:void(0)" class="loanSucBtn thLoanSucBtn" onclick="javascript:$('#prelendTab').hide();">好的</a>
+            <a href="/opac3/prelend/CanPrelendListByBookrecno" class="loanSucBtn thLoanSucBtn">进入借书框</a>
+        </div>
+    </div>
+</div>
+<!-- 预借成功弹出框 -->
+<div class="loanSucPopArea">
+	<div class="popMask"></div>
+	<div class="popIn loanSucPopIn">
+		<a href="javascript:void(0)" class="popDel"></a>
+		<div class="loanSucPInCon">
+			
+				
+				<h5 class="loanSucFont">预借成功!</h5></span>
+			
+			<p class="loanSucHint">您可到个人图书馆查看或取消预约</p>
+			<a href="javascript:void(0)" class="loanSucBtn thLoanSucBtn">好的</a>
+		</div>
+	</div>
+</div>
+<!-- 加入至书单出框 -->
+<div class="addBkLiPopArea">
+	<div class="popMask"></div>
+	<div class="popIn addBkLiPopIn">
+		<a href="javascript:void(0)" class="popDel"></a>
+		<div class="addBkLiPInCon">
+			<div class="addInpArea">
+				<input type="text" name="new_listName" id="new_listName" class="addInpIn"
+                        
+                            
+                            placeholder="名称"
+                        
+                />
+				<input type="button" class="addNewBtn" value="新建" onclick="newBookList()" disabled="disabled" /><br>
+				<input type="radio" name="new_privacy" value="1" />公开
+				<input type="radio" name="new_privacy" value="0" checked="checked"/>私有
+			</div>
+			<a href="javascript:void(0)" class="addOtherCon">
+				
+					
+					或从我的书单选择一个
+				
+			</a>
+			<ul class="myBkUl">
+				
+			</ul>
+			<div class="btnOut">
+				<a href="javascript:saveItemsToBookList()" class="loanSucBtn thLoanSucBtn">加入</a>
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<!-- 预约弹出框 -->
+<div class="appPopArea">
+	<div class="popMask"></div>
+	<div class="popIn appPopIn">
+		<a href="javascript:void(0)" class="popDel"></a>
+		<div class="appInCon">
+			<div class="mesTopLine clearfix notBord">
+				<p class="mesTit thMesTit flLeft"><span>预约图书</span></p>
+			</div>
+			<form action="">
+				<div class="fromGrop">
+					<span class="formGorpTit">选择分馆：</span>
+					<select name="reservationLibcode" id="reservationLibcode" class="formGorpInp formGorpSel">
+
+					</select>
+					<i class="formPoi">*</i>
+				</div>
+				<div class="formConfir">
+					<input id="reservationBut" type="button" value="确认" class="formConfirBtn  thForConfirBtn" onclick="reservationBook()" />
+				</div>
+			</form>
+		</div>
+	</div>
+</div>
+<!-- 预约成功弹出框 -->
+<div class="appSucPopArea">
+	<div class="popMask"></div>
+	<div class="popIn appSucPopIn">
+		<a href="javascript:void(0)" class="popDel"></a>
+		<div class="appSucPInCon">
+			<h5 class="loanSucFont">预约成功!</h5>
+			<p class="loanSucHint" style="padding: 5px 25px;line-height: 30px;margin-bottom: 30px;">
+				您可在“我的图书馆→我的预约”菜单里查看预约记录
+			</p>
+			<a href="javascript:void(0)" class="loanSucBtn thLoanSucBtn">好的</a>
+			<a href="javascript:void(0)" class="checkAppBtn thCheckAppBtn">查看预约</a>
+		</div>
+	</div>
+</div>
+
+
+<!-- 确认跳到预约弹出框 -->
+<div class="toReservationPopArea" style="display: none;">
+	<div class="popMask"></div>
+	<div class="popIn appSucPopIn">
+		<a href="javascript:void(0)" class="popDel"></a>
+		<div class="appSucPInCon">
+			<h5 class="loanSucFont"></h5>
+			<p class="loanSucHint" style="padding: 5px 25px;line-height: 30px;margin-bottom: 35px;">
+				没有可借图书，您可对该书进行预约，等书还回后会按照预约顺序分配给您
+			</p>
+			<a href="javascript:void(0);" class="loanSucBtn thLoanSucBtn">确定预约</a>
+		</div>
+	</div>
+</div>
+
+<script type="text/javascript">
+
+	
+
+$(".bookreservation").click(function(){
+	var check = checkLogin();
+	if (!check) {
+		return;
+	}
+	$(".toReservationPopArea").show();
+	var bookrecno = $(this).attr("bookrecno");
+	$(".toReservationPopArea .loanSucBtn").one("click", function(){
+		$(".toReservationPopArea").hide();
+		getLibcodeSimpleInfoList(bookrecno, 1);
+	});
+	var popupH = $(".toReservationPopArea").find('.popIn').height();
+	$(".toReservationPopArea").find('.popIn').css('margin-top', -popupH / 2);
+	$('html,body').addClass('overHide');
+});
+
+$('.toReservationPopArea .popDel').click(function(){
+	$(".toReservationPopArea").hide();
+	$('html,body').removeClass('overHide');
+});
+
+$('.appSucPopArea .popDel').click(function(){
+	$(".appSucPopArea").hide();
+	$('html,body').removeClass('overHide');
+});
+
+$(".appSucPopArea .loanSucBtn").click(function(){
+	$(".appSucPopArea").hide();
+	$('html,body').removeClass('overHide');
+});
+
+$(".appSucPopArea .checkAppBtn").click(function(){
+	window.location.href = "/opac3/reservation/currentReservationList";
+});
+
+var GLOBAL_BASE_API_URL = "http://api.interlib.com.cn:6699/interes";
+
+function getCurlibcodes(){
+	var curLibcodes = "";
+	var navPageBaseURL = "searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND";
+	var index = navPageBaseURL.indexOf("f_curlibcode");
+	var lastindex = -1;
+	while(index != -1){
+		navPageBaseURL = navPageBaseURL.substring(index+13);
+		lastindex = navPageBaseURL.indexOf("&");
+		if(lastindex == -1){
+			curLibcodes = navPageBaseURL + "," + curLibcodes;
+		}else{
+			curLibcodes = navPageBaseURL.substring(0,lastindex) + "," + curLibcodes;
+		}
+		index = navPageBaseURL.indexOf("f_curlibcode");
+	}
+	if(curLibcodes.endsWith(",")){
+		curLibcodes = curLibcodes.substring(0,curLibcodes.length-1);
+	}
+	return curLibcodes;
+}
+
+function trimToEmpty(str) {
+	if(str == undefined || str == null) {
+		return "";
+	}
+	return $.trim(str);
+}
+
+$(function() {
+	var facetFields = new Array("curlibcodeFacet", "subjectFacet", "authorFacet",
+		"pubdateFacet", "booktypeFacet", "langFacet", "class1Facet");
+	for(index in facetFields) {
+		var facetField = facetFields[index];
+		var isHide = $("#" + facetField + "UL .hide").length;
+		if(isHide > 0) {
+			$("#" + facetField + "LI").show();
+		}
+	}
+});
+function moreOrLessFacet(facetField) {
+	var aObj = $("#" + facetField + "A");
+	var facetUL = $("#" + facetField + "UL .hide");
+	if(facetUL.length > 0) {
+		facetUL.removeClass("hide").addClass("show");
+		aObj.html("显示较少..");
+	} else {
+		$("#" + facetField + "UL .show").removeClass("show").addClass("hide");
+		aObj.html("显示较多..");
+	}
+}
+function getHoldingPreviews(bookrecnos) {
+	var curLibcodes = getCurlibcodes();
+	$.ajax({
+		type: "GET",
+		url: "/opac3/book/holdingPreviews",
+		data: {
+			"bookrecnos": bookrecnos.join(","),
+			"curLibcodes":curLibcodes,
+			"return_fmt": "json"
+		},
+		dataType: "json",
+		success: function(data){
+			insertHoldingPreviewsNew(bookrecnos,data);
+		}
+	});
+}
+
+function insertHoldingPreviews(bookrecnos,data){
+	for(var i in bookrecnos) {
+		var bookrecno = bookrecnos[i];
+		var records = data.previews[bookrecno];
+		var tableStr = "";
+		var count = 0;
+
+		for(var j in records){
+			var callnos = records[j].callno;
+			var curlib = records[j].curlib;
+			var curlibName = records[j].curlibName;
+			var curlocal = records[j].curlocal;
+			var curlocalName = records[j].curlocalName;
+			var copycount = records[j].copycount;
+			var loanableCount = records[j].loanableCount;
+            var callno = "";
+            if(callnos){
+                var callnoArray = callnos.split(",");
+                for(var index in callnoArray){
+                    if(index<=2) {
+                        if (callno) {
+                            callno += ",";
+                        }
+                        callno += callnoArray[index];
+                    }else if(index==3){
+                        callno+="..."
+                    }
+                }
+            }
+
+            count += 1;
+            if(count<=3) {
+                var target = "/opac3/book/"+bookrecno+"?curlibcode="+curlocal+"#colleMes";
+                tableStr += "<p class=\"collBkNumLine\">" +
+                    "<a href=\""+target+"\" target='_blank'>" +
+                    "<i class=\"libMesIcon\"></i><span" + (loanableCount > 0 ? " class=\"color33\" " : '') + ">" + loanableCount + "个在馆</span>" +
+                    "<span>" + copycount + "个复本</span>" +
+                    "<span>" + curlocalName + "（" + curlibName + "）</span>" +
+                    (callno && callno != "" ? "<span class=\"verNm\">（" + callno + "）</span>" : "") +
+                    "</a>" +
+                    "</p>";
+            }
+		}
+
+		if(count == 0) {
+			var isbn = $("#book_summary_" + bookrecno).attr("meta_isbn").replace(/-/g,'');
+			var ysg_glc = "";
+			var kaicaiUrl = "https://book.interlib.cn/tcshop/"+ysg_glc+"/product/search?key=" + isbn;
+			tableStr1 = "<p class='libBookStatu color66'><i class='libNotBkImg'></i>暂无可用馆藏，为您推荐一下资源</p>";
+			tableStr2 = "<div class='headIcon cloudArea'><a href='"+kaicaiUrl+"' target='_blank' class='cloudBtn'><i class='cloudPokt'></i>挑选新书&nbsp;送书上门<i class='cloPoint'></i></a></div>";
+			var doubanUrl = "https://book.douban.com/subject_search?cat=1001&search_text=" + isbn;
+			var dangdangUrl = "http://search.dangdang.com/?act=input&category_path=01.00.00.00.00.00&key=" + isbn;
+			var jingdongUrl = "https://search.jd.com/Search?enc=utf-8&keyword=" + isbn;
+			var yamaxunUrl = "http://www.amazon.cn/gp/search?index=books&keywords=" + isbn;
+			tableStr3 ="<div class='gcOtherRes	flRight '>"+
+							"<a href='"+doubanUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/douban.png' > </a>"+
+							"<a href='"+dangdangUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/dangdang.png'> </a>"+
+							"<a href='"+jingdongUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/jingdong.png'> </a>"+
+							"<a href='"+yamaxunUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/yamaxun.png'></a>"+
+						"</div>";
+			tableStr = tableStr1 + tableStr2 + tableStr3
+		}else if(count>3){
+		    var target = "/opac3/book/"+bookrecno+"#colleMes";
+            tableStr += "<a href=\""+target+"\" target='_blank' class=\"color33 checkOtherLibMes\">查看其它馆藏&gt;</a>";
+		}
+
+		$("#holdingPreview_" + bookrecno).html(tableStr);
+	}
+}
+
+//added by LongT 2019-07-12
+function insertHoldingPreviewsNew(bookrecnos,data){
+	var showLocal = $.cookie("showLocal");//用于限定显示的馆藏地点
+	if(showLocal==null || showLocal == ""){
+		showLocal = "";
+	}
+    var curLibcodes = getCurlibcodes();//用于限定显示的分馆
+	var limitFlag = "0";
+	var glc = "P2SXS029038";
+
+	var isbn_bookrecno = new Array();
+    var bookrecnoArr = new Array();
+	for(var i in bookrecnos) {
+		var totalCopeyCount = 0;
+		var totalLoanableCount =0;
+		var bookrecno = bookrecnos[i];
+		var tableHeader = new Array("索书号");
+		tableHeader.push("条码号");
+		tableHeader.push("所在分馆");
+		tableHeader.push("馆藏地点");
+		//先去掉架位号的展示
+		/* tableHeader.push("书架号"); */
+		
+			
+			
+			
+			
+				tableHeader.push("在馆数/馆藏总数");
+			
+		
+		var tableContent = new Array();
+		var curlibces = new Array();
+		var records = data.previews[bookrecno];
+		for(var j in records){
+			var barcode = records[j].barcode;
+			var shelfno = records[j].shelfno;
+			if(shelfno == null) {
+				shelfno = "";
+			}
+			var callnos = records[j].callno;
+			var curlib = records[j].curlib;
+			var curlibName = records[j].curlibName;
+			var curlocal = records[j].curlocal;
+			var curlocalName = records[j].curlocalName;
+			var stateName = records[j].stateName;
+			var pbctypeName = records[j].pbctypeName;
+			var copycount = records[j].copycount;
+			var loanableCount = records[j].loanableCount;
+			var exist = false;
+			if(showLocal != null){
+				var locals = showLocal.split(",");
+				for(var i=0;i<locals.length;i++){
+					if(curlocal == locals[i]){
+						exist = true;
+					}
+				}
+			}
+			if(showLocal!=null&&showLocal!=""&&!exist&&curLibcodes==""){
+				continue;
+			}
+			if(limitFlag=="1"&&curLibcodes&&(curLibcodes+",").indexOf(curlib+",")==-1){
+                //只累计馆藏总数
+			    totalCopeyCount+=copycount;
+                continue;
+            }
+            var callno = "";
+            if(callnos){
+                var callnoArray = callnos.split(",");
+                for(var index in callnoArray){
+                    if(index<=2) {
+                        if (callno) {
+                            callno += ",";
+                        }
+                        callno += callnoArray[index];
+                    }else if(index==3){
+                        callno+="..."
+                    }
+                }
+            }
+			totalCopeyCount+=copycount;
+			totalLoanableCount+=loanableCount;
+			
+			
+			
+			
+			var dataArray = new Array(curlib, callno, barcode,  curlibName, curlocalName, /* shelfno, */ loanableCount+"/"+copycount);
+			
+			
+			tableContent.push(dataArray);
+		}
+		var tableStr = "";
+        
+        
+        
+        var holding_available = "在馆";
+        
+        
+        var tabStr = holding_available+"(<i class='searchLibData'>"+totalLoanableCount
+            +"</i>)/馆藏(<i class='searchLibData'>"+totalCopeyCount+"</i>)";
+        if(glc=="P2SC028016"){
+			tabStr = "在馆数"+"(<i class='searchLibData'>"+totalLoanableCount
+					+"</i>)/馆藏量(<i class='searchLibData'>"+totalCopeyCount+"</i>)";
+		}
+		var flag = true;
+		var divObj = $("div[bookrecno='"+bookrecno+"']");
+		if(divObj&&divObj.attr("booktype")=="2"){
+			getIesOrderInfo(bookrecno);
+			$("#holdingPreviews_H_A_"+bookrecno).html("现刊信息");
+			flag = false;
+		}
+		if(flag && (records==undefined||records==null||totalCopeyCount == 0)) {
+            var isbn = $("#book_summary_" + bookrecno).attr("meta_isbn").replace(/-/g,'');
+			tableStr1 = "<p class='libBookStatu color66'><i class='libNotBkImg'></i>暂无可用馆藏，为您推荐一下资源</p>";
+			var doubanUrl = "https://book.douban.com/subject_search?cat=1001&search_text=" + isbn;
+			var dangdangUrl = "http://search.dangdang.com/?act=input&category_path=01.00.00.00.00.00&key=" + isbn;
+			var jingdongUrl = "https://search.jd.com/Search?enc=utf-8&keyword=" + isbn;
+			var yamaxunUrl = "http://www.amazon.cn/gp/search?index=books&keywords=" + isbn;
+			tableStr3 ="<div class='gcOtherRes	flRight '>"+
+							"<a href='"+doubanUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/douban.png' > </a>"+
+							"<a href='"+dangdangUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/dangdang.png'> </a>"+
+							"<a href='"+jingdongUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/jingdong.png'> </a>"+
+							"<a href='"+yamaxunUrl+"' target='_blank' class='resLinkImg'><img src='media/pro2018/images/yamaxun.png'></a>"+
+						"</div>";
+			tableStr = tableStr1 + tableStr3;
+            //---开采 新书
+            if (!isEmpty(isbn)) {
+                var obj = {"isbn": isbn, "bookrecno": bookrecno}
+                isbn_bookrecno.push(obj);
+            }
+		} else {
+			if ("EGD0755036" == glc) {
+				if (totalLoanableCount > 0) {
+					$("#holdingPreview_" + bookrecno).parents(".rankLiIn").find("#bookLoan").show();
+				} else {
+					$("#holdingPreview_" + bookrecno).parents(".rankLiIn").find("#bookreservation").show();
+				}
+			}
+			tableStr = createTable("libBkTab", tableHeader, tableContent);
+			//是否多于10条
+			if(undefined!=records && records!=null && records.length>10){
+				tableStr += "<a href='book/"+bookrecno
+				+"?globalSearchWay='>查看更多</a>";
+			}
+            //---开采 网借
+            bookrecnoArr.push(bookrecno);
+		}
+		$("#holdingPreviews_H_A_"+bookrecno).html(tabStr);
+		$("#holdingPreview_" + bookrecno).html(tableStr);
+		if(glc=="MZJ0571117"){ //云谷学校默认显示馆藏
+			$("#holdingPreview_" + bookrecno).parent().show();
+		}
+	}
+	
+    
+
+}
+function getUrlParameter(url, name){
+	var r = null;
+	var urls = url.split("&");
+	var res = '';
+	for (var urlNum in urls) {
+
+		if(urls[urlNum].indexOf('_') == -1){
+			var reg = new RegExp(name + "=([^"+name+"]*)");
+			r = urls[urlNum].match(reg);
+			if (r != null && r != undefined) {
+				res += r[1] + ",";
+			}
+		}
+	}
+	if(res != null) return res; return null;
+};
+function createTable(className, tableHeader, tableContent) {
+	var url = window.location.href;
+	var name = "curlibcode";
+	var urlLibcode = getUrlParameter(url,name);
+	var urlLibcodes = urlLibcode.split(',');
+
+	var s = '<table border="1" cellspacing="0" cellpadding="0" class="'+className+'"><tr>';
+	for(index in tableHeader) {
+		s += "<th>" + tableHeader[index] + "</th>";
+	}
+	s += "</tr>";
+	for(index in tableContent) {
+		s += "<tr>";
+		var recordData = tableContent[index];
+		var glc="P2SXS029038";
+		if (urlLibcode == "" || urlLibcode == null){
+			for(j in recordData) {
+				if (j > 0) {
+					var style = "";
+					if (glc == "P3JS0519059" && j == 0) {
+						style = " style='color:red;'";
+					}
+					s += "<td" + style + ">" + recordData[j] + "</td>";
+				}
+			}
+		} else {
+			for(j in recordData) {
+				if (j == 0) {
+					var curlib = recordData[j];
+				}
+				for (var libIdx=0;libIdx<urlLibcodes.length;libIdx++) {
+					if(curlib== urlLibcodes[libIdx]){
+						if (j > 0) {
+							var style = "";
+							if (glc == "P3JS0519059" && j == 0) {
+								style = " style='color:red;'";
+							}
+							s += "<td" + style + ">" + recordData[j] + "</td>";
+						}
+					}
+				}
+			}
+		}
+		s += "</tr>";
+	}
+	s += "</table>";
+	return s;
+}
+
+
+$(function(){
+	var bookrecnos = getBookrecnos();
+	getHoldingPreviews(bookrecnos);
+
+	//获取图书概要、著者信息等内容
+	// getBookAllMeta(bookrecnos);
+
+    //关于预约与预借显示
+    showBookLoanAndBookAppoint(bookrecnos);
+});
+//预约与预借显示处理		begin
+function showBookLoanAndBookAppoint(bookrecnos) {
+    var tranBookrecnos = "";
+    for (var i = 0;i <bookrecnos.length;i++ ){
+        tranBookrecnos = tranBookrecnos + bookrecnos[i] + ",";
+    }
+    var url = "/opac3/api/holding/getHoldingsBybookrecnos";
+    var requestData = {"bookrecnos":tranBookrecnos};
+    $.post(url, requestData, function (data) {
+        var isChangeCurLoacl = "0";
+        var localMap = {};
+        if (isChangeCurLoacl!=1){
+            localMap = data.localMap;
+        }
+        var libcodeDeferDateMap = data.libcodeDeferDateMap;
+
+        var holdingListMap = data.holdingListMap;
+        if (holdingListMap) {
+			for(var bookrecno in holdingListMap){
+				var holdings = holdingListMap[bookrecno];
+				var holdMap = new Array();
+				jQuery.each(holdings,function(n,holding){
+					var map={lib:holding.curlib,local:holding.curlocal,
+						holdings:new Array(holding)};
+					var flag = true;
+					for(var i in holdMap){
+						if(holdMap[i].lib==holding.curlib&&holdMap[i].local==holding.curlocal){
+							holdMap[i].holdings.push(holding);
+							flag = false;
+							break;
+						}
+					}
+					if(flag){
+						holdMap.push(map);
+					}
+				});
+				for(var i in holdMap){
+					if(i=='array_contains') continue;
+
+					var holdings = holdMap[i].holdings;
+					var curlib = holdMap[i].lib;
+
+					var outOfLibNum = 0;
+					var inLibNum = 0;
+					for(var j in holdings){
+						var status = holdings[j].state;
+						var indate = holdings[j].indate;
+
+						//状态
+						var curlibDeferDays = libcodeDeferDateMap[curlib];
+						if(status == 2 && curlibDeferDays > 0) {
+							var currentDate = new Date();
+							var todayDate = new Date(currentDate.getFullYear(),
+								currentDate.getMonth(), currentDate.getDate());
+							var dateStr = indate.split("-");
+							var bookDate = new Date(dateStr[0],dateStr[1],dateStr[2]).getTime();
+							var intervalDays = new Number((todayDate-bookDate) / (24*60*60*1000));
+							var deferDays = curlibDeferDays + 1;
+							if(intervalDays < deferDays) {
+								//还没过上架天数，则改变显示状态为在编状态
+								status = 1;
+							}
+						}
+						//借出时显示应还时间
+						if(status==3){
+							outOfLibNum++;
+						}else if(status==2){
+							inLibNum++;
+						}
+						if(outOfLibNum > 0){
+							//$(".appointBook").show(); //只要存在[借出]的书籍则显示预约按钮
+							$("#holdingPreview_" + bookrecno).parents(".rankLiIn").find(".appointBook").show();
+						}
+						if(inLibNum > 0){
+							//$(".bookLoan").show(); 	 //只要存在[在馆]的书籍则显示预借按钮
+							$("#holdingPreview_" + bookrecno).parents(".rankLiIn").find(".bookLoan").show();
+						}
+					}
+				}
+			}
+        }
+    });
+}
+//预约与预借显示处理		end
+
+	
+	
+	var aObjects = $("a[checker]");
+	var checkers = "";
+	var comid = "";
+	var enc = "";
+	
+	comid = '4772';
+	
+	
+	enc = 'C16FDED2E959378D7B67C8DC46C348F6';
+	
+	aObjects.each(function(index){
+		var checker = $(this).attr("checker");
+		var bookrecno = $(this).attr("recno");
+
+		$(this).attr("checker", checker);
+		$(this).attr("href","#ebook_"+bookrecno)
+		$(this).parent().attr("id","book_ebookhy_"+bookrecno);
+		if(checker!=""){
+			if(checkers==""){
+				checkers = checker;
+			}else{
+				checkers += "," + checker;
+			}
+			checker = checker.replace(/\./g,"");
+			checker = checker.replace(/-/g,"");
+			var isbn = checker;
+
+            $(this).parents('li').find('.hyEbook div').attr("id","book_ebookt_"+bookrecno);
+            var bookName = $(this).attr("bookname");
+			$.ajax({
+				type: "GET",
+				url: "/opac3/book/opac2ebook?comid="+comid+"&enc="+enc+"&isbn="+isbn+"&bookname="+bookName,
+				dataType: "json",
+				success: function (json) {
+					if(json.str==0){
+						var bookurl = json.bookurl;
+						console.log(bookurl);
+						var first = "<span class='libBkDetTit'>可点击访问汇雅电子书</span>";
+						$("#book_ebookt_" + bookrecno).append(first);
+						var second="："
+						$("#book_ebookt_" + bookrecno).append(second);
+						var	third = "<a style='color: #3366cc;border-bottom: 1px solid #3366cc;' href='"+bookurl+"' target='_blank'>"+bookName+"</a><br/>";
+						$("#book_ebookt_" + bookrecno).append(third);
+						$("#book_ebookhy_" + bookrecno).show();
+					}/*else {
+						var bookEbook = document.getElementById("book_ebookhy_" +bookrecno);
+						bookEbook.style.display="none";
+						$(this).parents('li').find('.hyEbook').remove();
+						return;
+					}*/
+				}
+			});
+		}/*else{
+			var bookEbook = document.getElementById("book_ebookhy_" +bookrecno);
+			bookEbook.style.display="none";
+			$(this).parents('li').find('.hyEbook').remove();
+		}*/
+	});
+	
+
+
+	
+	
+
+
+
+
+
+$(function(){
+	//做一个高亮效果
+	function trim(s){
+	    //去除左右空格
+	    return s.replace(/(^\s*)|(\s*$)/g, "");
+	}
+	//检索词
+	var searchValue=trim($(".highLight-text").text());
+	var searchValueUpper=searchValue.toUpperCase();
+	if(searchValue&&searchValue!="*:*"){
+		var reg = new RegExp(searchValue,"gi");
+		$(".title-link").each(function(){
+			
+		      var innerText=trim($(this).html());
+		      
+		      //处理大小写问题
+		      var innerTextUpper=innerText.toUpperCase();
+		      var _index=innerTextUpper.indexOf(searchValueUpper);
+		      innerTextVal=innerText.substr(_index,searchValueUpper.length);
+		      if(reg.test(innerText)){
+		        console.log(innerTextVal);
+		      	//匹配成功
+		      	var newinner = innerText.replace(reg,'<span class="highlight" style="color:red">'+innerTextVal+'</span>')//处理HTML字符串，为目标文本加上样式，即替换对应的HTML结构
+        		$(this).html(newinner);//把处理后的HTML字符串写回到容器中
+		      }
+		   
+		})
+	
+	}
+
+	$(".resFilterBtn").click(function(){
+		$(".brConLeft").show();
+		$(".brConLeftMask").show();
+	});
+	$(".brConLeftMask").click(function(){
+		$(this).hide();
+		$(".brConLeft").hide();
+	});
+
+})
+
+$(".bkDetTabHead ul li.simpleDetail").click(function(){
+	var $bookrecno =  $(this).attr("bookrecno");
+	getBookSimpleInfo($bookrecno);
+})
+
+function getBookSimpleInfo(bookrecno){
+	var url = $("#bookSimpleDetailIFrame_" + bookrecno).attr("src");
+	if(!url) {
+		url = "/opac3/book/"+bookrecno+""+"?view=simple";
+		$("#bookSimpleDetailIFrame_" + bookrecno).attr("src", url);
+	}
+}
+
+function getIesOrderInfo(bookrecno){
+	var url = $("#seriesOrderIFrame_" + bookrecno).attr("src");
+	if(!url) {
+		url = "/opac3/series/currentissue/"+bookrecno+""+"?view=simple";
+		$("#seriesOrderIFrame_" + bookrecno).attr("src", url);
+	}
+}
+
+
+function getBookAllMeta(bookrecnos){
+	for (var i=0;i<bookrecnos.length;i++){
+		var bookrecno = bookrecnos[i];
+		showBookAllMetaInfo(bookrecno);
+	}
+}
+
+//图书目录信息,图书试读信息,图书内容简介,图书著者简介
+function showBookAllMetaInfo(bookrecno) {
+	if($.cookie("configouternet")!="false"){
+		getBookAllMetaInfo(bookrecno);
+	}
+}
+function getBookAllMetaInfo(bookrecno) {
+	var isbn = $("#book_summary_" + bookrecno).attr("meta_isbn");
+	if($.trim(isbn) == "") {
+		return;
+	}
+	var globalLibraryCode = "P2SXS029038";
+	var strURL = GLOBAL_BASE_API_URL + "/api/book/isbn/"+isbn+"/?glc="+globalLibraryCode+"&returnType=json" +
+	             "&callback=insertAllBookMetaInfo&jsoncallback=?";
+	$.getJSON(strURL, {});
+}
+function insertAllBookMetaInfo(json) {
+	if(json.isbn == undefined || json.isbn == null ||
+		json.result == undefined || json.result == null || json.result.length == 0) {
+		return;
+	}
+	var isbn = json.isbn;
+	var summary = trimToEmpty(json.result.summary);
+	var authorIntroduction = trimToEmpty(json.result.authorIntroduction);
+	var bookrecno = $("span[meta_isbn='" + isbn + "']").attr("bookrecno");
+	if(trimToEmpty(bookrecno) == "") {
+		return;
+	}
+	if(summary != "" && summary != null && summary != undefined) {
+		summary = delHtmlTag(summary.replace(/\s/g, ""));
+		var preTitle = "<span class='libBkDetTit'>内容与摘要：</span>";
+		$("#book_summary_" + bookrecno).html(preTitle+summary.substring(0, 150)+"...");
+		//$("#book_summary_" + bookrecno).before(preTitle);
+	}
+	if(authorIntroduction != null) {
+		$("#bookAuthorIntroduction_" + bookrecno).html(authorIntroduction);
+	}
+	if(summary == "" || authorIntroduction == "") {
+		//showDoubanSubject();
+	}
+}
+
+//去掉所有的html标记
+function delHtmlTag(str){
+	return str.replace(/<[^>]+>/g,"");
+}
+
+//延迟加载的内容
+$(window).load(function(){
+	$(".footArea").hide();
+	setTimeout(function(){
+		var globalLibraryCode = "P2SXS029038";
+		//获取封面
+		loadBookcovers(globalLibraryCode);
+		//自动获取图书元数据信息是否存在的标识 
+		if($.cookie("configouternet")=="false"){
+			return;
+		}
+		var haveBookMetaResource = "1";
+		if(haveBookMetaResource != '1') {
+			return;
+		}
+		function getDivISBNs() {
+			var divObjects = $("div[express_isbn]");
+			var isbns = "";
+			divObjects.each(function(index){
+				var isbn = $(this).attr("express_isbn");
+				isbns += "," + isbn;
+			});
+			return isbns;
+		}
+		var isbns = getDivISBNs();
+		if(isbns == "") {
+			return;
+		}
+
+		var strURL = GLOBAL_BASE_API_URL + "/api/bookmetadatastatus?glc="+globalLibraryCode+"&isbns="+isbns
+		+"&returnType=json&callback=showAllBookMetaInfoTab&jsoncallback=?";
+	  	$.getJSON(strURL, {});
+	  	//信息推送
+	  	$.getScript("http://api.interlib.com.cn:8586/InterlibCommonService/media/centerservice.js").done(function(){
+			var baseParam = "searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND";
+			baseParam+="&numFound=3";
+			pushResultData(1,"P2SXS029038",baseParam);
+			showAD();
+		});
+	},1000);
+
+
+});
+
+//添加图书专题
+function addBookSpecial(){
+	window.location.href="/opac3/admin/bookSpecial/edit?searchType=standard&isFacet=true&view=standard&rows=10&sortWay=score&sortOrder=desc&hasholding=1&f_curlibcode=BEILIN&searchWay0=title&searchWay1=author&searchWay2=marc&q0=%E5%A6%82%E4%BD%95%E9%98%85%E8%AF%BB%E4%B8%80%E6%9C%AC%E4%B9%A6&logical0=AND&logical1=AND&logical2=AND";
+}
+
+//文字未显示完整，类名统一，id需不同 /api/book
+layui.use("layer",function(){
+	$(".layerTip").each(function(){
+		$(this).hover(function() {
+			var thisId = '#'+$(this).prop('id');
+			var thisText = $(this).text();
+			openMsg(thisId,thisText);
+		}, function() {
+			layer.close(subtips);
+		});
+	});
+
+	function openMsg(id,text) {
+		subtips = layer.tips(text,
+		id,{tips:[1,'#000'],time: 30000});
+	}
+
+});
+
+//左侧分面处出版时间 根据输入的出版时间范围做二次检索
+function pubDateLimitSearch() {
+	var $startPubDate = $("input[name='startPubDate']").val();
+	var $endPubDate = $("input[name='endPubDate']").val();
+	var appendStr = "&startPubdate="+$startPubDate + "&endPubdate="+$endPubDate;
+	var $navPageBaseURL = $("#navPageBaseURL").text();
+	var baseURL = "/opac3/search?";
+	var targetURL = baseURL + $navPageBaseURL + appendStr;
+	document.location.href = targetURL;
+}
+
+//对接开采系统
+
+function to_kaicai_new(isbn_bookrecno){
+    var isbnArr = isbn_bookrecno.map(function(item, index, array) {
+		return item.isbn;
+	});
+    isbn_bookrecno_map = isbn_bookrecno;
+    //测试域名：http://store.interlib.cn/tcshoptest
+	//正式域名：https://book.interlib.cn/tcshop
+    var url = prefix_new + "/api/"  +unitcode_new + "/product/checkBookExist" +
+	"?type=1&skuIds=" + isbnArr.join(",");
+    console.log(url);
+    $.ajax({
+        type: "GET",
+        url: url,
+        dataType: "jsonp",
+		jsonpCallback: "showNewResource"
+    });
+};
+
+function showNewResource(data) {
+    if(data.code == 0) {
+        var result = data.result;
+        //alert(JSON.stringify(isbn_bookrecno_map))
+        isbn_bookrecno_map.forEach(function(item, index, array) {
+            var isbn = item.isbn;
+            var bookrecno = item.bookrecno;
+            //alert(isbn+"|"+bookrecno)
+            var state = result[isbn].state;
+            if (state == 1) {
+                var skuId = result[isbn].skuId;
+                var book_url = prefix_new + "/" + unitcode_new + "/product/" + skuId + ".html";
+                var appendStr = "<a href='"+book_url+"' target='_blank' class='cloudBtn'>" +
+					"<i class='cloudPokt'></i>挑选新书&nbsp;送书上门</a>"
+                $("#cloudArea_" + bookrecno).html(appendStr);
+            }
+		});
+    }
+};
+
+
+
+function to_kaicai_loan(bookrecnoArr){
+    var url = prefix_loan + "/api/" + unitcode_loan + "/product/checkBookExist" +
+        "?type=0&skuIds=" + bookrecnoArr.join(",");
+    console.log(url);
+    $.ajax({
+        type: "GET",
+        url: url,
+        dataType: "jsonp",
+        jsonpCallback: "showLoanResource"
+    });
+};
+
+function showLoanResource(data) {
+    if(data.code == 0) {
+        var result = data.result;
+        for (var key in result) {
+            var state = result[key].state;
+            if (state == 1) {
+                var skuId = result[key].skuId;
+                var book_url = prefix_loan + "/" + unitcode_loan + "/product/" + skuId + ".html";
+                var appendStr = "<a href='"+book_url+"' target='_blank' class='libInBook'>" +
+                    "<i class='libInBookIcon'></i>馆内图书&nbsp;配送到家</a>";
+                $("#cloudArea_" + key).html(appendStr);
+            }
+		}
+    }
+};
+
+//获取馆外访问部门的电子资源（宁波）
+
+
+//预借
+function addPrelendBookList(bookrecno,libcode,isRedirect) {
+	if(!canPrelendListByBookrecno(libcode,bookrecno)){
+        $("#prelendTab").show();
+		$('html,body').removeClass('overHide');
+		return false;
+	}
+	$(".resultTips").html("预借成功!");
+	$(".success_tips").html("您可到预借书架进行预借！");
+	$('html,body').removeClass('overHide');
+	$.ajax({
+		url:"/opac3/prelend/bookshelf",
+		type: "POST",
+		async:false,
+		data:{"bookrecno":bookrecno,"libcode":libcode},
+		success: function(data){
+			if( data.code == '200'){
+				$(".tips").show();
+				setTimeout("$(\".tips\").hide();",2000);
+			}
+			if(isRedirect && data.code == '200'){
+				document.location.href = '/opac3/prelend/CanPrelendListByBookrecno?prelendbookshelfIds='+data.data;
+			}
+		}
+	});
+}
+
+function canPrelendListByBookrecno(libcode,bookrecno){
+	var flag = false;
+	$.ajax({
+		url:"/opac3/prelend/getCanPrelendListByBookrecno/",
+		type: "POST",
+		async:false,
+		data:{"bookrecno":bookrecno,"libcode":libcode},
+		success: function(data){
+			if(data.length ==0){
+				$(".resultTips").html("借阅申请失败");
+				$(".success_tips").html("当前所选分馆暂无可预借的馆藏");
+			}else{
+				var message = new Array();
+				for(var i=0;i<data.length;i++){
+					if(data[i].canPrelend){
+						flag = true;
+						break;
+					}else{
+						message = message.concat(data[i].msgList);
+					}
+				}
+				if(!flag){
+					$.unique(message);
+					if(message.length>3){message = message.slice(0,3);}
+					$(".resultTips").html("借阅申请失败");
+					$(".success_tips").html(message.join("&nbsp;"));
+				}
+			}
+		}
+	});
+	return flag;
+}
+
+</script>
+
+
+
+		
+		<div style="display:none;">
+		<script type="text/javascript">
+/**
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-22724688-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+*/
+</script>
+		</div>
+		<link rel="stylesheet" href="/opac3/media/pro2018/css/theme/themeTwo.css" type="text/css" media="all">
+		
+	</body>
+</html>
