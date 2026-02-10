@@ -5,7 +5,6 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_milvus import Milvus
-from session.memory_manager import UserMemoryManager
 from utils.models import get_db, get_db_manager
 from session.session import SessionManager
 from graph_workflow import stream_recommendation_workflow
@@ -134,7 +133,6 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
             session_id=session.session_id,
             user_id=session.user_id,
             conversation_manager=session.conversation_manager,
-            memory_manager=session.memory_manager,
             rag_service=session.rag_service  # 传递 RAG 服务
         ):
             # 将事件转换为 SSE 格式并发送

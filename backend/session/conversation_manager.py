@@ -18,7 +18,7 @@ class ConversationManager:
 
     特点:
     1. 利用 LLM 原生 Messages API 自动管理上下文
-    2. 支持系统提示词（用户画像）
+    2. 支持系统提示词
     3. 自动修剪历史，避免超过上下文窗口
     4. 最小侵入，易于集成
     """
@@ -27,7 +27,7 @@ class ConversationManager:
         self,
         default_model: str = "gpt-4o-mini",
         default_temperature: float = 0.7,
-        max_history_rounds: int = 5
+        max_history_rounds: int = 3
     ):
         """
         初始化对话管理器
@@ -44,7 +44,7 @@ class ConversationManager:
 
     def set_system_context(self, system_prompt: str):
         """
-        设置系统上下文（用户画像、角色描述等）
+        设置系统上下文（角色描述等）
 
         Args:
             system_prompt: 系统提示词
@@ -56,38 +56,6 @@ class ConversationManager:
         if system_prompt:
             self.messages.insert(0, SystemMessage(content=system_prompt))
             logger.debug("✓ 系统上下文已设置")
-
-    def invoke(self, user_input: str, model: str = None, temperature: float = None) -> str:
-        """
-        同步调用（兼容原有代码）
-
-        Args:
-            user_input: 用户输入
-            model: 使用的模型（不指定则使用默认模型）
-            temperature: 温度参数（不指定则使用默认值）
-
-        Returns:
-            LLM 回复内容
-        """
-        # 使用指定的模型或默认模型
-        llm = ChatOpenAI(
-            model=model or self.default_model,
-            temperature=temperature if temperature is not None else self.default_temperature
-        )
-
-        # 添加用户消息
-        self.messages.append(HumanMessage(content=user_input))
-
-        # 调用 LLM（自动使用所有历史消息）
-        response = llm.invoke(self.messages)
-
-        # 保存 AI 回复
-        self.messages.append(AIMessage(content=response.content))
-
-        # 自动修剪历史
-        self._trim_history()
-
-        return response.content
 
     async def ainvoke(self, user_input: str, model: str = None, temperature: float = None) -> str:
         """
@@ -111,12 +79,6 @@ class ConversationManager:
 
         response = await llm.ainvoke(self.messages)
 
-        # 调试日志：打印响应类型和内容
-        logger.info(f"🔍 API响应类型: {type(response)}")
-        logger.info(f"🔍 API响应内容: {response}")
-        if hasattr(response, '__dict__'):
-            logger.info(f"🔍 API响应属性: {response.__dict__}")
-
         self.messages.append(AIMessage(content=response.content))
         self._trim_history()
 
@@ -127,7 +89,7 @@ class ConversationManager:
         修剪对话历史
 
         策略:
-        - 保留 SystemMessage（用户画像）
+        - 保留 SystemMessage
         - 只保留最近 N 轮对话（每轮 = User + Assistant）
         """
         system_msgs = [m for m in self.messages if isinstance(m, SystemMessage)]
@@ -172,7 +134,7 @@ def create_conversation_manager(
 
     Args:
         user_id: 用户ID
-        system_context: 系统上下文（用户画像等）
+        system_context: 系统上下文
         max_history_rounds: 最大保留对话轮数
 
     Returns:
