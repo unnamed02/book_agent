@@ -13,11 +13,9 @@ import re
 import asyncio
 
 
-from recommend.tools.douban_tool import search_douban_book, get_douban_book_detail
-from recommend.tools.resource_tool import search_digital_resource
-# from recommend.tools.shop_tool import search_shop_by_isbn, search_and_filter_book
-from recommend.tools.library_tool import search_library_collection
-from session.memory_manager import UserMemoryManager
+from tools.douban_tool import search_douban_book, get_douban_book_detail
+from tools.resource_tool import search_digital_resource
+from tools.library_tool import search_library_collection
 from session.conversation_manager import ConversationManager
 from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 
@@ -25,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 # ========== 并发控制 ==========
 # 全局信号量：限制同时进行的书籍详情获取数量（避免 API 频率限制）
-BOOK_DETAIL_SEMAPHORE = asyncio.Semaphore(2)  # 最多同时处理 2 本书
+BOOK_DETAIL_SEMAPHORE = asyncio.Semaphore(3)  # 最多同时处理 2 本书
 
 
 # ========== 状态定义 ==========
@@ -39,7 +37,6 @@ class BookRecommendationState(TypedDict):
 
     # 会话管理器
     conversation_manager: Optional[ConversationManager]
-    memory_manager: Optional[UserMemoryManager]
     rag_service: Optional[RAGCustomerService]  # RAG 客服服务
 
     # 路由结果
@@ -56,7 +53,6 @@ class BookRecommendationState(TypedDict):
     final_response: str  # 最终完整响应
 
     # 元数据
-    user_profile: Optional[str]
     recent_recommendations: List[str]
 
     # 错误处理
@@ -86,7 +82,7 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 **查询类型判断**：
    - 找书（find_book）：用户想要查找特定的书籍，查询图书馆是否有这本书
         关键词：找、查、有没有、搜索 + 具体书名
-        示例：找一下红楼梦/查一下如何阅读一本书/有没有三体/搜索一下活着
+        示例：找一下红楼梦/找如何阅读一本书/有没有三体/搜索一下活着/机械设计手册
    - 图书推荐（book_recommendation）：用户想要图书推荐，需要推荐书籍
         关键词：推荐、想看、想学、书单
         示例：我想学习python/推荐几本科幻小说/全民阅读书单/想看一些历史书
@@ -104,7 +100,7 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 
     route_result = await conversation_manager.ainvoke(
         route_prompt,
-        model="gpt-4o-mini",
+        model="qwen-flash",
         temperature=0
     )
 
@@ -239,8 +235,6 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
     return state
 
 
-
-
 async def handle_find_book(state: BookRecommendationState) -> BookRecommendationState:
     """
     节点: 处理找书请求（独立节点，不复用推荐流程）
@@ -286,26 +280,36 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
             state["dialogue_response"] = state["final_response"]
             return state
 
-        # 调用图书馆搜索工具
-        from recommend.tools.library_tool import search_library_collection
+        tasks = [
+                asyncio.to_thread(
+                    search_digital_resource.invoke,
+                    {"title": title, "author": author}
+                ),
+                asyncio.to_thread(
+                    search_library_collection.invoke,
+                    {"title": title, "author": author}
+                )
+            ]
 
-        logger.info(f"正在搜索图书馆馆藏: {title} - {author}")
-        library_result = search_library_collection.invoke({
-            "title": title,
-            "author": author
-        })
+        results = await asyncio.gather(*tasks)
 
-        # 解析搜索结果
-        library_data = json.loads(library_result)
+        digital_resources = results[0],
+        library_info = results[1]
+        
+        resource_text = _format_digital_resources(digital_resources)
+        library_text = _format_library_info(library_info)
 
-        if not library_data:
-            # 没有找到馆藏
-            response = f"很抱歉，在碑林区图书馆没有找到《{title}》的馆藏信息。\n\n您可以：\n1. 尝试使用不同的书名或关键词搜索\n2. 询问我其他相关的图书推荐"
-        else:
-            # 找到馆藏，复用 _format_library_info 函数格式化输出
-            library_text = _format_library_info(json.dumps(library_data, ensure_ascii=False))
-            response = f"📚 为您找到《{title}》的馆藏信息：\n\n{library_text}"
+        
+        response = f"""{title}
+**📍 馆藏信息**：
+{library_text}
 
+**📥 电子资源**：
+{resource_text}
+
+---"""
+        logger.info(response)
+        
         state["final_response"] = response
         state["dialogue_response"] = response
 
@@ -334,16 +338,13 @@ async def load_user_context(state: BookRecommendationState) -> BookRecommendatio
             memories = memory_manager.get_memories()
             long_term = memories.get("long_term_memory", {})
 
-            state["user_profile"] = long_term.get("user_profile", "新用户")
             state["recent_recommendations"] = long_term.get("recent_recommendations", [])
 
-            logger.info(f"✓ 加载用户画像: {state['user_profile']}")
+            logger.info(f"✓ 加载用户上下文完成")
         except Exception as e:
             logger.warning(f"加载用户上下文失败: {e}")
-            state["user_profile"] = None
             state["recent_recommendations"] = []
     else:
-        state["user_profile"] = None
         state["recent_recommendations"] = []
 
     return state
@@ -373,26 +374,17 @@ async def generate_book_recommendations(state: BookRecommendationState) -> BookR
     """
     节点5: 生成详细书籍推荐列表（带推荐理由）
 
-    使用LLM根据用户需求和画像推荐书籍，用于需要详细信息的场景
+    使用LLM根据用户需求推荐书籍，用于需要详细信息的场景
     """
     logger.info("📍 节点: generate_book_recommendations")
 
     conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
-    user_profile = state.get("user_profile")
     recent_books = state.get("recent_recommendations", [])
 
     # 更新系统上下文
-    if user_profile or recent_books:
-        system_context = f"""你是专业的图书推荐助手。
-
-## 用户画像
-{user_profile if user_profile else "新用户"}
-
-## 最近推荐（避免重复）
-{', '.join(recent_books[:10]) if recent_books else '无'}
-
-请基于用户画像提供个性化推荐。"""
+    if recent_books:
+        system_context = f"""你是专业的图书推荐助手。"""
 
         conversation_manager.set_system_context(system_context)
 
@@ -410,7 +402,7 @@ JSON格式：
 推荐策略：
 1. 如果用户明确指定了书名，只返回名称相符或者相似的书籍
 2. 如果用户描述了主题、领域或需求，推荐3-5本相关书籍
-3. 考虑用户的阅读历史，避免重复推荐
+3. 避免重复推荐最近已推荐的书籍
 
 选书标准：
 1. 必须是真实存在的图书，有明确的作者
@@ -708,24 +700,19 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
             # 添加小延迟
             await asyncio.sleep(0.3)
 
-            # Step 3: 并行获取资源、购买、馆藏信息
+            # Step 3: 并行获取资源、馆藏信息
             isbn = detail.get("isbn", "")
-            publisher = detail.get("publisher", "")
 
             tasks = [
                 asyncio.to_thread(
                     search_digital_resource.invoke,
-                    {"publisher": publisher, "title": title, "author": author, "isbn": isbn}
+                    {"title": title, "author": author}
+                ),
+                asyncio.to_thread(
+                    search_library_collection.invoke,
+                    {"title": title, "author": author}
                 )
             ]
-
-            if isbn:
-                # tasks.append(asyncio.to_thread(search_shop_by_isbn.invoke, {"isbn": isbn}))
-                tasks.append(asyncio.sleep(0, result="[]"))
-                tasks.append(asyncio.to_thread(search_library_collection.invoke, {"title": title, "author": author}))
-            else:
-                tasks.append(asyncio.sleep(0, result="[]"))
-                tasks.append(asyncio.sleep(0, result="[]"))
 
             results = await asyncio.gather(*tasks)
 
@@ -740,8 +727,7 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
                 "image": detail.get("image", ""),
                 "reason": reason,
                 "digital_resources": results[0],
-                "shop_links": results[1],
-                "library_info": results[2]
+                "library_info": results[1]
             }
 
         except Exception as e:
@@ -898,8 +884,8 @@ def create_recommendation_graph() -> StateGraph:
     - customer_service: 处理客服咨询（使用 RAG）
     - general_chat: 处理宽泛推荐、作者介绍、一般闲聊、需求不明确的情况
     - search_booklist: 搜索用户提供的书单，输出 Markdown 表格
-    - load_context: 从数据库加载用户画像和历史推荐
-    - recommend: 使用LLM生成个性化推荐书单（基于用户画像，3-5本书）
+    - load_context: 从数据库加载历史推荐
+    - recommend: 使用LLM生成推荐书单（3-5本书）
     - fetch_detail: 并行获取豆瓣、馆藏、资源、购买链接
     - format_response: 格式化为Markdown响应
     - update_prefs: 根据推荐结果增量更新用户偏好（偏好学习）
@@ -967,7 +953,6 @@ async def stream_recommendation_workflow(
     session_id: str,
     user_id: str,
     conversation_manager: ConversationManager,
-    memory_manager: Optional[UserMemoryManager] = None,
     rag_service: Optional[RAGCustomerService] = None
 ):
     """
@@ -995,7 +980,6 @@ async def stream_recommendation_workflow(
         session_id=session_id,
         user_id=user_id,
         conversation_manager=conversation_manager,
-        memory_manager=memory_manager,
         rag_service=rag_service,  # 添加 RAG 服务
         query_type="book_recommendation",  # 新增
         is_query_clear=True,
@@ -1004,7 +988,6 @@ async def stream_recommendation_workflow(
         books_detail=[],
         dialogue_response="",
         final_response="",
-        user_profile=None,
         recent_recommendations=[],
         error=None
     )

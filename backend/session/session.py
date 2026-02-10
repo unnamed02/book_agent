@@ -8,7 +8,6 @@ from datetime import datetime
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 from langchain_milvus import Milvus
-from session.memory_manager import UserMemoryManager
 from session.conversation_manager import ConversationManager, create_conversation_manager
 from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -58,9 +57,6 @@ class Session:
             max_history_rounds=max_history_rounds
         )
 
-        # 记忆管理器（懒加载）
-        self.memory_manager: Optional[UserMemoryManager] = None
-
         # RAG 客服服务（懒加载）
         self.rag_service: Optional[RAGCustomerService] = None
 
@@ -85,46 +81,6 @@ class Session:
         """
         elapsed = (datetime.now() - self.last_access).total_seconds()
         return elapsed > timeout_seconds
-
-    async def initialize_memory_manager(
-        self,
-        db_session: AsyncSession,
-        vectorstore: Milvus
-    ):
-        """
-        初始化记忆管理器（懒加载）
-
-        Args:
-            db_session: 数据库会话
-            vectorstore: 向量数据库
-        """
-        if self.memory_manager is not None:
-            # 如果已存在，只更新数据库会话
-            self.memory_manager.db_session = db_session
-            self.memory_manager.longterm_memory.db_session = db_session
-            logger.debug(f"更新会话 {self.session_id} 的数据库会话")
-            return
-
-        try:
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-            embeddings = OpenAIEmbeddings()
-
-            self.memory_manager = UserMemoryManager(
-                user_id=self.user_id,
-                db_session=db_session,
-                llm=llm,
-                embeddings=embeddings,
-                vectorstore=vectorstore
-            )
-
-            # 首次加载长期记忆（用户画像、历史推荐等）
-            # 这些数据相对稳定，只在 session 创建时加载一次
-            await self.memory_manager.load_all_memories("")
-
-            logger.info(f"✓ 为会话 {self.session_id} 创建记忆管理器并加载长期记忆")
-        except Exception as e:
-            logger.warning(f"创建记忆管理器失败: {e}，将使用无记忆模式")
-            self.memory_manager = None
 
     async def initialize_rag_service(
         self,
