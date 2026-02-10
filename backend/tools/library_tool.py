@@ -87,6 +87,7 @@ def search_library_collection(title: str , author : str) -> str:
                 # 只返回碑林区图书馆的馆藏
                 if holding.get('curlib') == 'BEILIN':
                     results.append({
+                        "title": book_info.get('title',''),
                         "pub_info": book_info.get('pub_info', ''),
                         "call_number": holding.get('callno', ''),
                         "location": holding.get('curlocalName', ''),

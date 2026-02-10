@@ -22,7 +22,7 @@ class ResourceResult(TypedDict):
 
 @tool
 def search_digital_resource(title: str, author: str) -> str:
-    """根据出版社、书名、作者、ISBN搜索数字资源"""
+    """根据书名、作者搜索数字资源"""
     logger.info(f"搜索电子资源 - 书名: {title}, 作者: {author}")
 
     # 使用线程池并发执行三个搜索任务
@@ -36,7 +36,7 @@ def search_digital_resource(title: str, author: str) -> str:
         zhangyue_list = json.loads(future_zhangyue.result())
         cxstar_list = json.loads(future_cxstar.result())
         chineseall_list = json.loads(future_chineseall.result())
-
+    
     raw_result = json.dumps(zhangyue_list + cxstar_list + chineseall_list, ensure_ascii=False)
     return raw_result
 
@@ -314,9 +314,8 @@ if __name__ == "__main__":
     print(result)
     
     result = search_digital_resource.invoke({
-        "publisher": "",
-        "title": "Python编程从入门到实践",
-        "author": "Eric Matthes",
+        "title": "机械设计手册",
+        "author": "成大先",
     })    
     
     print(result)
