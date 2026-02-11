@@ -246,68 +246,107 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
 
-    # 使用 LLM 提取书名和作者
-    extract_prompt = f"""从用户的查询中提取书名和作者信息。
+    # 使用 LLM 提取书名和作者，并识别是否为丛书
+    extract_prompt = f"""从用户的查询中提取书名和作者信息，并判断是否为丛书。
 
 用户查询：{user_query}
 
 请以 JSON 格式返回：
 {{
-    "title": "书名",
-    "author": "作者"
+    "author": "作者",
+    "books": ["书名1", "书名2", ...]
 }}
+
+判断规则：
+1. 如果是知名丛书（如哈利波特、三体、魔戒、冰与火之歌等），且用户只提到丛书名称，返回所有分册
+2. 如果用户明确指定了某一册，只返回该册
+3. 如果是单本书，books 数组只包含一个元素
+4. 用户没有提到作者且不好确定作者时，该项返回空值
+
+示例：
+- 用户查询"哈利波特" → {{"author": "J.K.罗琳", "books": ["哈利波特与魔法石", "哈利波特与密室", "哈利波特与阿兹卡班囚徒", "哈利波特与火焰杯", "哈利波特与凤凰社", "哈利波特与混血王子", "哈利波特与死亡圣器"]}}
+- 用户查询"哈利波特与魔法石" → {{"author": "J.K.罗琳", "books": ["哈利波特与魔法石"]}}
+- 用户查询"三体" → {{"author": "刘慈欣", "books": ["三体", "三体Ⅱ·黑暗森林", "三体Ⅲ·死神永生"]}}
+- 用户查询"活着" → {{"author": "余华", "books": ["活着"]}}
+- 用户查询"机械设计手册" -> {{"author": "", "books" : ["机械设计手册"]}}
 
 只返回 JSON，不要其他内容。"""
 
     try:
         extract_result = await conversation_manager.ainvoke(
             extract_prompt,
-            model="gpt-4o-mini",
+            model="qwen3-max-2026-01-23",
             temperature=0
         )
 
         # 解析提取结果
         import json
         book_info = json.loads(extract_result.strip())
-        title = book_info.get("title", "")
+        books = book_info.get("books", [])
         author = book_info.get("author", "")
 
-        logger.info(f"提取到书名: {title}, 作者: {author}")
+        logger.info(f"提取到 {len(books)} 本书，作者: {author}")
 
-        if not title:
+        if not books:
             state["final_response"] = "抱歉，我没有理解您要找的书名，请提供更明确的书名信息。"
             state["dialogue_response"] = state["final_response"]
             return state
 
-        tasks = [
+        # 为每本书搜索资源和馆藏
+        all_results = []
+        for book_title in books:
+            tasks = [
                 asyncio.to_thread(
                     search_digital_resource.invoke,
-                    {"title": title, "author": author}
+                    {"title": book_title, "author": author}
                 ),
                 asyncio.to_thread(
                     search_library_collection.invoke,
-                    {"title": title, "author": author}
+                    {"title": book_title, "author": author}
                 )
             ]
+            results = await asyncio.gather(*tasks)
+            all_results.append({
+                "title": book_title,
+                "digital_resources": results[0],
+                "library_info": results[1]
+            })
 
-        results = await asyncio.gather(*tasks)
+        # 格式化响应
+        if len(books) == 1:
+            # 单本书
+            result = all_results[0]
+            resource_text = _format_digital_resources(result["digital_resources"])
+            library_text = _format_library_info(result["library_info"])
 
-        digital_resources = results[0]
-        library_info = results[1]
-        
-        resource_text = _format_digital_resources(digital_resources)
-        library_text = _format_library_info(library_info)
+            response = f"""# {result["title"]} - {author}
 
-        
-        response = f"""# {title} {author}
-
-** 馆藏信息**：
+**📍 馆藏信息**：
 {library_text}
 
-** 电子资源**：
+**📥 电子资源**：
 {resource_text}
 
 ---"""
+        else:
+            # 多本书（丛书）
+            response_parts = [f"# 共找到 {len(books)} 本书\n"]
+            for idx, result in enumerate(all_results, 1):
+                resource_text = _format_digital_resources(result["digital_resources"])
+                library_text = _format_library_info(result["library_info"])
+
+                response_parts.append(f"""## {idx}. {result["title"]} - {author}
+
+**📍 馆藏信息**：
+{library_text}
+
+**📥 电子资源**：
+{resource_text}
+
+---""")
+
+            response = "\n".join(response_parts)
+
         logger.info(response)
         
         state["final_response"] = response
@@ -350,26 +389,6 @@ async def load_user_context(state: BookRecommendationState) -> BookRecommendatio
     return state
 
 
-async def update_user_preferences(state: BookRecommendationState) -> BookRecommendationState:
-    """
-    节点4: 更新用户偏好
-
-    根据当前查询增量更新偏好
-    """
-    logger.info("📍 节点: update_user_preferences")
-
-    memory_manager = state.get("memory_manager")
-
-    if memory_manager:
-        try:
-            await memory_manager.update_preferences_from_query(state["user_query"])
-            logger.info("✓ 更新用户偏好完成")
-        except Exception as e:
-            logger.warning(f"更新偏好失败: {e}")
-
-    return state
-
-
 async def generate_book_recommendations(state: BookRecommendationState) -> BookRecommendationState:
     """
     节点5: 生成详细书籍推荐列表（带推荐理由）
@@ -394,6 +413,7 @@ async def generate_book_recommendations(state: BookRecommendationState) -> BookR
 
 请按以下格式回答：
 
+今年是2026年
 先自然且亲切地回应用户的需求，然后直接给出推荐书单的JSON。
 
 JSON格式：
@@ -800,8 +820,15 @@ def _format_digital_resources(resource_json: str) -> str:
         if resources:
             formatted = []
             for r in resources:
-                title_with_author = f"{r['title']} - {r['author']}" if r.get('author') else r['title']
-                formatted.append(f"\n[{r['source']}] [{title_with_author}]({r['link']})")
+                # 构建显示文本：书名 - 作者 - 出版社
+                parts = [r['title']]
+                if r.get('author'):
+                    parts.append(r['author'])
+                if r.get('publisher'):
+                    parts.append(r['publisher'])
+                title_with_info = ' - '.join(parts)
+
+                formatted.append(f"\n[{r['source']}] [{title_with_info}]({r['link']})")
             return '\n'.join(formatted)
         else:
             return '暂无资源'
@@ -897,7 +924,6 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("customer_service", handle_customer_service)
     workflow.add_node("find_book", handle_find_book)
     workflow.add_node("load_context", load_user_context)
-    workflow.add_node("update_prefs", update_user_preferences)
     workflow.add_node("recommend", generate_book_recommendations)
     workflow.add_node("fetch_detail", fetch_books_detail)
     workflow.add_node("format_response", format_final_response)
@@ -926,7 +952,7 @@ def create_recommendation_graph() -> StateGraph:
     # load_context → recommend（直接进入详细推荐流程）
     workflow.add_edge("load_context", "recommend")
 
-    # 详细推荐流程：recommend → fetch_detail → format_response → update_prefs → save_memory → END
+
     workflow.add_conditional_edges(
         "recommend",
         has_error,
@@ -938,10 +964,8 @@ def create_recommendation_graph() -> StateGraph:
 
     # 详细信息流程
     workflow.add_edge("fetch_detail", "format_response")
-    workflow.add_edge("format_response", "update_prefs")
-    workflow.add_edge("update_prefs", "save_memory")
-    workflow.add_edge("save_memory", END)
-
+    workflow.add_edge("format_response", END)
+    
     return workflow.compile()
 
 

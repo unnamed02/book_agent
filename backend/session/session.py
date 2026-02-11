@@ -52,6 +52,7 @@ class Session:
 
         # 创建对话管理器（每个会话一个）
         self.conversation_manager = create_conversation_manager(
+            session_id=session_id,
             user_id=user_id,
             system_context=system_context,
             max_history_rounds=max_history_rounds

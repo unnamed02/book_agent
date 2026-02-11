@@ -5,8 +5,10 @@ import logging
 import re
 import json
 from rapidfuzz import fuzz
-from typing import TypedDict
+from typing import TypedDict, List
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import SystemMessage, HumanMessage
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -20,6 +22,59 @@ class ResourceResult(TypedDict):
     link: str        # 资源链接
     isbn: str        # ISBN（可选）
 
+def llm_filter_resources(results: List[ResourceResult], title: str, author: str) -> List[ResourceResult]:
+    """
+    使用 LLM 对搜索结果进行智能筛选和排序
+
+    Args:
+        results: 原始搜索结果列表
+        title: 用户搜索的书名
+        author: 用户搜索的作者
+
+    Returns:
+        筛选和排序后的结果列表
+    """
+    if not results:
+        return results
+
+    try:
+        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+
+        # 构建提示词
+        results_text = "\n".join([
+            f"{i+1}. 书名: {r['title']}, 作者: {r['author']}, 出版社: {r['publisher']}, 来源: {r['source']}"
+            for i, r in enumerate(results)
+        ])
+
+        prompt = f"""你是一个图书资源筛选专家。用户正在搜索：
+书名: {title}
+作者: {author}
+
+以下是搜索到的资源列表：
+{results_text}
+
+请根据以下标准对结果进行筛选和排序：
+1. 书名和作者的匹配度（优先考虑完全匹配或高度相似）
+
+请返回一个 JSON 数组，包含筛选后的结果序号（从1开始），按推荐优先级排序。
+只返回 JSON 数组，不要其他文字说明。格式示例: [1, 3, 2]
+如果所有结果都不太匹配，返回空数组: []"""
+
+        response = llm.invoke([HumanMessage(content=prompt)])
+
+        # 解析 LLM 返回的序号列表
+        filtered_indices = json.loads(response.content.strip())
+
+        # 根据序号重新排序结果
+        filtered_results = [results[i-1] for i in filtered_indices if 0 < i <= len(results)]
+
+        logger.info(f"LLM 筛选: 原始 {len(results)} 条 -> 筛选后 {len(filtered_results)} 条")
+        return filtered_results
+
+    except Exception as e:
+        logger.warning(f"LLM 筛选失败: {e}，返回原始结果")
+        return results
+
 @tool
 def search_digital_resource(title: str, author: str) -> str:
     """根据书名、作者搜索数字资源"""
@@ -29,16 +84,21 @@ def search_digital_resource(title: str, author: str) -> str:
     with ThreadPoolExecutor(max_workers=3) as executor:
         # 提交三个搜索任务
         future_zhangyue = executor.submit(search_zhangyue_resource, title, author)
-        future_cxstar = executor.submit(search_cxstar_resource, title, author)
+        # future_cxstar = executor.submit(search_cxstar_resource, title, author)
         future_chineseall = executor.submit(search_chineseall_resource, title, author)
 
         # 获取结果
         zhangyue_list = json.loads(future_zhangyue.result())
-        cxstar_list = json.loads(future_cxstar.result())
+        # cxstar_list = json.loads(future_cxstar.result())
         chineseall_list = json.loads(future_chineseall.result())
-    
-    raw_result = json.dumps(zhangyue_list + cxstar_list + chineseall_list, ensure_ascii=False)
-    return raw_result
+
+    # 合并所有结果
+    all_results = zhangyue_list + chineseall_list
+
+    # 使用 LLM 进行智能筛选
+    filtered_results = llm_filter_resources(all_results, title, author)
+
+    return json.dumps(filtered_results, ensure_ascii=False)
 
 def search_zhangyue_resource(title: str, author: str = "") -> str:
     """搜索掌阅资源"""
@@ -48,7 +108,7 @@ def search_zhangyue_resource(title: str, author: str = "") -> str:
         all_results: list[ResourceResult] = []
 
         # 用书名搜索
-        url = f"https://se.zhangyue.com/search/index?appId=0ad6dfa1&keyword={title}"
+        url = f"https://se.zhangyue.com/search/index?appId=bec9564c&keyword={title}"
         response = requests.get(url, headers=headers, timeout=10)
         soup = BeautifulSoup(response.text, 'html.parser')
 
@@ -56,7 +116,7 @@ def search_zhangyue_resource(title: str, author: str = "") -> str:
 
         # 查找所有书籍链接 - 结构是 <a href="..."><li>...</li></a>
         book_links = soup.select('ul.pagelist a[href*="/book/detail"]')[:20]
-
+        
         for link_tag in book_links:
             link = link_tag.get('href', '')
 
@@ -78,16 +138,25 @@ def search_zhangyue_resource(title: str, author: str = "") -> str:
                 # 使用 rapidfuzz 计算相似度（partial_ratio 适合部分匹配）
                 title_similarity = fuzz.partial_ratio(normalized_search, normalized_title)
                 author_similarity = fuzz.partial_ratio(author,author_text)
-                
+
                 # 相似度阈值 80 以上才添加
                 if title_similarity >= 80 and author_similarity >= 80:
+                    # 将 detail 链接转换为 read 链接
+                    if '/book/detail' in link and 'bookId=' in link:
+                        book_id = re.search(r'bookId=(\d+)', link).group(1)
+                        read_link = f"https://s.zhangyue.com/read?bid={book_id}&appId=bec9564c"
+                    else:
+                        read_link = link if link.startswith('http') else f"https://se.zhangyue.com{link}"
+
+                    logger.info(read_link)
+
                     result: ResourceResult = {
                         "source": "掌阅电子书平台",
                         "title": title_text,
                         "author": author_text,
                         "publisher": publisher_text,
-                        "isbn": "",  # 掌阅搜索结果不包含ISBN
-                        "link": link if link.startswith('http') else f"https://se.zhangyue.com{link}"
+                        "isbn": "",
+                        "link": read_link
                     }
                     all_results.append(result)
 
@@ -307,15 +376,15 @@ if __name__ == "__main__":
     result = search_zhangyue_resource("蛤蟆先生去看心理学医生", "罗伯特·戴博德")
     print(result)
     
-    result = search_cxstar_resource("Python编程从入门到实践","Eric Matthes")
-    print(result)
+    # result = search_cxstar_resource("Python编程从入门到实践","Eric Matthes")
+    # print(result)
 
-    result = search_chineseall_resource("机械设计手册","成大先")
-    print(result)
+    # result = search_chineseall_resource("机械设计手册","成大先")
+    # print(result)
     
-    result = search_digital_resource.invoke({
-        "title": "机械设计手册",
-        "author": "成大先",
-    })    
+    # result = search_digital_resource.invoke({
+    #     "title": "机械设计手册",
+    #     "author": "成大先",
+    # })    
     
-    print(result)
+    # print(result)
