@@ -12,7 +12,7 @@
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
-        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link">{{inline.text}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
     </view>
 
@@ -23,6 +23,7 @@
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
     </view>
     <view wx:elif="{{item.type === 'ol'}}" class="markdown-ol">
@@ -31,6 +32,7 @@
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
     </view>
 

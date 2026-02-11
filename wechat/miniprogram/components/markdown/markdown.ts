@@ -171,5 +171,49 @@ Component({
     onImageError(e: any) {
       console.error('图片加载失败:', e)
     },
+
+    // 处理链接点击
+    onLinkTap(e: any) {
+      const url = e.currentTarget.dataset.url
+      if (!url) return
+
+      // 尝试在小程序内打开链接
+      wx.showModal({
+        title: '打开链接',
+        content: '是否要打开此链接？',
+        confirmText: '打开',
+        cancelText: '复制',
+        success: (res) => {
+          if (res.confirm) {
+            // 用户选择打开链接
+            // 注意：需要在 app.json 中配置 web-view 页面
+            wx.navigateTo({
+              url: `/pages/webview/webview?url=${encodeURIComponent(url)}`,
+              fail: () => {
+                // 如果没有 webview 页面，则复制链接
+                this.copyLink(url)
+              },
+            })
+          } else if (res.cancel) {
+            // 用户选择复制链接
+            this.copyLink(url)
+          }
+        },
+      })
+    },
+
+    // 复制链接到剪贴板
+    copyLink(url: string) {
+      wx.setClipboardData({
+        data: url,
+        success: () => {
+          wx.showToast({
+            title: '链接已复制',
+            icon: 'success',
+            duration: 2000,
+          })
+        },
+      })
+    },
   },
 })
