@@ -128,7 +128,6 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
         # 默认当作图书推荐
         state["query_type"] = "book_recommendation"
 
-
     return state
 
 
@@ -253,22 +252,25 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
 
 请以 JSON 格式返回：
 {{
-    "author": "作者",
-    "books": ["书名1", "书名2", ...]
+    "books": [
+        {{"title": "书名1", "author": "作者1"}},
+        {{"title": "书名2", "author": "作者2"}},
+        ...
+    ]
 }}
 
 判断规则：
 1. 如果是知名丛书（如哈利波特、三体、魔戒、冰与火之歌等），且用户只提到丛书名称，返回所有分册
 2. 如果用户明确指定了某一册，只返回该册
 3. 如果是单本书，books 数组只包含一个元素
-4. 用户没有提到作者且不好确定作者时，该项返回空值
+4. 用户没有提到作者且不好确定作者时，author 返回空字符串
 
 示例：
-- 用户查询"哈利波特" → {{"author": "J.K.罗琳", "books": ["哈利波特与魔法石", "哈利波特与密室", "哈利波特与阿兹卡班囚徒", "哈利波特与火焰杯", "哈利波特与凤凰社", "哈利波特与混血王子", "哈利波特与死亡圣器"]}}
-- 用户查询"哈利波特与魔法石" → {{"author": "J.K.罗琳", "books": ["哈利波特与魔法石"]}}
-- 用户查询"三体" → {{"author": "刘慈欣", "books": ["三体", "三体Ⅱ·黑暗森林", "三体Ⅲ·死神永生"]}}
-- 用户查询"活着" → {{"author": "余华", "books": ["活着"]}}
-- 用户查询"机械设计手册" -> {{"author": "", "books" : ["机械设计手册"]}}
+- 用户查询"哈利波特" → {{"books": [{{"title": "哈利波特与魔法石", "author": "J.K.罗琳"}}, {{"title": "哈利波特与密室", "author": "J.K.罗琳"}}, {{"title": "哈利波特与阿兹卡班囚徒", "author": "J.K.罗琳"}}, {{"title": "哈利波特与火焰杯", "author": "J.K.罗琳"}}, {{"title": "哈利波特与凤凰社", "author": "J.K.罗琳"}}, {{"title": "哈利波特与混血王子", "author": "J.K.罗琳"}}, {{"title": "哈利波特与死亡圣器", "author": "J.K.罗琳"}}]}}
+- 用户查询"哈利波特与魔法石" → {{"books": [{{"title": "哈利波特与魔法石", "author": "J.K.罗琳"}}]}}
+- 用户查询"三体" → {{"books": [{{"title": "三体", "author": "刘慈欣"}}, {{"title": "三体Ⅱ·黑暗森林", "author": "刘慈欣"}}, {{"title": "三体Ⅲ·死神永生", "author": "刘慈欣"}}]}}
+- 用户查询"活着" → {{"books": [{{"title": "活着", "author": "余华"}}]}}
+- 用户查询"机械设计手册" → {{"books": [{{"title": "机械设计手册", "author": ""}}]}}
 
 只返回 JSON，不要其他内容。"""
 
@@ -280,37 +282,41 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
         )
 
         # 解析提取结果
-        import json
         book_info = json.loads(extract_result.strip())
         books = book_info.get("books", [])
-        author = book_info.get("author", "")
 
-        logger.info(f"提取到 {len(books)} 本书，作者: {author}")
+        logger.info(f"提取到 {len(books)} 本书")
 
         if not books:
             state["final_response"] = "抱歉，我没有理解您要找的书名，请提供更明确的书名信息。"
             state["dialogue_response"] = state["final_response"]
             return state
 
-        # 为每本书搜索资源和馆藏
-        all_results = []
-        for book_title in books:
+        # 为每本书搜索资源和馆藏（并发执行）
+        async def fetch_book_info(book):
+            book_title = book.get("title", "")
+            book_author = book.get("author", "")
+
             tasks = [
                 asyncio.to_thread(
                     search_digital_resource.invoke,
-                    {"title": book_title, "author": author}
+                    {"title": book_title, "author": book_author}
                 ),
                 asyncio.to_thread(
                     search_library_collection.invoke,
-                    {"title": book_title, "author": author}
+                    {"title": book_title, "author": book_author}
                 )
             ]
             results = await asyncio.gather(*tasks)
-            all_results.append({
+            return {
                 "title": book_title,
+                "author": book_author,
                 "digital_resources": results[0],
                 "library_info": results[1]
-            })
+            }
+
+        # 并发获取所有书籍的信息
+        all_results = await asyncio.gather(*[fetch_book_info(book) for book in books])
 
         # 格式化响应
         if len(books) == 1:
@@ -319,15 +325,16 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
             resource_text = _format_digital_resources(result["digital_resources"])
             library_text = _format_library_info(result["library_info"])
 
-            response = f"""# {result["title"]} - {author}
+            # 构建响应，只显示有内容的板块
+            response_parts = [f"# {result['title']} - {result['author']}\n"]
 
-**📍 馆藏信息**：
-{library_text}
+            if library_text:
+                response_parts.append(f"**馆藏信息**：\n{library_text}\n")
 
-**📥 电子资源**：
-{resource_text}
+            if resource_text:
+                response_parts.append(f"**电子资源**：\n{resource_text}\n")
 
----"""
+            response = "\n".join(response_parts)
         else:
             # 多本书（丛书）
             response_parts = [f"# 共找到 {len(books)} 本书\n"]
@@ -335,20 +342,22 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
                 resource_text = _format_digital_resources(result["digital_resources"])
                 library_text = _format_library_info(result["library_info"])
 
-                response_parts.append(f"""## {idx}. {result["title"]} - {author}
+                book_parts = [f"## {idx}. {result['title']} - {result['author']}\n"]
 
-**📍 馆藏信息**：
-{library_text}
+                if library_text:
+                    book_parts.append(f"**馆藏信息**：\n{library_text}\n")
+                else:
+                    book_parts.append(f"**暂无馆藏**   [荐购此书](https://library.example.com/recommend)\n")
+                    
+                if resource_text:
+                    book_parts.append(f"**电子资源**：\n{resource_text}\n")
 
-**📥 电子资源**：
-{resource_text}
-
----""")
+                response_parts.append("\n".join(book_parts))
 
             response = "\n".join(response_parts)
 
         logger.info(response)
-        
+
         state["final_response"] = response
         state["dialogue_response"] = response
 
@@ -439,7 +448,7 @@ JSON格式：
 
     llm_response = await conversation_manager.ainvoke(
         recommend_prompt,
-        model="DeepSeek-V3.2-Fast",
+        model="qwen3-max-2026-01-23",
         temperature=0.7
     )
     logger.info(f"LLM原始响应: {llm_response[:200]}...")
@@ -831,9 +840,9 @@ def _format_digital_resources(resource_json: str) -> str:
                 formatted.append(f"\n[{r['source']}] [{title_with_info}]({r['link']})")
             return '\n'.join(formatted)
         else:
-            return '暂无资源'
+            return None
     except:
-        return '暂无资源'
+        return None
 
 
 
@@ -866,10 +875,10 @@ def _format_library_info(library_json: str) -> str:
                 )
             return '\n'.join(lib_lines)
         else:
-            return '暂无馆藏\n\n[荐购此书](https://library.example.com/recommend)'
+            return None
     except Exception as e:
         logger.error(f"格式化馆藏信息失败: {e}")
-        return '暂无馆藏\n\n[荐购此书](https://library.example.com/recommend)'
+        return None
 
 
 # ========== 构建 StateGraph ==========
