@@ -125,7 +125,7 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         )
 
         # 初始化 RAG 服务（懒加载）
-        await session.initialize_rag_service(kb_vectorstore=get_kb_vectorstore())
+        # await session.initialize_rag_service(kb_vectorstore=get_kb_vectorstore())
 
         # 使用 LangGraph 工作流执行推荐流程
         async for event in stream_recommendation_workflow(
