@@ -1,0 +1,93 @@
+<!--components/book-card/book-card.wxml-->
+<view class="book-cards-container">
+  <swiper
+    class="book-swiper"
+    indicator-dots="{{books.length > 1}}"
+    indicator-color="rgba(0, 0, 0, .3)"
+    indicator-active-color="#1890ff"
+    circular="{{false}}"
+    autoplay="{{false}}"
+    bindchange="onSwiperChange"
+  >
+    <swiper-item wx:for="{{books}}" wx:key="index">
+      <scroll-view class="book-card" scroll-y="{{true}}">
+        <!-- 书籍封面 -->
+        <image
+          wx:if="{{item.image}}"
+          class="book-cover"
+          src="{{item.image}}"
+          mode="aspectFit"
+        />
+
+        <!-- 书籍信息 -->
+        <view class="book-info">
+          <view class="book-title">{{item.title}}</view>
+          <view class="book-author">{{item.author}}</view>
+          <view class="book-meta">
+            <text wx:if="{{item.publisher && item.publisher !== '未知'}}" class="book-publisher">{{item.publisher}}</text>
+            <text wx:if="{{item.rating}}" class="book-rating">⭐ {{item.rating}}</text>
+          </view>
+
+          <!-- 推荐理由 -->
+          <view wx:if="{{item.reason}}" class="book-reason">
+            <text class="reason-label">推荐理由：</text>
+            <text class="reason-text">{{item.reason}}</text>
+          </view>
+
+          <!-- 馆藏信息 -->
+          <view wx:if="{{item.hasLibrary}}" class="book-section">
+            <view class="section-title">馆藏信息</view>
+            <view class="library-list">
+              <view
+                wx:for="{{item.libraryItems}}"
+                wx:for-item="lib"
+                wx:key="index"
+                class="library-item"
+              >
+                <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
+                <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
+                <view class="library-detail">所在分馆: {{lib.library}}</view>
+                <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
+                <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 电子资源 -->
+          <view wx:if="{{item.hasResources}}" class="book-section">
+            <view class="section-title">电子资源</view>
+            <view class="resources-list">
+              <view
+                wx:for="{{item.resources}}"
+                wx:for-item="platform"
+                wx:key="source"
+                class="platform-group"
+              >
+                <view class="platform-name">[{{platform.source}}]</view>
+                <view
+                  wx:for="{{platform.books}}"
+                  wx:for-item="book"
+                  wx:key="index"
+                  class="resource-item"
+                  bindtap="onResourceTap"
+                  data-url="{{book.link}}"
+                >
+                  <view class="resource-title">{{book.title}}</view>
+                  <view class="resource-meta">
+                    <text wx:if="{{book.author}}" class="resource-author">{{book.author}}</text>
+                    <text wx:if="{{book.publisher}}" class="resource-publisher">{{book.publisher}}</text>
+                  </view>
+                </view>
+              </view>
+            </view>
+          </view>
+        </view>
+      </scroll-view>
+    </swiper-item>
+  </swiper>
+
+  <!-- 页码指示器 -->
+  <view wx:if="{{books.length > 1}}" class="page-indicator">
+    {{currentPage + 1}} / {{books.length}}
+  </view>
+</view>
