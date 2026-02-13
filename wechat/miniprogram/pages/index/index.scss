@@ -64,7 +64,7 @@ page {
   display: flex;
   flex-direction: column;
   gap: 32rpx;
-  width: 96%;
+  width: 94%;
   padding-top: 32rpx;
   margin: 0 auto;
 }
@@ -74,7 +74,7 @@ page {
   flex-direction: column;
 }
 
-/* --- 用户消息 (保持靠右，限制宽度) --- */
+/* --- 用户消息 (限制宽度) --- */
 .message-user {
   display: flex;
   flex-direction: row-reverse; 
