@@ -1,0 +1,184 @@
+/* components/book-card/book-card.wxss */
+.book-cards-container {
+  width: 100%;
+  padding: 20rpx 0;
+}
+
+.book-swiper {
+  width: 100%;
+  height: 1000rpx;
+}
+
+.book-card {
+  width: 100%;
+  height: 950rpx;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 16rpx;
+  border: 1rpx solid #e0e0e0;
+  box-shadow: 0 4rpx 12rpx rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.book-cover {
+  width: 100%;
+  height: 400rpx;
+  background: #fff;
+  margin-top: 20rpx;
+}
+
+.book-info {
+  padding: 24rpx;
+}
+
+.book-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+  line-height: 1.4;
+}
+
+.book-author {
+  font-size: 28rpx;
+  color: #666;
+  margin-bottom: 8rpx;
+}
+
+.book-meta {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 16rpx;
+}
+
+.book-publisher {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.book-rating {
+  font-size: 24rpx;
+  color: #ff9800;
+}
+
+.book-reason {
+  background: #f0f9ff;
+  padding: 16rpx;
+  border-radius: 8rpx;
+  margin-bottom: 16rpx;
+}
+
+.reason-label {
+  font-size: 24rpx;
+  color: #1890ff;
+  font-weight: bold;
+}
+
+.reason-text {
+  font-size: 26rpx;
+  color: #333;
+  line-height: 1.6;
+}
+
+.book-section {
+  margin-top: 16rpx;
+  padding-top: 16rpx;
+  border-top: 1rpx solid #eee;
+}
+
+.section-title {
+  font-size: 28rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 12rpx;
+}
+
+.library-info {
+  font-size: 24rpx;
+  color: #666;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.library-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12rpx;
+}
+
+.library-item {
+  padding: 12rpx;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+
+.library-title {
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 4rpx;
+}
+
+.library-pub-info {
+  color: #666;
+  margin-bottom: 8rpx;
+  font-size: 22rpx;
+}
+
+.library-detail {
+  color: #666;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.resources-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16rpx;
+}
+
+.platform-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.platform-name {
+  font-size: 26rpx;
+  color: #333;
+  font-weight: bold;
+  margin-bottom: 4rpx;
+}
+
+.resource-item {
+  padding: 12rpx;
+  background: #f5f5f5;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+  margin-left: 16rpx;
+}
+
+.resource-title {
+  color: #1890ff;
+  margin-bottom: 4rpx;
+}
+
+.resource-meta {
+  display: flex;
+  gap: 12rpx;
+  font-size: 22rpx;
+  color: #666;
+}
+
+.resource-author,
+.resource-publisher {
+  color: #1890ff;
+}
+
+.page-indicator {
+  text-align: center;
+  font-size: 24rpx;
+  color: #999;
+  margin-top: 16rpx;
+}
