@@ -40,7 +40,14 @@
         <!-- 助手消息 -->
         <view wx:else class="message-assistant">
           <view class="message-content assistant-content">
-            <markdown content="{{item.content}}" />
+            <!-- 如果是书籍卡片类型，先显示文字再显示卡片，最后显示追加内容 -->
+            <block wx:if="{{item.type === 'book_cards'}}">
+              <markdown wx:if="{{item.content}}" content="{{item.content}}" />
+              <book-card books="{{item.books}}" />
+              <markdown wx:if="{{item.appendContent}}" content="{{item.appendContent}}" />
+            </block>
+            <!-- 普通 Markdown 内容 -->
+            <markdown wx:else content="{{item.content}}" />
           </view>
         </view>
       </view>

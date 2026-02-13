@@ -7,6 +7,9 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
+  type?: 'book_cards' | 'text'
+  books?: any[]
+  appendContent?: string
 }
 
 Page({
@@ -142,11 +145,20 @@ Page({
         this.setData({ userId: data.user_id })
         storageService.setUserId(data.user_id)
       }
-    } else if (data.type === 'dialogue') {
-      // 对话内容 - 处理图片代理
+    } else if (data.type === 'message') {
+      // 消息内容 - 处理图片代理
       const processedContent = apiService.proxyImageUrls(data.content || '')
       const content = processedContent + '\n\n'
-      updateContent(content)
+
+      // 如果消息已创建，需要追加而不是替换
+      const messages = this.data.messages
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        const lastMessage = messages[messages.length - 1]
+        const newContent = lastMessage.content + content
+        updateContent(newContent)
+      } else {
+        updateContent(content)
+      }
     } else if (data.type === 'books') {
       // 书单 - 处理图片代理
       const messages = this.data.messages
@@ -160,20 +172,53 @@ Page({
       const lastMessage = messages[messages.length - 1]
       const newContent = lastMessage.content + `*${data.content}*\n\n`
       updateContent(newContent)
-    } else if (data.type === 'book_detail') {
-      // 书籍详情
+    } else if (data.type === 'book_cards') {
+      // 书籍卡片数据
       const messages = this.data.messages
       const lastMessage = messages[messages.length - 1]
+
+      // 如果没有最后一条消息，创建一个新消息
+      if (!lastMessage || lastMessage.role !== 'assistant') {
+        messages.push({
+          role: 'assistant',
+          content: '',
+          type: 'book_cards',
+          books: []
+        })
+      }
+
       // 移除"正在查询"状态
-      let newContent = lastMessage.content.replace(/\*正在为您查询这些书籍的详细信息\.\.\.\*\n\n/g, '')
-      // 添加详细信息（已经过代理URL处理）
-      const processedContent = apiService.proxyImageUrls(data.content || '')
-      newContent += processedContent + '\n\n'
-      updateContent(newContent)
-    } else if (data.type === 'message') {
-      // 简单消息 - 处理图片代理
-      const processedContent = apiService.proxyImageUrls(data.content || '')
-      updateContent(processedContent)
+      let newContent = lastMessage ? lastMessage.content.replace(/\*正在为您查询这些书籍的详细信息\.\.\.\*\n\n/g, '') : ''
+
+      // 处理图片代理
+      const bookCards: any[] = Array.isArray(data.content) ? data.content : []
+      const books = bookCards.map((book: any) => ({
+        ...book,
+        image: book.image ? apiService.proxyImageUrls(book.image) : ''
+      }))
+
+      // 更新消息，添加书籍卡片类型标记
+      messages[messages.length - 1] = {
+        ...messages[messages.length - 1],
+        content: newContent,
+        type: 'book_cards',
+        books: books
+      }
+      this.setData({ messages })
+    } else if (data.type === 'append_message') {
+      // 追加消息 - 追加到最后一条消息的 appendContent 字段
+      const messages = this.data.messages
+      if (messages.length > 0) {
+        const lastMessage = messages[messages.length - 1]
+        if (lastMessage.role === 'assistant') {
+          const processedContent = apiService.proxyImageUrls(data.content || '')
+          messages[messages.length - 1] = {
+            ...lastMessage,
+            appendContent: (lastMessage.appendContent || '') + processedContent
+          }
+          this.setData({ messages })
+        }
+      }
     } else if (data.type === 'done') {
       // 完成
       this.setData({ loading: false })
@@ -183,7 +228,7 @@ Page({
   },
 
   // 更新助手消息
-  updateAssistantMessage(content: string, hasCreated: boolean, isStreaming: boolean): boolean {
+  updateAssistantMessage(content: string, hasCreated: boolean, isStreaming: boolean, append: boolean = false): boolean {
     const messages = [...this.data.messages]
 
     if (!hasCreated) {
@@ -197,9 +242,10 @@ Page({
       return true
     } else {
       // 更新最后一条消息
+      const lastMessage = messages[messages.length - 1]
       messages[messages.length - 1] = {
-        ...messages[messages.length - 1],
-        content,
+        ...lastMessage,
+        content: append ? (lastMessage.content + content) : content,
         isStreaming,
       }
       this.setData({ messages })
