@@ -8,7 +8,6 @@ import sys
 from utils.models import DatabaseManager, Base, get_db_manager
 import logging
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

@@ -13,7 +13,6 @@ from service.knowledge_base_tool import (
     get_default_knowledge_base
 )
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

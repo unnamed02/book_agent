@@ -13,7 +13,7 @@ import re
 import asyncio
 
 
-from tools.douban_tool import search_douban_book, get_douban_book_detail
+from tools.douban_tool import search_douban_book
 from tools.resource_tool import search_digital_resource
 from tools.library_tool import search_library_collection
 from session.conversation_manager import ConversationManager
@@ -218,7 +218,7 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
 
 async def handle_find_book(state: BookRecommendationState) -> BookRecommendationState:
     """
-    节点: 处理找书请求（独立节点，不复用推荐流程）
+    节点: 提取书名（找书流程第一步）
 
     直接查询图书馆馆藏并格式化输出
     """
@@ -258,7 +258,7 @@ JSON格式：
             model="qwen3-max-2026-01-23",
             temperature=0
         )
-
+    
         # 解析提取结果
         book_info = json.loads(extract_result.strip())
         books = book_info.get("books", [])
@@ -266,67 +266,24 @@ JSON格式：
         logger.info(f"提取到 {len(books)} 本书")
 
         if not books:
+            state["error"] = "无法提取书名"
+            state["recommended_books"] = []
+            state["book_cards"] = []
             state["final_response"] = "抱歉，我没有理解您要找的书名，请提供更明确的书名信息。"
             state["dialogue_response"] = state["final_response"]
             return state
 
-        # 并发获取所有书籍的信息
-        all_results = await asyncio.gather(*[
-            _fetch_book_resources(book.get("title", ""), book.get("author", ""))
-            for book in books
-        ])
-
-        # 构建书籍卡片数据，分为有资源和无资源两类
-        book_cards = []
-        books_without_resources = []
-
-        for result in all_results:
-            # 解析电子资源并按平台分组
-            resources = _group_resources_by_source(result.get("digital_resources", "[]"))
-
-            # 解析馆藏信息
-            library_items = _format_library_info(result.get("library_info", "[]"))
-
-            has_library = library_items is not None and len(library_items) > 0
-            has_resources = len(resources) > 0
-
-            # 如果既没有馆藏也没有电子资源，放入无资源列表
-            if not has_library and not has_resources:
-                books_without_resources.append({
-                    "title": result.get("title", ""),
-                    "author": result.get("author", "")
-                })
-            else:
-                # 有资源的书籍加入卡片列表
-                publisher = result.get("publisher", "")
-                book_cards.append({
-                    "title": result.get("title", ""),
-                    "author": result.get("author", ""),
-                    "publisher": publisher if publisher else "",
-                    "rating": result.get("rating", ""),
-                    "hasLibrary": has_library,
-                    "libraryItems": library_items or [],
-                    "hasResources": has_resources,
-                    "resources": resources
-                })
-
-
-        # 保存卡片数据到状态
-        state["book_cards"] = book_cards
-        state["books_without_resources"] = books_without_resources
-        state["final_response"] = ""
-        state["dialogue_response"] = ""
-
-        logger.info("✓ 找书响应生成完成")
+        # 保存提取的书籍列表
+        state["recommended_books"] = books
+        logger.info(f"✓ 提取 {len(books)} 本书籍")
 
     except Exception as e:
-        logger.error(f"找书处理失败: {e}", exc_info=True)
+        logger.error(f"找书提取失败: {e}", exc_info=True)
+        state["error"] = str(e)
         state["final_response"] = f"抱歉，查找时出现错误，请稍后重试。"
         state["dialogue_response"] = state["final_response"]
 
     return state
-
-
 
 
 async def generate_recommendations(state: BookRecommendationState) -> BookRecommendationState:
@@ -406,16 +363,26 @@ async def fetch_book_details(state: BookRecommendationState) -> BookRecommendati
         return state
 
     # 并行获取所有书籍的详细信息并构建卡片
-    tasks = [_fetch_single_book_detail(book) for book in books]
+    # 超过5本书时不获取豆瓣信息以提升性能
+    fetch_douban = len(books) <= 5
+    tasks = [_fetch_single_book_detail(book, fetch_douban) for book in books]
     all_books_detail = await asyncio.gather(*tasks)
 
     # 过滤有效结果并去重，同时构建书籍卡片
     book_cards = []
+    books_without_resources = []
     seen_books = set()
     book_titles = []
 
-    for detail in all_books_detail:
+    for i, detail in enumerate(all_books_detail):
+        original_book = books[i]
+
+        # 如果没有获取到详情，记录为未找到
         if not detail or not detail.get("title"):
+            books_without_resources.append({
+                "title": original_book.get("title", ""),
+                "author": original_book.get("author", "")
+            })
             continue
 
         book_key = (detail["title"], detail["author"])
@@ -431,16 +398,27 @@ async def fetch_book_details(state: BookRecommendationState) -> BookRecommendati
         # 解析馆藏信息
         library_items = _format_library_info(detail.get("library_info", "[]"))
 
-        # 构建卡片数据
-        book_cards.append({
-            **detail,  # 直接展开所有字段
-            "hasLibrary": library_items is not None and len(library_items) > 0,
-            "libraryItems": library_items or [],
-            "hasResources": len(resources) > 0,
-            "resources": resources
-        })
+        has_library = library_items is not None and len(library_items) > 0
+        has_resources = len(resources) > 0
+
+        # 如果既没有馆藏也没有电子资源，放入无资源列表
+        if not has_library and not has_resources:
+            books_without_resources.append({
+                "title": detail.get("title", ""),
+                "author": detail.get("author", "")
+            })
+        else:
+            # 构建卡片数据
+            book_cards.append({
+                **detail,  # 直接展开所有字段
+                "hasLibrary": has_library,
+                "libraryItems": library_items or [],
+                "hasResources": has_resources,
+                "resources": resources
+            })
 
     state["book_cards"] = book_cards
+    state["books_without_resources"] = books_without_resources
     logger.info(f"✓ 获取 {len(book_cards)} 本书籍的详细信息")
 
     # 格式化最终响应（用于保存到记忆）
@@ -560,7 +538,7 @@ def _regex_extract_books(text: str) -> List[Dict]:
 
 
 
-async def _fetch_single_book_detail(book: Dict) -> Dict:
+async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Dict:
     """
 
     包括：豆瓣详情、馆藏、电子资源、购买链接
@@ -572,33 +550,7 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
     try:
         logger.info(f"开始获取《{title}》的详细信息")
 
-        # Step 1: 搜索豆瓣获取 URI
-        douban_search_result = search_douban_book.invoke({
-            "title": title,
-            "author": author
-        })
-
-        # 添加小延迟，避免请求过于密集
-        await asyncio.sleep(0.3)
-
-        data = json.loads(douban_search_result)
-        books_found = data.get("books", [])
-
-        if not books_found:
-            logger.warning(f"豆瓣未找到《{title}》")
-            return {}
-
-        # 选择最相关的结果（通常第一个）
-        uri = books_found[0]["uri"]
-
-        # Step 2: 获取豆瓣详情
-        detail_result = get_douban_book_detail.invoke({"uri": uri})
-        detail = json.loads(detail_result)
-
-
-        # Step 3: 并行获取资源、馆藏信息
-        isbn = detail.get("isbn", "")
-
+        # 并行获取电子资源、馆藏信息
         tasks = [
             asyncio.to_thread(
                 search_digital_resource.invoke,
@@ -610,20 +562,49 @@ async def _fetch_single_book_detail(book: Dict) -> Dict:
             )
         ]
 
-        results = await asyncio.gather(*tasks)
+        # 只有在需要时才获取豆瓣信息
+        if fetch_douban:
+            tasks.insert(0, asyncio.to_thread(
+                search_douban_book.invoke,
+                {"title": title, "author": author}
+            ))
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # 处理豆瓣结果
+        cover_url = ""
+        digital_idx = 0
+        library_idx = 1
+
+        if fetch_douban:
+            digital_idx = 1
+            library_idx = 2
+            if not isinstance(results[0], Exception):
+                try:
+                    data = json.loads(results[0])
+                    books_found = data.get("books", [])
+                    if books_found:
+                        first_book = books_found[0]
+                        cover_url = first_book.get("cover_url", "")
+                    else:
+                        logger.warning(f"豆瓣未找到《{title}》")
+                except Exception as e:
+                    logger.warning(f"豆瓣结果解析失败: {e}")
+            else:
+                logger.warning(f"豆瓣查询失败: {results[0]}")
 
         # 组装完整信息
         return {
-            "title": detail.get("title", title),
-            "author": detail.get("author", author),
-            "publisher": detail.get("publisher", "未知"),
-            "isbn": isbn,
-            "rating": detail.get("rating", ""),
-            "summary": detail.get("summary", ""),
-            "image": detail.get("image", ""),
+            "title": title,
+            "author": author,
+            "publisher": "",
+            "isbn": "",
+            "rating": "",
+            "summary": "",
+            "image": cover_url,
             "reason": reason,
-            "digital_resources": results[0],
-            "library_info": results[1]
+            "digital_resources": results[digital_idx] if not isinstance(results[digital_idx], Exception) else "[]",
+            "library_info": results[library_idx] if not isinstance(results[library_idx], Exception) else "[]"
         }
 
     except Exception as e:
@@ -692,27 +673,6 @@ def _group_resources_by_source(digital_resources_json: str) -> List[Dict]:
     ]
 
 
-async def _fetch_book_resources(title: str, author: str) -> Dict:
-    """并发获取书籍的电子资源和馆藏信息"""
-    tasks = [
-        asyncio.to_thread(
-            search_digital_resource.invoke,
-            {"title": title, "author": author}
-        ),
-        asyncio.to_thread(
-            search_library_collection.invoke,
-            {"title": title, "author": author}
-        )
-    ]
-    results = await asyncio.gather(*tasks)
-    return {
-        "title": title,
-        "author": author,
-        "digital_resources": results[0],
-        "library_info": results[1]
-    }
-
-
 # ========== 构建 StateGraph ==========
 
 def create_recommendation_graph() -> StateGraph:
@@ -732,9 +692,9 @@ def create_recommendation_graph() -> StateGraph:
     节点说明：
     - route_query: 智能路由，判断查询类型（find_book/book_recommendation/customer_service）
     - customer_service: 处理客服咨询（使用 RAG）
-    - find_book: 处理找书请求，查询馆藏和电子资源
+    - find_book: 提取书名（找书流程第一步）
     - generate_recommendations: 生成推荐书单和对话响应
-    - fetch_book_details: 获取书籍详情并构建卡片
+    - fetch_book_details: 获取书籍详情并构建卡片（找书和推荐共用）
     """
     workflow = StateGraph(BookRecommendationState)
 
@@ -762,11 +722,13 @@ def create_recommendation_graph() -> StateGraph:
     # 客服分支直接结束
     workflow.add_edge("customer_service", END)
 
-    # 找书分支直接结束
-    workflow.add_edge("find_book", END)
+    # 找书分支：提取书名 → 获取详情 → 结束
+    workflow.add_edge("find_book", "fetch_book_details")
 
     # 推荐分支：生成推荐 → 获取详情 → 结束
     workflow.add_edge("generate_recommendations", "fetch_book_details")
+
+    # 获取详情后结束
     workflow.add_edge("fetch_book_details", END)
 
     return workflow.compile()
@@ -843,39 +805,44 @@ async def stream_recommendation_workflow(
                 return
 
             elif node_name == "find_book":
-                # 找书响应：发送书籍卡片
-                book_cards = node_state.get("book_cards", [])
-                books_without_resources = node_state.get("books_without_resources", [])
-
-                total_count = len(book_cards)
-
-                if book_cards:
-                    # 构建消息内容
-                    message_content = f"共找到 {total_count} 本书籍："
-
-                    # 发送消息
+                # 找书第一步：提取书名完成
+                if node_state.get("error"):
                     yield {
-                        "type": "message",
-                        "content": message_content
+                        "type": "error",
+                        "content": node_state.get("final_response", "抱歉，查找时出现错误。")
                     }
+                    yield {"type": "done"}
+                    return
 
-                if book_cards:
-                    # 发送书籍卡片
-                    yield {
-                        "type": "book_cards",
-                        "content": book_cards
-                    }
+                # 发送找到的书籍信息
+                books = node_state.get("recommended_books", [])
+                if books:
+                    if len(books) > 5:
+                        # 超过5本显示前5本
+                        book_list = "\n".join([
+                            f"《{b['title']}》 - {b['author']}" if b.get('author') else f"《{b['title']}》"
+                            for b in books[:5]
+                        ])
+                        yield {
+                            "type": "message",
+                            "content": f"相关书籍有：\n{book_list}\n等 {len(books)} 本"
+                        }
+                    else:
+                        # 5本及以下显示详细列表
+                        book_list = "\n".join([
+                            f"《{b['title']}》 - {b['author']}" if b.get('author') else f"《{b['title']}》"
+                            for b in books
+                        ])
+                        yield {
+                            "type": "message",
+                            "content": f"相关书籍有：\n{book_list}"
+                        }
 
-                if books_without_resources:
-                    books_list = "、".join([f"《{b['title']}》" for b in books_without_resources])
-                    message_content = f"\n\n以下书籍暂无馆藏和电子资源：{books_list}"
-                    yield {
-                        "type": "append_message",
-                        "content": message_content
-                    }
-                    
-                yield {"type": "done"}
-                return
+           # 发送状态提示
+                yield {
+                    "type": "status",
+                    "content": "正在为您查询这些书籍的详细信息..."
+                }
 
             elif node_name == "generate_recommendations":
                 # 生成推荐书单完成
@@ -914,12 +881,23 @@ async def stream_recommendation_workflow(
                 }
 
             elif node_name == "fetch_book_details":
-                # 获取书籍详情完成
+                # 获取书籍详情完成（找书和推荐共用）
                 book_cards = node_state.get("book_cards", [])
+                books_without_resources = node_state.get("books_without_resources", [])
+
                 if book_cards:
                     yield {
                         "type": "book_cards",
                         "content": book_cards
+                    }
+
+                # 如果有无资源的书籍，发送提示
+                if books_without_resources:
+                    books_list = "、".join([f"《{b['title']}》" for b in books_without_resources])
+                    message_content = f"\n\n以下书籍暂无馆藏和电子资源：{books_list}"
+                    yield {
+                        "type": "append_message",
+                        "content": message_content
                     }
 
         # 最终完成标记

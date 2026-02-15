@@ -63,9 +63,6 @@ def search_library_collection(title: str , author : str) -> str:
 
         bookrecnos = list(books_info.keys())
 
-        print(f"搜索URL: {search_url}")
-        print(f"找到的图书: {books_info}")
-
         if not bookrecnos:
             logger.info(f"未找到《{title}》的馆藏信息")
             return json.dumps([], ensure_ascii=False)
