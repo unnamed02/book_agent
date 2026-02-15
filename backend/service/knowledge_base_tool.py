@@ -199,7 +199,7 @@ class RAGCustomerService:
             llm: 语言模型
         """
         self.kb = knowledge_base
-        self.llm = llm or ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+        self.llm = llm or ChatOpenAI(model="qwen-flash", temperature=0.3)
 
     async def answer_question(
         self,

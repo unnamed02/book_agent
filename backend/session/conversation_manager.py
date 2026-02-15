@@ -229,7 +229,7 @@ def create_conversation_manager(
     """
     manager = ConversationManager(
         session_id=session_id,
-        default_model="gpt-4o-mini",  # 默认模型，可以在调用时切换
+        default_model="qwen-flash",  # 默认模型，可以在调用时切换
         default_temperature=0.7,
         max_history_rounds=max_history_rounds,
         redis_client=redis_client
