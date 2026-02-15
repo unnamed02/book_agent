@@ -69,30 +69,16 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
     conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
 
-    route_prompt = f"""分析用户的查询意图和明确性。
+    route_prompt = f"""判断用户查询类型：
 
 用户查询：{user_query}
 
-请判断查询类型：
+类型：
+- find_book：查找特定书籍（关键词：找、查、有没有、搜索 + 书名）
+- book_recommendation：需要推荐书籍（关键词：推荐、想看、想学、书单）
+- customer_service：询问系统功能、使用方法等
 
-**查询类型判断**：
-   - 找书（find_book）：用户想要查找特定的书籍，查询图书馆是否有这本书
-        关键词：找、查、有没有、搜索 + 具体书名
-        示例：找一下红楼梦/找如何阅读一本书/有没有三体/搜索一下活着/机械设计手册
-   - 图书推荐（book_recommendation）：用户想要图书推荐，需要推荐书籍
-        关键词：推荐、想看、想学、书单
-        示例：我想学习python/推荐几本科幻小说/全民阅读书单/想看一些历史书
-   - 客服咨询（customer_service）：询问系统功能、使用方法、技术问题、投诉建议等
-        示例：怎么使用/系统有什么功能/如何借书
-
-重要提示：
-- 如果用户提到"找"、"查"、"有没有"等词，并且后面跟着具体的书名，应该判断为 find_book
-- 如果用户想要推荐或建议，应该判断为 book_recommendation
-
-返回格式：
-只返回查询类型对应的字符串，find_book/book_recommendation/customer_service，不返回其他内容
-
-"""
+只返回类型字符串：find_book/book_recommendation/customer_service"""
 
     route_result = await conversation_manager.ainvoke(
         route_prompt,
@@ -219,7 +205,7 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
 
     cs_response = await conversation_manager.ainvoke(
         cs_prompt,
-        model="gpt-4o-mini",
+        model="qwen-flash",
         temperature=0.7
     )
 
@@ -242,11 +228,11 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     user_query = state["user_query"]
 
     # 使用 LLM 提取书名和作者，并识别是否为丛书
-    extract_prompt = f"""从用户的查询中提取书名和作者信息，并判断是否为丛书。
+    extract_prompt = f"""从查询中提取书名和作者，返回JSON格式。
 
 用户查询：{user_query}
 
-请以 JSON 格式返回：
+JSON格式：
 {{
     "books": [
         {{"title": "书名1", "author": "作者1"}},
@@ -255,22 +241,16 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     ]
 }}
 
-判断规则：
-1. 如果是知名丛书（如哈利波特、三体、魔戒、冰与火之歌等），且用户只提到丛书名称，返回所有分册
-2. 如果用户明确指定了某一册，只返回该册
-3. 如果是单本书，books 数组只包含一个元素
-4. 用户没有提到作者且不好确定作者时，author 返回空字符串
-5. 丁丁历险记搜索时只使用分册名称（如"黑岛"、"独角兽号"），不要加"丁丁历险记"前缀
+规则：
+1. 知名丛书（哈利波特、三体等）且用户只提丛书名，返回所有分册
+2. 用户指定某一册，只返回该册
+3. 作者推断（用户未指定时）：
+   - 唯一经典作品（如《活着》余华）→ 填充作者
+   - 多个同名书（如《边城》）→ 返回所有并填充各自作者
+   - 工具书/教材/其余情况 → author 为空字符串
+4. 丁丁历险记只用分册名（如"黑岛"），不加前缀
 
-示例：
-- 用户查询"哈利波特" → {{"books": [{{"title": "哈利波特与魔法石", "author": "J.K.罗琳"}}, {{"title": "哈利波特与密室", "author": "J.K.罗琳"}}, {{"title": "哈利波特与阿兹卡班囚徒", "author": "J.K.罗琳"}}, {{"title": "哈利波特与火焰杯", "author": "J.K.罗琳"}}, {{"title": "哈利波特与凤凰社", "author": "J.K.罗琳"}}, {{"title": "哈利波特与混血王子", "author": "J.K.罗琳"}}, {{"title": "哈利波特与死亡圣器", "author": "J.K.罗琳"}}]}}
-- 用户查询"哈利波特与魔法石" → {{"books": [{{"title": "哈利波特与魔法石", "author": "J.K.罗琳"}}]}}
-- 用户查询"三体" → {{"books": [{{"title": "三体", "author": "刘慈欣"}}, {{"title": "三体Ⅱ·黑暗森林", "author": "刘慈欣"}}, {{"title": "三体Ⅲ·死神永生", "author": "刘慈欣"}}]}}
-- 用户查询"丁丁历险记" → {{"books": [{{"title": "黑岛", "author": "埃尔热"}}, {{"title": "独角兽号的秘密", "author": "埃尔热"}}, {{"title": "红海鲨鱼", "author": "埃尔热"}}, ...]}}
-- 用户查询"活着" → {{"books": [{{"title": "活着", "author": "余华"}}]}}
-- 用户查询"机械设计手册" → {{"books": [{{"title": "机械设计手册", "author": ""}}]}}
-
-只返回 JSON，不要其他内容。"""
+只返回JSON。"""
 
     try:
         extract_result = await conversation_manager.ainvoke(
@@ -367,34 +347,22 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
         conversation_manager.set_system_context(system_context)
 
     # 生成推荐书单
-    recommend_prompt = f"""请根据用户需求进行个性化推荐。
+    recommend_prompt = f"""根据用户需求推荐图书。
 
 用户需求：{user_query}
 
-请按以下格式回答：
+格式：先自然回应，然后输出JSON书单。
 
-先自然且亲切地回应用户的需求，然后直接给出推荐书单的JSON。
+JSON格式：{{"books": [{{"title": "书名", "author": "作者", "reason": "推荐理由(20字内)"}}, ...]}}
 
-JSON格式：
-{{"books": [{{"title": "完整书名", "author": "作者名", "reason": "简短推荐理由(20字内)"}}, ...]}}
+要求：
+- 推荐3-5本真实存在的图书
+- 优先推荐中文版经典、权威书籍
+- author只写名字，不加"著"、"编"等后缀
+- title只要主标题，不含版本、分册信息
+- JSON不用```包裹
 
-推荐策略：
-1. 如果用户明确指定了书名，只返回名称相符或者相似的书籍
-2. 如果用户描述了主题、领域或需求，推荐3-5本相关书籍
-3. 避免重复推荐最近已推荐的书籍
-
-选书标准：
-1. 必须是真实存在的图书，有明确的作者
-2. 优先推荐中文版
-3. 优先选择经典、权威的书籍
-
-格式要求：
-- 对话部分用自然语言，不要加"第一部分"、"第二部分"等标记
-- JSON部分不要用```包裹，直接输出
-- author字段只写作者名字，不要加"著"、"编"、"译"等后缀、
-- title只要主标题，不要保留版本，分册名等形象
-  * 正确：{{"author": "曹雪芹"}}
-  * 错误：{{"author": "曹雪芹 著"}} 或 {{"author": "曹雪芹 著，高鹗 续"}}"""
+示例：{{"author": "曹雪芹"}}"""
 
     llm_response = await conversation_manager.ainvoke(
         recommend_prompt,

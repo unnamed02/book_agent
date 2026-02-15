@@ -1,10 +1,10 @@
 from langchain_core.tools import tool
-from langchain_openai import ChatOpenAI
 import requests
 import logging
 import urllib3
 import json
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -16,67 +16,81 @@ DOUBAN_API_KEY = os.getenv("DOUBAN_API_KEY", "")
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 def optimize_query(query: str) -> str:
-    """优化豆瓣搜索query"""
+    """优化豆瓣搜索query - 使用正则表达式替代LLM"""
 
-    llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
-    prompt = f"""请优化以下图书搜索query，使豆瓣搜索更精准：
+    # 去掉版本号
+    query = re.sub(r'[（(]?第?\s*[0-9一二三四五六七八九十]+\s*版[）)]?', '', query)
+    query = re.sub(r'[（(]?修订版|珍藏版|典藏版|精装版|平装版|增订版|新版[）)]?', '', query)
 
-优化规则：
-1. 书名处理：
-   - 去掉版本号（如"第3版"、"修订版"、"珍藏版"等）
-   - 去掉副标题（保留主标题）
+    # 去掉"著"、"编"、"译"、"续"等后缀
+    query = re.sub(r'\s*[著编译续注校主编著者]\s*$', '', query)
+    query = re.sub(r'\s+[著编译续注校主编著者](?=\s|$)', '', query)
 
-2. 作者处理：
-   - 先去掉"著"、"编"、"译"、"续"等后缀词
-   - 如有多个作者（用逗号、顿号、"与"等分隔），只保留第一个
-   - 去掉外国作者的音译名（如"埃里克·马瑟斯"、"Joshua Bloch"等）
-   - 对于家喻户晓的经典名著，如果作者是原作者，去掉作者名以提高搜索准确率
-     示例：
-     * 「红楼梦 曹雪芹」→「红楼梦」（经典名著原作者）
-     * 「三国演义 罗贯中」→「三国演义」（经典名著原作者）
-     * 「红楼梦 刘心武」→「红楼梦 刘心武」（续作/点评者，需保留）
-     * 「Python编程从入门到实践 埃里克」→「Python编程从入门到实践」（外国作者）
+    # 经典名著列表（去掉原作者以提高搜索准确率）
+    classics = {
+        '红楼梦': ['曹雪芹', '曹雪芹 高鹗'],
+        '三国演义': ['罗贯中'],
+        '水浒传': ['施耐庵'],
+        '西游记': ['吴承恩'],
+        '三体': ['刘慈欣']
+    }
 
-只返回优化后的query，不要任何解释或其他内容。
+    for book, authors in classics.items():
+        if book in query:
+            for author in authors:
+                query = query.replace(f'{book} {author}', book)
+                query = query.replace(f'{author} {book}', book)
 
-原query：{query}
-优化后："""
+    # 清理多余空格
+    query = re.sub(r'\s+', ' ', query).strip()
 
-    result = llm.invoke(prompt).content.strip()
-    logger.info(f"Query优化: '{query}' -> '{result}'")
-    return result
+    logger.info(f"Query优化: '{query}' (正则优化)")
+    return query
 
-def extract_first_author(author_string: str) -> str:
-    """提取第一个作者名"""
+def extract_first_author(author_string) -> str:
+    """提取第一个作者名 - 使用正则表达式"""
+    # 处理列表类型
     if isinstance(author_string, list):
         author_string = author_string[0] if author_string else ""
+
+    # 转换为字符串
+    author_string = str(author_string) if author_string else ""
+
+    # 处理字符串形式的列表（如 "['吴敬梓']"）
+    if author_string.startswith('[') and author_string.endswith(']'):
+        # 提取列表中的第一个元素
+        match = re.search(r"['\"]([^'\"]+)['\"]", author_string)
+        if match:
+            author_string = match.group(1)
+        else:
+            author_string = author_string.strip('[]').strip()
 
     if not author_string or author_string == "":
         return "未知作者"
 
-    llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
-    prompt = f"""从以下作者信息中提取第一个作者的名字，去掉"编"、"著"、"译"、"注"、"校"、"主编"、"编著"等后缀。
-只返回作者名字，不要其他内容。
+    # 去掉后缀
+    author = re.sub(r'\s*[（(]?[著编译注校主编著者]+[）)]?\s*$', '', author_string)
 
-作者信息：{author_string}"""
+    # 提取第一个作者（按常见分隔符）
+    author = re.split(r'[,，、;；/]', author)[0].strip()
 
-    result = llm.invoke(prompt).content.strip()
-    return result if result else "未知作者"
+    return author if author else "未知作者"
 
 def extract_title(title: str) -> str:
-    """提取书名，去掉版本号"""
+    """提取书名，去掉版本号 - 使用正则表达式"""
     if not title:
         return ""
 
-    llm = ChatOpenAI(model="Qwen3-8B", temperature=0)
-    prompt = f"""从以下书名中去掉版本号信息（如"第X版"、"单行本"等），只保留核心书名。
-只返回书名，不要其他内容。
+    # 去掉版本号
+    title = re.sub(r'[（(]?第?\s*[0-9一二三四五六七八九十]+\s*版[）)]?', '', title)
+    title = re.sub(r'[（(]?单行本|修订版|珍藏版|典藏版|精装版|平装版|增订版|新版[）)]?', '', title)
 
-书名：{title}"""
+    # 清理多余空格
+    title = re.sub(r'\s+', ' ', title).strip()
 
-    result = llm.invoke(prompt).content.strip()
-    return result if result else title
+    return title if title else title
 
 
 @tool
@@ -133,14 +147,13 @@ def get_douban_book_detail(uri: str, use_llm_optimize: bool = True) -> str:
         logger.info(f"*** {response} ***")
         if use_llm_optimize:
             title = extract_title(str(title_raw))
-            author = extract_first_author(str(author_raw)) if author_raw else "未知作者"
+            author = extract_first_author(author_raw) if author_raw else "未知作者"
         else:
             title = str(title_raw) if title_raw else "未知书名"
             # 简单处理作者：取列表第一个，去掉常见后缀
             if isinstance(author_raw, list) and author_raw:
                 author = str(author_raw[0])
                 # 简单去掉后缀
-                import re
                 author = re.sub(r'\s*(著|编|译|注|校|主编|编著).*$', '', author).strip()
             else:
                 author = str(author_raw) if author_raw else "未知作者"

@@ -103,7 +103,7 @@ class Session:
                 return
 
             embeddings = OpenAIEmbeddings()
-            llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.3)
+            llm = ChatOpenAI(model="qwen-flash", temperature=0.3)
 
             # 创建知识库
             kb = KnowledgeBase(

@@ -38,7 +38,7 @@ def llm_filter_resources(results: List[ResourceResult], title: str, author: str)
         return results
 
     try:
-        llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+        llm = ChatOpenAI(model="qwen-flash", temperature=0)
 
         # 构建提示词
         results_text = "\n".join([
@@ -148,10 +148,8 @@ def search_zhangyue_resource(title: str, author: str = "") -> str:
                     else:
                         read_link = link if link.startswith('http') else f"https://se.zhangyue.com{link}"
 
-                    logger.info(read_link)
-
                     result: ResourceResult = {
-                        "source": "掌阅电子书平台",
+                        "source": "掌阅精选",
                         "title": title_text,
                         "author": author_text,
                         "publisher": publisher_text,
@@ -337,6 +335,8 @@ def search_chineseall_resource(title: str, author: str = "") -> str:
             item_publisher = item.get("publisher", "")
             item_isbn = item.get("isbn", "").replace('-', '')
             item_shid = item.get("shId", "")
+            
+            logger.info(item_shid)
 
             if item_title:
                 normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', item_title.lower())
@@ -347,12 +347,12 @@ def search_chineseall_resource(title: str, author: str = "") -> str:
                 # 相似度阈值 80 以上才添加
                 if title_similarity >= 80:
                     result: ResourceResult = {
-                        "source": "书香陕西图书馆（中文在线）",
+                        "source": "中文在线",
                         "title": item_title,
                         "author": item_author,
                         "publisher": item_publisher,
                         "isbn": item_isbn,
-                        "link": f"https://shanxist.chineseall.cn/book/detail/{item_shid}"
+                        "link": f"https://beilin.w.chineseall.cn/book/detail/{item_shid}?topicCode=dbgf_1_0_2_81"
                     }
                     all_results.append(result)
 
@@ -373,14 +373,14 @@ def search_chineseall_resource(title: str, author: str = "") -> str:
 if __name__ == "__main__":
     print("=== 测试搜索电子资源 ===")
 
-    result = search_zhangyue_resource("蛤蟆先生去看心理学医生", "罗伯特·戴博德")
-    print(result)
+    # result = search_zhangyue_resource("蛤蟆先生去看心理学医生", "罗伯特·戴博德")
+    # print(result)
     
     # result = search_cxstar_resource("Python编程从入门到实践","Eric Matthes")
     # print(result)
 
-    # result = search_chineseall_resource("机械设计手册","成大先")
-    # print(result)
+    result = search_chineseall_resource("我只要少许","简")
+    print(result)
     
     # result = search_digital_resource.invoke({
     #     "title": "机械设计手册",

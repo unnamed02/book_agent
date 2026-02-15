@@ -146,9 +146,8 @@ Page({
         storageService.setUserId(data.user_id)
       }
     } else if (data.type === 'message') {
-      // 消息内容 - 处理图片代理
-      const processedContent = apiService.proxyImageUrls(data.content || '')
-      const content = processedContent + '\n\n'
+      // 消息内容
+      const content = (data.content || '') + '\n\n'
 
       // 如果消息已创建，需要追加而不是替换
       const messages = this.data.messages
@@ -160,11 +159,10 @@ Page({
         updateContent(content)
       }
     } else if (data.type === 'books') {
-      // 书单 - 处理图片代理
+      // 书单
       const messages = this.data.messages
       const lastMessage = messages[messages.length - 1]
-      const processedContent = apiService.proxyImageUrls(data.content || '')
-      const newContent = lastMessage.content + processedContent + '\n\n'
+      const newContent = lastMessage.content + (data.content || '') + '\n\n'
       updateContent(newContent)
     } else if (data.type === 'status') {
       // 状态信息
