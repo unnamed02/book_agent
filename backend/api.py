@@ -17,7 +17,11 @@ from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
 
-logging.basicConfig(level=logging.INFO)
+# 统一配置日志等级
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
