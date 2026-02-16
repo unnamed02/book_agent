@@ -35,7 +35,7 @@ class BookRecommendationState(TypedDict):
     rag_service: Optional[RAGCustomerService]  # RAG 客服服务
 
     # 路由结果
-    query_type: str  # "book_recommendation" | "customer_service" | "clarification"
+    query_type: str  # "book_recommendation" | "customer_service" | "find_book"
 
     # 推荐结果
     recommended_books: List[Dict]  # [{"title": "", "author": "", "reason": ""}]
@@ -751,7 +751,6 @@ async def stream_recommendation_workflow(
         session_id: 会话ID
         user_id: 用户ID
         conversation_manager: 会话管理器
-        memory_manager: 记忆管理器（可选）
         rag_service: RAG 客服服务（可选）
 
     Yields:
@@ -893,11 +892,9 @@ async def stream_recommendation_workflow(
 
                 # 如果有无资源的书籍，发送提示
                 if books_without_resources:
-                    books_list = "、".join([f"《{b['title']}》" for b in books_without_resources])
-                    message_content = f"\n\n以下书籍暂无馆藏和电子资源：{books_list}"
                     yield {
-                        "type": "append_message",
-                        "content": message_content
+                        "type": "books_not_found",
+                        "content": books_without_resources
                     }
 
         # 最终完成标记

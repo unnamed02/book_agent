@@ -52,6 +52,11 @@ Component({
           })
         }
       })
+    },
+
+    onRecommendTap(e: any) {
+      const { title, author } = e.currentTarget.dataset
+      this.triggerEvent('recommend', { title, author })
     }
   }
 })

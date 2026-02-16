@@ -7,8 +7,9 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
-  type?: 'book_cards' | 'text'
+  type?: 'book_cards' | 'text' | 'books_not_found'
   books?: any[]
+  booksNotFound?: any[]
   appendContent?: string
 }
 
@@ -203,6 +204,17 @@ Page({
         books: books
       }
       this.setData({ messages })
+    } else if (data.type === 'books_not_found') {
+      // 未找到的书籍列表
+      const messages = this.data.messages
+      const booksNotFound = Array.isArray(data.content) ? data.content : []
+      messages.push({
+        role: 'assistant',
+        type: 'books_not_found',
+        booksNotFound: booksNotFound,
+        content: ''
+      })
+      this.setData({ messages })
     } else if (data.type === 'append_message') {
       // 追加消息 - 追加到最后一条消息的 appendContent 字段
       const messages = this.data.messages
@@ -278,5 +290,47 @@ Page({
         }
       },
     })
+  },
+
+  // 处理荐购按钮点击
+  onRecommend(e: any) {
+    const { title, author } = e.detail
+
+    // 添加用户消息
+    const userMessage: Message = {
+      role: 'user',
+      content: `荐购 ${title} ${author || ''}`
+    }
+
+    // 生成表单消息
+    const formContent = `感谢您的荐购！请填写以下信息：
+
+**书名**：${title}
+**作者**：${author || '未知'}
+
+请补充以下信息（选填）：
+- ISBN：
+- 出版社：
+- 备注：
+
+请按以下格式回复：
+ISBN: [ISBN号]
+出版社: [出版社名称]
+备注: [其他信息]`
+
+    const assistantMessage: Message = {
+      role: 'assistant',
+      content: formContent
+    }
+
+    // 添加两条消息到列表
+    const messages = [...this.data.messages, userMessage, assistantMessage]
+    this.setData({ messages })
+
+    // 保存消息历史
+    storageService.setMessages(messages)
+
+    // 滚动到底部
+    this.scrollToBottom()
   },
 })

@@ -81,6 +81,18 @@
               </view>
             </view>
           </view>
+
+          <!-- 荐购链接 -->
+          <view class="recommend-section">
+            <text
+              class="recommend-link"
+              bindtap="onRecommendTap"
+              data-title="{{item.title}}"
+              data-author="{{item.author}}"
+            >
+              荐购此书
+            </text>
+          </view>
         </view>
       </scroll-view>
     </swiper-item>
