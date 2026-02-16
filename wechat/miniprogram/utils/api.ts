@@ -8,7 +8,7 @@ interface ChatRequest {
 }
 
 interface SSEData {
-  type: 'session' | 'dialogue' | 'books' | 'status' | 'message' | 'done' | 'book_cards' | 'append_message'
+  type: 'session' | 'dialogue' | 'books' | 'status' | 'message' | 'done' | 'book_cards' | 'append_message' | 'books_not_found'
   content?: string
   session_id?: string
   user_id?: string

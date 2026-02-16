@@ -2,6 +2,7 @@
   "usingComponents": {
     "navigation-bar": "/components/navigation-bar/navigation-bar",
     "markdown": "../../components/markdown/markdown",
-    "book-card": "../../components/book-card/book-card"
+    "book-card": "../../components/book-card/book-card",
+    "books-not-found": "../../components/books-not-found/books-not-found"
   }
 }
