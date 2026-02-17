@@ -7,10 +7,12 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   isStreaming?: boolean
-  type?: 'book_cards' | 'text' | 'books_not_found'
+  type?: 'book_cards' | 'text' | 'books_not_found' | 'purchase_form'
   books?: any[]
   booksNotFound?: any[]
   appendContent?: string
+  purchaseTitle?: string
+  purchaseAuthor?: string
 }
 
 Page({
@@ -205,15 +207,31 @@ Page({
       }
       this.setData({ messages })
     } else if (data.type === 'books_not_found') {
-      // 未找到的书籍列表
+      // 未找到的书籍列表 - 合并到上一条消息
       const messages = this.data.messages
       const booksNotFound = Array.isArray(data.content) ? data.content : []
-      messages.push({
-        role: 'assistant',
-        type: 'books_not_found',
-        booksNotFound: booksNotFound,
-        content: ''
-      })
+
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        // 合并到上一条助手消息
+        const lastMessage = messages[messages.length - 1]
+
+        // 移除"正在查询"状态
+        let newContent = lastMessage.content.replace(/\*正在为您查询这些书籍的详细信息\.\.\.\*\n\n/g, '')
+
+        messages[messages.length - 1] = {
+          ...lastMessage,
+          content: newContent,
+          booksNotFound: booksNotFound
+        }
+      } else {
+        // 如果没有上一条消息，创建新消息
+        messages.push({
+          role: 'assistant',
+          type: 'books_not_found',
+          booksNotFound: booksNotFound,
+          content: ''
+        })
+      }
       this.setData({ messages })
     } else if (data.type === 'append_message') {
       // 追加消息 - 追加到最后一条消息的 appendContent 字段
@@ -302,29 +320,17 @@ Page({
       content: `荐购 ${title} ${author || ''}`
     }
 
-    // 生成表单消息
-    const formContent = `感谢您的荐购！请填写以下信息：
-
-**书名**：${title}
-**作者**：${author || '未知'}
-
-请补充以下信息（选填）：
-- ISBN：
-- 出版社：
-- 备注：
-
-请按以下格式回复：
-ISBN: [ISBN号]
-出版社: [出版社名称]
-备注: [其他信息]`
-
-    const assistantMessage: Message = {
+    // 添加表单消息
+    const formMessage: Message = {
       role: 'assistant',
-      content: formContent
+      type: 'purchase_form',
+      content: '',
+      purchaseTitle: title,
+      purchaseAuthor: author
     }
 
     // 添加两条消息到列表
-    const messages = [...this.data.messages, userMessage, assistantMessage]
+    const messages = [...this.data.messages, userMessage, formMessage]
     this.setData({ messages })
 
     // 保存消息历史
@@ -332,5 +338,11 @@ ISBN: [ISBN号]
 
     // 滚动到底部
     this.scrollToBottom()
+  },
+
+  // 处理荐购表单提交
+  onPurchaseSubmit() {
+    // 表单组件内部已经显示提交成功提示，这里不需要额外处理
+    // 不添加用户消息到聊天记录
   },
 })

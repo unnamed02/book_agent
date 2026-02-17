@@ -22,12 +22,7 @@ async def init_database():
         # 创建所有表
         await db_manager.init_db()
 
-        logger.info("✅ 数据库表创建成功!")
-        logger.info("已创建的表:")
-        logger.info("  - user_preferences (用户偏好表)")
-        logger.info("  - recommendation_history (推荐历史表)")
-        logger.info("  - feedback_records (反馈记录表)")
-        logger.info("  - reading_progress (阅读进度表)")
+        logger.info("✅ 数据库初始化成功!")
 
         # 关闭连接
         await db_manager.close()
@@ -104,21 +99,12 @@ async def check_database():
             for table in tables:
                 logger.info(f"  - {table}")
 
-            expected_tables = [
-                "user_preferences",
-                "recommendation_history",
-                "feedback_records",
-                "reading_progress"
-            ]
-
-            missing_tables = [t for t in expected_tables if t not in tables]
-
-            if missing_tables:
-                logger.warning(f"缺失的表: {', '.join(missing_tables)}")
-                logger.info("请运行: python init_db.py --init")
-                return False
+            if len(tables) == 0:
+                logger.info("数据库中暂无表")
+                logger.info("如需创建表，请运行: python init_db.py --init")
+                return True
             else:
-                logger.info("✅ 所有必需的表都已存在!")
+                logger.info("✅ 数据库检查完成!")
                 return True
 
         await db_manager.close()

@@ -13,6 +13,8 @@ import logging
 import json
 import uuid
 import requests
+import redis.asyncio as redis
+import os
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
@@ -26,9 +28,16 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
+# 全局Redis客户端
+redis_client: Optional[redis.Redis] = None
+# 全局会话管理器
+session_manager: Optional[SessionManager] = None
+
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """应用生命周期管理"""
+    global redis_client, session_manager
+
     # 启动时执行
     try:
         db_manager = get_db_manager()
@@ -36,6 +45,23 @@ async def lifespan(_app: FastAPI):
         logger.info("数据库初始化成功")
     except Exception as e:
         logger.warning(f"数据库初始化失败: {e}，记忆功能将不可用")
+
+    # 初始化Redis连接
+    try:
+        redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+        redis_client = await redis.from_url(
+            redis_url,
+            encoding="utf-8",
+            decode_responses=True
+        )
+        await redis_client.ping()
+        logger.info(f"Redis连接成功: {redis_url}")
+    except Exception as e:
+        logger.warning(f"Redis连接失败: {e}，对话历史持久化将不可用")
+        redis_client = None
+
+    # 初始化会话管理器
+    session_manager = SessionManager(session_timeout=3600, redis_client=redis_client)
 
     yield
 
@@ -47,6 +73,14 @@ async def lifespan(_app: FastAPI):
     except Exception as e:
         logger.error(f"关闭数据库连接失败: {e}")
 
+    # 关闭Redis连接
+    if redis_client:
+        try:
+            await redis_client.close()
+            logger.info("Redis连接已关闭")
+        except Exception as e:
+            logger.error(f"关闭Redis连接失败: {e}")
+
 app = FastAPI(lifespan=lifespan)
 
 app.add_middleware(
@@ -57,9 +91,6 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["*"],
 )
-
-# 全局会话管理器
-session_manager = SessionManager(session_timeout=3600)
 
 @app.get("/")
 async def root():

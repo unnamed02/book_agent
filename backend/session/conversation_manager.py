@@ -89,80 +89,86 @@ class ConversationManager:
             temperature=temperature if temperature is not None else self.default_temperature
         )
 
+        # 添加用户消息
         self.messages.append(HumanMessage(content=user_input))
 
+        # 保存到 Redis
+        if self.redis_client:
+            asyncio.create_task(self._append_message_to_redis("human", user_input))
+
+        # 调用 LLM
         response = await llm.ainvoke(self.messages)
 
+        # 添加 AI 消息
         self.messages.append(AIMessage(content=response.content))
+        # 保存到 Redis
+        if self.redis_client:
+            asyncio.create_task(self._append_message_to_redis("ai", response.content))
 
         self._trim_history()
 
-        # 保存到 Redis（不等待结果，后台执行）
-        if self.redis_client:
-            asyncio.create_task(self._save_to_redis())
-
         return response.content
 
-    async def _save_to_redis(self):
-        """将对话历史保存到 Redis"""
+    async def _append_message_to_redis(self, msg_type: str, content: str):
+        """追加单条消息到 Redis List"""
         if not self.redis_client:
             return
 
         try:
-            # 序列化消息列表
-            messages_data = []
-            for msg in self.messages:
-                if isinstance(msg, SystemMessage):
-                    msg_type = "system"
-                elif isinstance(msg, HumanMessage):
-                    msg_type = "human"
-                elif isinstance(msg, AIMessage):
-                    msg_type = "ai"
-                else:
-                    continue
+            msg_data = json.dumps({
+                "type": msg_type,
+                "content": content
+            }, ensure_ascii=False)
 
-                messages_data.append({
-                    "type": msg_type,
-                    "content": msg.content
-                })
+            # 追加到列表末尾
+            await self.redis_client.rpush(self.redis_key, msg_data)
 
-            # 保存到 Redis
-            await self.redis_client.setex(
-                self.redis_key,
-                self.redis_ttl,
-                json.dumps(messages_data, ensure_ascii=False)
-            )
-            logger.debug(f"✓ 对话历史已保存到 Redis: {self.redis_key}")
+            # 只保留最近的消息（max_history_rounds * 2）
+            max_list_size = self.max_history_rounds * 2
+            await self.redis_client.ltrim(self.redis_key, -max_list_size, -1)
+
+            # 设置过期时间
+            await self.redis_client.expire(self.redis_key, self.redis_ttl)
 
         except Exception as e:
-            logger.error(f"保存对话历史到 Redis 失败: {e}")
+            logger.error(f"追加消息到 Redis 失败: {e}")
 
     async def load_from_redis(self):
-        """从 Redis 加载对话历史"""
+        """从 Redis List 加载对话历史（只加载 human 和 ai 消息，system 由代码设置）"""
         if not self.redis_client:
             return
 
         try:
-            data = await self.redis_client.get(self.redis_key)
-            if not data:
+            # 获取列表长度
+            list_len = await self.redis_client.llen(self.redis_key)
+            if list_len == 0:
                 logger.debug(f"Redis 中没有找到对话历史: {self.redis_key}")
                 return
 
-            messages_data = json.loads(data)
-            self.messages = []
+            # 获取所有消息
+            messages_json = await self.redis_client.lrange(self.redis_key, 0, -1)
 
-            for msg_data in messages_data:
-                msg_type = msg_data["type"]
-                content = msg_data["content"]
+            # 保留 system message
+            system_msgs = [m for m in self.messages if isinstance(m, SystemMessage)]
+            self.messages = system_msgs.copy()
 
-                if msg_type == "system":
-                    self.messages.append(SystemMessage(content=content))
-                elif msg_type == "human":
-                    self.messages.append(HumanMessage(content=content))
-                elif msg_type == "ai":
-                    self.messages.append(AIMessage(content=content))
+            for msg_json in messages_json:
+                try:
+                    msg_data = json.loads(msg_json)
+                    msg_type = msg_data["type"]
+                    content = msg_data["content"]
 
-            logger.info(f"✓ 从 Redis 加载了 {len(self.messages)} 条对话历史")
+                    if msg_type == "human":
+                        self.messages.append(HumanMessage(content=content))
+                    elif msg_type == "ai":
+                        self.messages.append(AIMessage(content=content))
+                    # 忽略 system 类型，因为已经由代码设置
+
+                except json.JSONDecodeError:
+                    logger.warning(f"跳过无效的消息: {msg_json[:50]}")
+                    continue
+
+            logger.info(f"✓ 从 Redis 加载了 {len(self.messages) - len(system_msgs)} 条对话历史")
 
         except Exception as e:
             logger.error(f"从 Redis 加载对话历史失败: {e}")
