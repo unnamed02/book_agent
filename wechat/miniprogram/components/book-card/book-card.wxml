@@ -34,22 +34,42 @@
             <text class="reason-text">{{item.reason}}</text>
           </view>
 
-          <!-- 馆藏信息 -->
-          <view wx:if="{{item.hasLibrary}}" class="book-section">
-            <view class="section-title">馆藏信息</view>
+          <!-- 馆藏信息 / 荐购信息 -->
+          <view class="book-section">
+            <view class="section-title">{{item.hasLibrary ? '馆藏信息' : '荐购'}}</view>
             <view class="library-list">
-              <view
-                wx:for="{{item.libraryItems}}"
-                wx:for-item="lib"
-                wx:key="index"
-                class="library-item"
-              >
-                <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
-                <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
-                <view class="library-detail">所在分馆: {{lib.library}}</view>
-                <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
-                <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
-              </view>
+              <!-- 有馆藏时显示馆藏信息 -->
+              <block wx:if="{{item.hasLibrary}}">
+                <view
+                  wx:for="{{item.libraryItems}}"
+                  wx:for-item="lib"
+                  wx:key="index"
+                  class="library-item"
+                >
+                  <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
+                  <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
+                  <view class="library-detail">所在分馆: {{lib.library}}</view>
+                  <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
+                  <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
+                </view>
+              </block>
+              <!-- 没有馆藏时显示荐购信息 -->
+              <block wx:else>
+                <view class="library-item recommend-item">
+                  <view class="recommend-info">
+                    <view class="library-title">{{item.title}}</view>
+                    <view wx:if="{{item.author}}" class="library-pub-info">{{item.author}}</view>
+                  </view>
+                  <text
+                    class="recommend-link"
+                    bindtap="onRecommendTap"
+                    data-title="{{item.title}}"
+                    data-author="{{item.author}}"
+                  >
+                    荐购
+                  </text>
+                </view>
+              </block>
             </view>
           </view>
 
@@ -80,18 +100,6 @@
                 </view>
               </view>
             </view>
-          </view>
-
-          <!-- 荐购链接 -->
-          <view class="recommend-section">
-            <text
-              class="recommend-link"
-              bindtap="onRecommendTap"
-              data-title="{{item.title}}"
-              data-author="{{item.author}}"
-            >
-              荐购此书
-            </text>
           </view>
         </view>
       </scroll-view>

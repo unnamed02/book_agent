@@ -11,6 +11,7 @@ from langchain_milvus import Milvus
 from session.conversation_manager import ConversationManager, create_conversation_manager
 from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 from sqlalchemy.ext.asyncio import AsyncSession
+import redis.asyncio as redis
 import logging
 
 logger = logging.getLogger(__name__)
@@ -35,7 +36,8 @@ class Session:
         session_id: str,
         user_id: str,
         system_context: str = "你是专业的图书推荐助手。",
-        max_history_rounds: int = 10
+        max_history_rounds: int = 10,
+        redis_client: Optional[redis.Redis] = None
     ):
         """
         初始化会话
@@ -45,6 +47,7 @@ class Session:
             user_id: 用户ID
             system_context: 系统上下文
             max_history_rounds: 最大保留对话轮数
+            redis_client: Redis客户端（可选）
         """
         self.session_id = session_id
         self.user_id = user_id
@@ -55,7 +58,8 @@ class Session:
             session_id=session_id,
             user_id=user_id,
             system_context=system_context,
-            max_history_rounds=max_history_rounds
+            max_history_rounds=max_history_rounds,
+            redis_client=redis_client
         )
 
         # RAG 客服服务（懒加载）
@@ -171,15 +175,17 @@ class SessionManager:
     会话管理器 - 管理所有会话
     """
 
-    def __init__(self, session_timeout: int = 3600):
+    def __init__(self, session_timeout: int = 3600, redis_client: Optional[redis.Redis] = None):
         """
         初始化会话管理器
 
         Args:
             session_timeout: 会话超时时间（秒，默认1小时）
+            redis_client: Redis客户端（可选）
         """
         self.sessions: Dict[str, Session] = {}
         self.session_timeout = session_timeout
+        self.redis_client = redis_client
         logger.info("✓ 会话管理器已初始化")
 
     async def get_or_create_session(
@@ -202,6 +208,8 @@ class SessionManager:
             Session 实例
         """
         import uuid
+        from utils.models import User, UserSession
+        from sqlalchemy import select
 
         # 生成默认ID
         if not session_id:
@@ -219,13 +227,52 @@ class SessionManager:
                 session_id=session_id,
                 user_id=user_id,
                 system_context="你是专业的图书推荐助手。",
-                max_history_rounds=10
+                max_history_rounds=10,
+                redis_client=self.redis_client
             )
             self.sessions[session_id] = session
+
+            # 保存到数据库
+            if db is not None:
+                try:
+                    # 确保用户存在
+                    result = await db.execute(select(User).where(User.user_id == user_id))
+                    user = result.scalar_one_or_none()
+                    if not user:
+                        user = User(user_id=user_id)
+                        db.add(user)
+                        await db.flush()
+                        logger.info(f"✓ 创建新用户: {user_id}")
+
+                    # 创建会话记录
+                    user_session = UserSession(
+                        user_id=user_id,
+                        session_id=session_id
+                    )
+                    db.add(user_session)
+                    await db.commit()
+                    logger.info(f"✓ 保存会话到数据库: {session_id}")
+                except Exception as e:
+                    logger.error(f"保存会话到数据库失败: {e}")
+                    await db.rollback()
         else:
             # 更新访问时间
             session = self.sessions[session_id]
             session.update_access_time()
+
+            # 更新数据库中的最后活跃时间
+            if db is not None:
+                try:
+                    result = await db.execute(
+                        select(UserSession).where(UserSession.session_id == session_id)
+                    )
+                    user_session = result.scalar_one_or_none()
+                    if user_session:
+                        user_session.last_active_at = datetime.now()
+                        await db.commit()
+                except Exception as e:
+                    logger.error(f"更新会话活跃时间失败: {e}")
+                    await db.rollback()
 
         # 懒加载记忆管理器
         if db is not None and vectorstore is not None:
