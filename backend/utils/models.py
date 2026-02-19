@@ -3,12 +3,11 @@
 """
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, String, DateTime, Integer, ForeignKey
+from sqlalchemy import Column, String, DateTime, Integer, ForeignKey, Text
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
-from datetime import datetime
 
 Base = declarative_base()
-
 
 class User(Base):
     """用户表"""
@@ -28,6 +27,31 @@ class UserSession(Base):
     session_id = Column(String(100), unique=True, nullable=False, index=True, comment="会话ID")
     created_at = Column(DateTime, default=func.now(), comment="创建时间")
     last_active_at = Column(DateTime, default=func.now(), onupdate=func.now(), comment="最后活跃时间")
+
+
+class ConversationArchive(Base):
+    """对话历史归档表"""
+    __tablename__ = "conversation_archives"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    session_id = Column(String(100), nullable=False, index=True, comment="会话ID")
+    messages = Column(JSONB, nullable=False, comment="消息列表（JSONB）")
+    archived_at = Column(DateTime, default=func.now, comment="归档时间")
+
+
+class PurchaseRecommendation(Base):
+    """荐购表单表"""
+    __tablename__ = "purchase_recommendations"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(String(100), ForeignKey("users.user_id"), nullable=False, index=True, comment="用户ID")
+    book_title = Column(String(500), nullable=False, comment="书名")
+    author = Column(String(200), nullable=True, comment="作者")
+    notes = Column(Text, nullable=True, comment="备注")
+    contact = Column(String(100), nullable=True, comment="联系方式")
+    status = Column(String(20), default="pending", comment="状态: pending/approved/rejected")
+    created_at = Column(DateTime, default=func.now(), comment="提交时间")
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新时间")
 
 
 # 数据库连接和会话管理

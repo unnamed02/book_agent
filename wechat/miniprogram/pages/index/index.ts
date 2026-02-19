@@ -341,8 +341,21 @@ Page({
   },
 
   // 处理荐购表单提交
-  onPurchaseSubmit() {
-    // 表单组件内部已经显示提交成功提示，这里不需要额外处理
-    // 不添加用户消息到聊天记录
+  onPurchaseSubmit(e: any) {
+    const { message } = e.detail
+
+    if (message) {
+      // 添加助手消息到聊天记录
+      const messages = this.data.messages
+      messages.push({
+        role: 'assistant',
+        content: message,
+        type: 'text'
+      })
+
+      this.setData({ messages })
+      storageService.saveMessages(messages)
+      this.scrollToBottom()
+    }
   },
 })

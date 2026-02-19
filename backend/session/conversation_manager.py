@@ -120,15 +120,13 @@ class ConversationManager:
                 "content": content
             }, ensure_ascii=False)
 
-            # 追加到列表末尾
-            await self.redis_client.rpush(self.redis_key, msg_data)
+            # 追加到列表末尾，返回列表长度
+            length = await self.redis_client.rpush(self.redis_key, msg_data)
 
-            # 只保留最近的消息（max_history_rounds * 2）
-            max_list_size = self.max_history_rounds * 2
-            await self.redis_client.ltrim(self.redis_key, -max_list_size, -1)
-
-            # 设置过期时间
-            await self.redis_client.expire(self.redis_key, self.redis_ttl)
+            # 检查是否需要 compact（超过 220 条消息）
+            if length > 220:
+                await self.redis_client.sadd("needs_compact_list", self.redis_key)
+                logger.debug(f"会话 {self.session_id} 已达到 {length} 条消息，已加入 compact 队列")
 
         except Exception as e:
             logger.error(f"追加消息到 Redis 失败: {e}")

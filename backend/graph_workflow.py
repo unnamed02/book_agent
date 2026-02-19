@@ -758,6 +758,8 @@ async def stream_recommendation_workflow(
             - type: "session" | "status" | "dialogue" | "books" | "book_cards" | "append_message" | "done" | "error"
             - content: 内容
     """
+    logger.info(f"🚀 启动推荐工作流 - 用户查询: {user_query[:50]}...")
+
     # 创建图
     graph = create_recommendation_graph()
 
