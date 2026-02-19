@@ -149,6 +149,36 @@ class ApiService {
       })
     }
   }
+
+  // 提交荐购表单
+  submitPurchaseRecommendation(data: {
+    user_id: string
+    book_title: string
+    author?: string
+    notes?: string
+    contact?: string
+  }): Promise<{ success: boolean; message: string; id?: number }> {
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: `${this.baseUrl}/purchase-recommendation`,
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/json',
+        },
+        data,
+        success: (res: any) => {
+          if (res.statusCode === 200) {
+            resolve(res.data)
+          } else {
+            reject(new Error(`请求失败: ${res.statusCode}`))
+          }
+        },
+        fail: (error: any) => {
+          reject(error)
+        },
+      })
+    })
+  }
 }
 
 // 导出单例

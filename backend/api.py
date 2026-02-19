@@ -15,6 +15,7 @@ import uuid
 import requests
 import redis.asyncio as redis
 import os
+import asyncio
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
@@ -24,6 +25,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logging.root.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
 load_dotenv()
@@ -32,17 +34,20 @@ load_dotenv()
 redis_client: Optional[redis.Redis] = None
 # 全局会话管理器
 session_manager: Optional[SessionManager] = None
+# 全局后台任务
+compact_task: Optional[asyncio.Task] = None
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     """应用生命周期管理"""
-    global redis_client, session_manager
+    global redis_client, session_manager, compact_task
 
     # 启动时执行
     try:
         db_manager = get_db_manager()
         await db_manager.init_db()
-        logger.info("数据库初始化成功")
+        db_type = "PostgreSQL" if "postgresql" in db_manager.database_url else "SQLite"
+        logger.info(f"数据库初始化成功 ({db_type}: {db_manager.database_url.split('@')[-1] if '@' in db_manager.database_url else 'local'})")
     except Exception as e:
         logger.warning(f"数据库初始化失败: {e}，记忆功能将不可用")
 
@@ -63,9 +68,26 @@ async def lifespan(_app: FastAPI):
     # 初始化会话管理器
     session_manager = SessionManager(session_timeout=3600, redis_client=redis_client)
 
+    # 启动 Redis compact 后台任务
+    if redis_client:
+        from utils.redis_compact import run_compact_scheduler
+        compact_task = asyncio.create_task(run_compact_scheduler())
+        logger.info("Redis compact 定时任务已启动（每10分钟执行）")
+
     yield
 
     # 关闭时执行
+    logger.info("正在关闭应用...")
+
+    # 停止后台任务
+    if compact_task:
+        compact_task.cancel()
+        try:
+            await compact_task
+        except (asyncio.CancelledError, KeyboardInterrupt):
+            pass
+        logger.info("Redis compact 任务已停止")
+
     try:
         db_manager = get_db_manager()
         await db_manager.close()
@@ -196,3 +218,59 @@ async def proxy_image(url: str):
     except Exception as e:
         logger.error(f"代理图片失败: {url}, 错误: {str(e)}")
         return Response(status_code=404)
+
+
+class PurchaseRecommendationRequest(BaseModel):
+    """荐购表单请求"""
+    user_id: str
+    book_title: str
+    author: Optional[str] = None
+    notes: Optional[str] = None
+    contact: Optional[str] = None
+
+
+@app.post("/purchase-recommendation")
+async def submit_purchase_recommendation(
+    request: PurchaseRecommendationRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """提交荐购表单"""
+    try:
+        from utils.models import PurchaseRecommendation, User
+
+        # 确保用户存在
+        user = await db.get(User, request.user_id)
+        if not user:
+            user = User(user_id=request.user_id)
+            db.add(user)
+            await db.flush()
+
+        # 创建荐购记录
+        recommendation = PurchaseRecommendation(
+            user_id=request.user_id,
+            book_title=request.book_title,
+            author=request.author,
+            notes=request.notes,
+            contact=request.contact,
+            status="pending"
+        )
+
+        db.add(recommendation)
+        await db.commit()
+        await db.refresh(recommendation)
+
+        logger.info(f"用户 {request.user_id} 提交荐购: {request.book_title}")
+
+        return {
+            "success": True,
+            "message": "荐购提交成功",
+            "id": recommendation.id
+        }
+
+    except Exception as e:
+        await db.rollback()
+        logger.error(f"提交荐购失败: {e}")
+        return {
+            "success": False,
+            "message": f"提交失败: {str(e)}"
+        }
