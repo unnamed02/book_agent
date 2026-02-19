@@ -1,0 +1,27 @@
+<!--components/books-not-found/books-not-found.wxml-->
+<view class="books-not-found-container">
+  <view class="not-found-title">以下{{books.length}}本书籍未找到资源：</view>
+  <view class="books-list">
+    <view
+      wx:for="{{displayBooks}}"
+      wx:key="index"
+      class="book-item"
+    >
+      <view class="book-info">
+        <text class="book-title">《{{item.title}}》</text>
+        <text wx:if="{{item.author}}" class="book-author">{{item.author}}</text>
+      </view>
+      <text
+        class="recommend-link"
+        bindtap="onRecommendTap"
+        data-title="{{item.title}}"
+        data-author="{{item.author}}"
+      >
+        荐购
+      </text>
+    </view>
+  </view>
+  <view wx:if="{{books.length > 3}}" class="toggle-btn" bindtap="onToggle">
+    {{expanded ? '收起' : '展开'}}
+  </view>
+</view>

@@ -1,0 +1,53 @@
+<!--components/purchase-form/purchase-form.wxml-->
+<view class="purchase-form-container">
+  <view class="form-title">感谢您的荐购！</view>
+
+  <view class="form-item">
+    <view class="form-label">书名</view>
+    <input
+      class="form-input"
+      placeholder="请输入书名"
+      value="{{title}}"
+      bindinput="onTitleInput"
+      disabled="{{submitted}}"
+    />
+  </view>
+
+  <view class="form-item">
+    <view class="form-label">作者</view>
+    <input
+      class="form-input"
+      placeholder="请输入作者"
+      value="{{author}}"
+      bindinput="onAuthorInput"
+      disabled="{{submitted}}"
+    />
+  </view>
+
+  <view class="form-item">
+    <view class="form-label">备注（选填）</view>
+    <textarea
+      class="form-textarea"
+      placeholder="指定ISBN、出版社、版本等，方便我们确定最优质版本。"
+      value="{{note}}"
+      bindinput="onNoteInput"
+      maxlength="200"
+      disabled="{{submitted}}"
+    />
+  </view>
+
+  <view class="form-item">
+    <view class="form-label">电话号码（选填）</view>
+    <input
+      class="form-input"
+      placeholder="填写后，该书上架将通过短信告知您。"
+      value="{{contact}}"
+      bindinput="onContactInput"
+      disabled="{{submitted}}"
+    />
+  </view>
+
+  <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || submitted}}">
+    {{submitted ? '已提交' : (submitting ? '提交中...' : '提交荐购')}}
+  </button>
+</view>
