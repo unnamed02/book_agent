@@ -18,6 +18,11 @@ from tools.resource_tool import search_digital_resource
 from tools.library_tool import search_library_collection
 from session.session import Session
 from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
+from prompts.system_prompts import (
+    CUSTOMER_SERVICE_SYSTEM_PROMPT,
+    EXTRACT_BOOK_SYSTEM_PROMPT,
+    BOOK_RECOMMENDATION_SYSTEM_PROMPT
+)
 
 logger = logging.getLogger(__name__)
 
@@ -184,25 +189,11 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
     session = state["session"]
     user_query = state["user_query"]
 
-    cs_prompt = f"""你是图书推荐系统的客服助手，请回答用户的问题。
-
-用户问题：{user_query}
-
-系统功能说明：
-- 图书推荐：基于用户需求推荐合适的图书
-- 个性化学习：根据用户历史偏好提供个性化推荐
-- 多源信息：提供豆瓣评分、馆藏信息、电子资源、购买链接
-- 记忆功能：记住用户的阅读偏好，避免重复推荐
-
-常见问题：
-- 如何使用？直接描述你想读的书籍类型或主题即可
-- 推荐不准确？可以提供更详细的需求描述
-- 想看历史推荐？告诉我你的用户ID即可查询
-
-请用友好、专业的语气回答用户问题。"""
+    # 设置客服系统提示词
+    session.set_system_context(CUSTOMER_SERVICE_SYSTEM_PROMPT)
 
     cs_response = await session.ainvoke(
-        cs_prompt,
+        user_query,
         model="qwen-flash",
         temperature=0.7,
         original_query=user_query
@@ -226,19 +217,11 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     session = state["session"]
     user_query = state["user_query"]
 
-    # 使用 LLM 提取书名和作者，并识别是否为丛书
-    extract_prompt = f"""从查询中提取书名和作者，返回JSON格式。
+    # 设置提取书名系统提示词
+    session.set_system_context(EXTRACT_BOOK_SYSTEM_PROMPT)
 
-用户查询：{user_query}
-
-JSON格式：
-{{
-    "books": [
-        {{"title": "书名1", "author": "作者1"}},
-        {{"title": "书名2", "author": "作者2"}},
-        ...
-    ]
-}}
+    # 使用 LLM 提取书名和作者
+    extract_prompt = f"""用户查询：{user_query}
 
 规则：
 1. 知名丛书（哈利波特、三体等）且用户只提丛书名，返回所有分册
@@ -299,30 +282,11 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
     recent_books = state.get("recent_recommendations", [])
 
     # 更新系统上下文
-    if recent_books:
-        system_context = f"""你是专业的图书推荐助手。"""
-        session.set_system_context(system_context)
-
-    # 生成推荐书单
-    recommend_prompt = f"""根据用户需求推荐图书。
-
-用户需求：{user_query}
-
-格式：先自然回应，然后输出JSON书单。
-
-JSON格式：{{"books": [{{"title": "书名", "author": "作者", "reason": "推荐理由(20字内)"}}, ...]}}
-
-要求：
-- 推荐3-5本真实存在的图书
-- 优先推荐中文版经典、权威书籍
-- author只写名字，不加"著"、"编"等后缀
-- title只要主标题，不含版本、分册信息
-- JSON不用```包裹
-
-示例：{{"author": "曹雪芹"}}"""
+    # 设置图书推荐系统提示词
+    session.set_system_context(BOOK_RECOMMENDATION_SYSTEM_PROMPT)
 
     llm_response = await session.ainvoke(
-        recommend_prompt,
+        user_query,
         model="qwen3-max-2026-01-23",
         temperature=0.7,
         original_query=user_query
