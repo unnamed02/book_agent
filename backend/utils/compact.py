@@ -94,19 +94,11 @@ async def compact_redis_to_db():
         # 获取剩余待处理数量
         remaining = await redis_client.scard('needs_compact_list')
 
-        # 触发 Redis AOF 重写（后台异步执行）
-        if archived_count > 0:
-            try:
-                await redis_client.bgrewriteaof()
-                logger.info("已触发 Redis AOF 重写")
-            except Exception as e:
-                logger.warning(f"触发 AOF 重写失败: {e}")
-
         await redis_client.aclose()
         await db_manager.close()
 
         logger.info(f"Compact 任务完成，剩余 {remaining} 个会话待处理")
-        return remaining
+        return archived_count  # 返回归档数量而不是剩余数量
 
     except Exception as e:
         logger.error(f"Compact 任务失败: {e}")
@@ -187,7 +179,7 @@ async def merge_archive_sessions():
 
                     merged_count += 1
                     logger.info(f"已合并归档会话: {session_id} (合并了 {len(old_archives)} 条历史记录，共 {len(all_messages)} 条消息)")
-
+            
                 except Exception as e:
                     logger.error(f"合并归档会话失败 {key}: {e}")
                     continue
@@ -212,9 +204,21 @@ async def run_compact_scheduler():
     while True:
         try:
             # 先处理合并归档队列
-            await merge_archive_sessions()
+            merged_count = await merge_archive_sessions()
             # 再处理普通 compact 队列
-            await compact_redis_to_db()
+            compacted_count = await compact_redis_to_db()
+
+            # 如果有任何归档操作，触发 Redis AOF 重写
+            if merged_count > 0 or compacted_count > 0:
+                try:
+                    redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
+                    redis_client = await redis.from_url(redis_url, decode_responses=True)
+                    await redis_client.bgrewriteaof()
+                    logger.info("已触发 Redis AOF 重写")
+                    await redis_client.aclose()
+                except Exception as e:
+                    logger.warning(f"触发 AOF 重写失败: {e}")
+
         except Exception as e:
             logger.error(f"调度器错误: {e}")
 

@@ -119,21 +119,30 @@ class SessionManager:
                 oldest_sid, _ = self.sessions.popitem(last=False)
                 logger.info(f"🗑️ LRU 淘汰会话: {oldest_sid}")
 
-            # 检查该用户是否有旧会话，如果有则归档
+            # 检查该用户是否有旧会话，如果有则归档最近的一个
             if self.redis_client and db is not None:
                 try:
                     result = await db.execute(
-                        select(UserSession).where(UserSession.user_id == user_id)
+                        select(UserSession)
+                        .where(UserSession.user_id == user_id)
+                        .order_by(UserSession.last_active_at.desc())
+                        .limit(1)
                     )
-                    old_sessions = result.scalars().all()
+                    latest_old_session = result.scalar_one_or_none()
 
-                    # 将旧会话加入合并归档队列
-                    for old_session in old_sessions:
-                        old_key = f"conversation:{old_session.session_id}"
+                    # 将最近的旧会话加入合并归档队列
+                    if latest_old_session:
+                        old_session_id = latest_old_session.session_id
+                        old_key = f"conversation:{old_session_id}"
                         list_len = await self.redis_client.llen(old_key)
                         if list_len > 0:
                             await self.redis_client.sadd("merge_archive_list", old_key)
-                            logger.info(f"用户 {user_id} 创建新会话，旧会话 {old_session.session_id} 已加入合并归档队列 ({list_len} 条消息)")
+                            logger.info(f"用户 {user_id} 创建新会话，旧会话 {old_session_id} 已加入合并归档队列 ({list_len} 条消息)")
+
+                        # 从 LRU 缓存中删除旧会话
+                        if old_session_id in self.sessions:
+                            del self.sessions[old_session_id]
+                            logger.info(f"从 LRU 缓存中删除旧会话: {old_session_id}")
                 except Exception as e:
                     logger.error(f"归档旧会话失败: {e}")
 
