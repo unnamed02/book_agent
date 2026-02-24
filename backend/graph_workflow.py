@@ -16,7 +16,7 @@ import asyncio
 from tools.douban_tool import search_douban_book
 from tools.resource_tool import search_digital_resource
 from tools.library_tool import search_library_collection
-from session.conversation_manager import ConversationManager
+from session.session import Session
 from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 
 logger = logging.getLogger(__name__)
@@ -31,7 +31,7 @@ class BookRecommendationState(TypedDict):
     user_id: str
 
     # 会话管理器
-    conversation_manager: Optional[ConversationManager]
+    session: Optional[Session]
     rag_service: Optional[RAGCustomerService]  # RAG 客服服务
 
     # 路由结果
@@ -66,7 +66,6 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
     """
     logger.info("📍 节点: route_query")
 
-    conversation_manager = state["conversation_manager"]
     user_query = state["user_query"]
 
     route_prompt = f"""判断用户查询类型：
@@ -80,11 +79,10 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 
 只返回类型字符串：find_book/book_recommendation/customer_service"""
 
-    route_result = await conversation_manager.ainvoke(
-        route_prompt,
-        model="qwen-flash",
-        temperature=0
-    )
+    # 直接使用裸 LLM 调用
+    llm = ChatOpenAI(model="qwen-flash", temperature=0)
+    response = await llm.ainvoke([HumanMessage(content=route_prompt)])
+    route_result = response.content
 
     # 解析路由结果 - 直接返回查询类型字符串
     try:
@@ -128,11 +126,11 @@ async def handle_customer_service(state: BookRecommendationState) -> BookRecomme
     if rag_service:
         try:
             # 获取对话历史（用于上下文）
-            conversation_manager = state.get("conversation_manager")
+            session_obj = state.get("session")
             conversation_history = []
-            if conversation_manager:
+            if session_obj:
                 # 简化历史格式供 RAG 使用
-                messages = conversation_manager.messages[-6:]  # 最近3轮
+                messages = session_obj.messages[-6:]  # 最近3轮
                 for i in range(0, len(messages), 2):
                     if i + 1 < len(messages):
                         conversation_history.append({
@@ -183,7 +181,7 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
     """
     回退的客服模式（不使用 RAG）
     """
-    conversation_manager = state["conversation_manager"]
+    session = state["session"]
     user_query = state["user_query"]
 
     cs_prompt = f"""你是图书推荐系统的客服助手，请回答用户的问题。
@@ -203,10 +201,11 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
 
 请用友好、专业的语气回答用户问题。"""
 
-    cs_response = await conversation_manager.ainvoke(
+    cs_response = await session.ainvoke(
         cs_prompt,
         model="qwen-flash",
-        temperature=0.7
+        temperature=0.7,
+        original_query=user_query
     )
 
     state["final_response"] = cs_response
@@ -224,7 +223,7 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     """
     logger.info("📍 节点: handle_find_book")
 
-    conversation_manager = state["conversation_manager"]
+    session = state["session"]
     user_query = state["user_query"]
 
     # 使用 LLM 提取书名和作者，并识别是否为丛书
@@ -253,10 +252,11 @@ JSON格式：
 只返回JSON。"""
 
     try:
-        extract_result = await conversation_manager.ainvoke(
+        extract_result = await session.ainvoke(
             extract_prompt,
             model="qwen3-max-2026-01-23",
-            temperature=0
+            temperature=0,
+            original_query=user_query
         )
     
         # 解析提取结果
@@ -294,14 +294,14 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
     """
     logger.info("📍 节点: generate_recommendations")
 
-    conversation_manager = state["conversation_manager"]
+    session = state["session"]
     user_query = state["user_query"]
     recent_books = state.get("recent_recommendations", [])
 
     # 更新系统上下文
     if recent_books:
         system_context = f"""你是专业的图书推荐助手。"""
-        conversation_manager.set_system_context(system_context)
+        session.set_system_context(system_context)
 
     # 生成推荐书单
     recommend_prompt = f"""根据用户需求推荐图书。
@@ -321,10 +321,11 @@ JSON格式：{{"books": [{{"title": "书名", "author": "作者", "reason": "推
 
 示例：{{"author": "曹雪芹"}}"""
 
-    llm_response = await conversation_manager.ainvoke(
+    llm_response = await session.ainvoke(
         recommend_prompt,
         model="qwen3-max-2026-01-23",
-        temperature=0.7
+        temperature=0.7,
+        original_query=user_query
     )
 
     # 解析响应
@@ -740,7 +741,7 @@ async def stream_recommendation_workflow(
     user_query: str,
     session_id: str,
     user_id: str,
-    conversation_manager: ConversationManager,
+    session: Session,
     rag_service: Optional[RAGCustomerService] = None
 ):
     """
@@ -750,7 +751,7 @@ async def stream_recommendation_workflow(
         user_query: 用户查询
         session_id: 会话ID
         user_id: 用户ID
-        conversation_manager: 会话管理器
+        session: 会话管理器
         rag_service: RAG 客服服务（可选）
 
     Yields:
@@ -768,7 +769,7 @@ async def stream_recommendation_workflow(
         user_query=user_query,
         session_id=session_id,
         user_id=user_id,
-        conversation_manager=conversation_manager,
+        session=session,
         rag_service=rag_service,
         query_type="book_recommendation",
         recommended_books=[],
