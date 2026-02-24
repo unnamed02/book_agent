@@ -1,18 +1,16 @@
 """
-会话管理类
-封装会话相关的所有状态和管理器，包括对话上下文管理和记忆管理
+会话类
+封装单个用户会话的所有状态和功能
 """
 
 from typing import Optional, List, Dict
 from datetime import datetime
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
-from langchain_milvus import Milvus
-from session.conversation_manager import ConversationManager, create_conversation_manager
-from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
-from sqlalchemy.ext.asyncio import AsyncSession
 import redis.asyncio as redis
 import logging
+import json
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -24,9 +22,7 @@ class Session:
     属性:
         - session_id: 会话ID
         - user_id: 用户ID
-        - conversation_manager: 对话管理器（管理上下文）
-        - memory_manager: 记忆管理器（管理长期记忆）
-        - rag_service: RAG 客服服务（处理知识库问答）
+        - messages: 对话消息列表
         - history: 对话历史（简单备份）
         - last_access: 最后访问时间
     """
@@ -53,17 +49,18 @@ class Session:
         self.user_id = user_id
         self.last_access = datetime.now()
 
-        # 创建对话管理器（每个会话一个）
-        self.conversation_manager = create_conversation_manager(
-            session_id=session_id,
-            user_id=user_id,
-            system_context=system_context,
-            max_history_rounds=max_history_rounds,
-            redis_client=redis_client
-        )
+        # 对话管理相关属性
+        self.default_model = "qwen-flash"
+        self.default_temperature = 0.7
+        self.messages: List[BaseMessage] = []
+        self.max_history_rounds = max_history_rounds
+        self.redis_client = redis_client
+        self.redis_ttl = 86400
+        self.redis_key = f"conversation:{session_id}"
 
-        # RAG 客服服务（懒加载）
-        self.rag_service: Optional[RAGCustomerService] = None
+        # 设置系统上下文
+        if system_context:
+            self.messages.insert(0, SystemMessage(content=system_context))
 
         # 对话历史（备份用）
         self.history: List[Dict] = []
@@ -87,46 +84,152 @@ class Session:
         elapsed = (datetime.now() - self.last_access).total_seconds()
         return elapsed > timeout_seconds
 
-    async def initialize_rag_service(
-        self,
-        kb_vectorstore: Optional[Milvus] = None
-    ):
+    def set_system_context(self, system_prompt: str):
         """
-        初始化 RAG 客服服务（懒加载）
+        设置系统上下文（角色描述等）
 
         Args:
-            kb_vectorstore: 知识库向量数据库
+            system_prompt: 系统提示词
         """
-        if self.rag_service is not None:
-            logger.debug(f"会话 {self.session_id} 的 RAG 服务已存在")
+        # 移除旧的 SystemMessage
+        self.messages = [m for m in self.messages if not isinstance(m, SystemMessage)]
+
+        # 添加新的 SystemMessage（始终在最前面）
+        if system_prompt:
+            self.messages.insert(0, SystemMessage(content=system_prompt))
+            logger.debug("✓ 系统上下文已设置")
+
+    async def ainvoke(self, user_input: str, model: str = None, temperature: float = None, original_query: str = None) -> str:
+        """
+        异步调用 LLM
+
+        Args:
+            user_input: 用户输入（用于 LLM 调用和内存历史）
+            model: 使用的模型（不指定则使用默认模型）
+            temperature: 温度参数（不指定则使用默认值）
+            original_query: 用户的原始输入（用于保存到 Redis，不指定则保存 user_input）
+
+        Returns:
+            LLM 回复内容
+        """
+        # 使用指定的模型或默认模型
+        llm = ChatOpenAI(
+            model=model or self.default_model,
+            temperature=temperature if temperature is not None else self.default_temperature
+        )
+
+        # 添加用户消息到内存历史
+        self.messages.append(HumanMessage(content=user_input))
+
+        # 保存到 Redis（如果提供了 original_query 则保存它，否则保存 user_input）
+        if self.redis_client:
+            query_to_save = original_query if original_query is not None else user_input
+            asyncio.create_task(self._append_message_to_redis("human", query_to_save))
+
+        # 调用 LLM
+        response = await llm.ainvoke(self.messages)
+
+        # 添加 AI 消息到内存历史
+        self.messages.append(AIMessage(content=response.content))
+
+        # 保存 AI 回复到 Redis
+        if self.redis_client:
+            asyncio.create_task(self._append_message_to_redis("ai", response.content))
+
+        self._trim_history()
+
+        return response.content
+
+    async def _append_message_to_redis(self, msg_type: str, content: str):
+        """追加单条消息到 Redis List"""
+        if not self.redis_client:
             return
 
         try:
-            if kb_vectorstore is None:
-                logger.warning("知识库向量数据库未提供，RAG 服务不可用")
-                return
+            msg_data = json.dumps({
+                "type": msg_type,
+                "content": content
+            }, ensure_ascii=False)
 
-            embeddings = OpenAIEmbeddings()
-            llm = ChatOpenAI(model="qwen-flash", temperature=0.3)
+            # 追加到列表末尾，返回列表长度
+            length = await self.redis_client.rpush(self.redis_key, msg_data)
 
-            # 创建知识库
-            kb = KnowledgeBase(
-                collection_name="customer_service_kb",
-                embeddings=embeddings,
-                vectorstore=kb_vectorstore
-            )
-
-            # 创建 RAG 服务
-            self.rag_service = RAGCustomerService(
-                knowledge_base=kb,
-                llm=llm
-            )
-
-            logger.info(f"✓ 为会话 {self.session_id} 创建 RAG 客服服务")
+            # 检查是否需要 compact（超过 220 条消息）
+            if length > 220:
+                await self.redis_client.sadd("needs_compact_list", self.redis_key)
+                logger.debug(f"会话 {self.session_id} 已达到 {length} 条消息，已加入 compact 队列")
 
         except Exception as e:
-            logger.warning(f"创建 RAG 服务失败: {e}，将使用默认客服模式")
-            self.rag_service = None
+            logger.error(f"追加消息到 Redis 失败: {e}")
+
+    async def load_from_redis(self):
+        """从 Redis List 加载对话历史（只加载 human 和 ai 消息，system 由代码设置）"""
+        if not self.redis_client:
+            return
+
+        try:
+            # 获取列表长度
+            list_len = await self.redis_client.llen(self.redis_key)
+            if list_len == 0:
+                logger.debug(f"Redis 中没有找到对话历史: {self.redis_key}")
+                return
+
+            # 获取所有消息
+            messages_json = await self.redis_client.lrange(self.redis_key, 0, -1)
+
+            # 保留 system message
+            system_msgs = [m for m in self.messages if isinstance(m, SystemMessage)]
+            self.messages = system_msgs.copy()
+
+            for msg_json in messages_json:
+                try:
+                    msg_data = json.loads(msg_json)
+                    msg_type = msg_data["type"]
+                    content = msg_data["content"]
+
+                    if msg_type == "human":
+                        self.messages.append(HumanMessage(content=content))
+                    elif msg_type == "ai":
+                        self.messages.append(AIMessage(content=content))
+                except Exception as e:
+                    logger.error(f"解析消息失败: {e}")
+                    continue
+
+            logger.info(f"✓ 从 Redis 加载了 {len(messages_json)} 条消息")
+
+        except Exception as e:
+            logger.error(f"从 Redis 加载对话历史失败: {e}")
+
+    def _trim_history(self):
+        """修剪对话历史，只保留最近 N 轮"""
+        system_msgs = [m for m in self.messages if isinstance(m, SystemMessage)]
+        other_msgs = [m for m in self.messages if not isinstance(m, SystemMessage)]
+
+        # 只保留最近 N 轮（每轮 = Human + AI）
+        max_messages = self.max_history_rounds * 2
+        if len(other_msgs) > max_messages:
+            other_msgs = other_msgs[-max_messages:]
+            logger.debug(f"修剪历史，保留最近 {self.max_history_rounds} 轮对话")
+
+        self.messages = system_msgs + other_msgs
+
+    def get_conversation_rounds(self) -> int:
+        """获取当前对话轮数"""
+        non_system = [m for m in self.messages if not isinstance(m, SystemMessage)]
+        return len(non_system) // 2
+
+    def clear_history(self, keep_system: bool = True):
+        """
+        清空对话历史
+
+        Args:
+            keep_system: 是否保留系统消息
+        """
+        if keep_system:
+            self.messages = [m for m in self.messages if isinstance(m, SystemMessage)]
+        else:
+            self.messages = []
+        logger.debug("对话历史已清空")
 
     def add_to_history(self, user_msg: str, assistant_msg: str):
         """
@@ -145,178 +248,5 @@ class Session:
         if len(self.history) > 5:
             self.history = self.history[-5:]
 
-    async def update_preferences(self, user_query: str):
-        """
-        根据用户查询增量更新偏好（不重新加载所有记忆）
-
-        Args:
-            user_query: 用户查询
-        """
-        if not self.memory_manager:
-            return
-
-        try:
-            # 只提取并更新用户偏好，不重新加载所有记忆
-            await self.memory_manager.update_preferences_from_query(user_query)
-            logger.debug(f"✓ 会话 {self.session_id} 更新偏好成功")
-        except Exception as e:
-            logger.error(f"✗ 会话 {self.session_id} 更新偏好失败: {e}")
-
-    def get_conversation_rounds(self) -> int:
-        """获取对话轮数"""
-        return self.conversation_manager.get_conversation_rounds()
-
     def __repr__(self) -> str:
         return f"Session(id={self.session_id}, user={self.user_id}, rounds={self.get_conversation_rounds()})"
-
-
-class SessionManager:
-    """
-    会话管理器 - 管理所有会话
-    """
-
-    def __init__(self, session_timeout: int = 3600, redis_client: Optional[redis.Redis] = None):
-        """
-        初始化会话管理器
-
-        Args:
-            session_timeout: 会话超时时间（秒，默认1小时）
-            redis_client: Redis客户端（可选）
-        """
-        self.sessions: Dict[str, Session] = {}
-        self.session_timeout = session_timeout
-        self.redis_client = redis_client
-        logger.info("✓ 会话管理器已初始化")
-
-    async def get_or_create_session(
-        self,
-        session_id: Optional[str],
-        user_id: Optional[str],
-        db: Optional[AsyncSession] = None,
-        vectorstore: Optional[Milvus] = None
-    ) -> Session:
-        """
-        获取或创建会话
-
-        Args:
-            session_id: 会话ID（可选）
-            user_id: 用户ID（可选）
-            db: 数据库会话
-            vectorstore: 向量数据库
-
-        Returns:
-            Session 实例
-        """
-        import uuid
-        from utils.models import User, UserSession
-        from sqlalchemy import select
-
-        # 生成默认ID
-        if not session_id:
-            session_id = str(uuid.uuid4())
-        if not user_id:
-            user_id = f"user_{session_id}"
-
-        # 清理过期会话
-        self._cleanup_expired_sessions()
-
-        # 获取或创建会话
-        if session_id not in self.sessions:
-            # 检查该用户是否有旧会话，如果有则归档
-            if self.redis_client and db is not None:
-                try:
-                    from sqlalchemy import select
-                    from utils.models import UserSession
-
-                    # 查询该用户的所有会话
-                    result = await db.execute(
-                        select(UserSession).where(UserSession.user_id == user_id)
-                    )
-                    old_sessions = result.scalars().all()
-
-                    # 将旧会话加入合并归档队列
-                    for old_session in old_sessions:
-                        old_key = f"conversation:{old_session.session_id}"
-                        list_len = await self.redis_client.llen(old_key)
-                        if list_len > 0:
-                            await self.redis_client.sadd("merge_archive_list", old_key)
-                            logger.info(f"用户 {user_id} 创建新会话，旧会话 {old_session.session_id} 已加入合并归档队列 ({list_len} 条消息)")
-                except Exception as e:
-                    logger.error(f"归档旧会话失败: {e}")
-
-            # 创建新会话
-            session = Session(
-                session_id=session_id,
-                user_id=user_id,
-                system_context="你是专业的图书推荐助手。",
-                max_history_rounds=10,
-                redis_client=self.redis_client
-            )
-            self.sessions[session_id] = session
-
-            # 保存到数据库
-            if db is not None:
-                try:
-                    # 确保用户存在
-                    result = await db.execute(select(User).where(User.user_id == user_id))
-                    user = result.scalar_one_or_none()
-                    if not user:
-                        user = User(user_id=user_id)
-                        db.add(user)
-                        await db.flush()
-                        logger.info(f"✓ 创建新用户: {user_id}")
-
-                    # 创建会话记录
-                    user_session = UserSession(
-                        user_id=user_id,
-                        session_id=session_id
-                    )
-                    db.add(user_session)
-                    await db.commit()
-                    logger.info(f"✓ 保存会话到数据库: {session_id}")
-                except Exception as e:
-                    logger.error(f"保存会话到数据库失败: {e}")
-                    await db.rollback()
-        else:
-            # 更新访问时间
-            session = self.sessions[session_id]
-            session.update_access_time()
-
-            # 更新数据库中的最后活跃时间
-            if db is not None:
-                try:
-                    result = await db.execute(
-                        select(UserSession).where(UserSession.session_id == session_id)
-                    )
-                    user_session = result.scalar_one_or_none()
-                    if user_session:
-                        user_session.last_active_at = datetime.now()
-                        await db.commit()
-                except Exception as e:
-                    logger.error(f"更新会话活跃时间失败: {e}")
-                    await db.rollback()
-
-        # 懒加载记忆管理器
-        if db is not None and vectorstore is not None:
-            await session.initialize_memory_manager(db, vectorstore)
-
-        return session
-
-    def _cleanup_expired_sessions(self):
-        """清理过期会话"""
-        expired = [
-            sid for sid, session in self.sessions.items()
-            if session.is_expired(self.session_timeout)
-        ]
-    
-        for sid in expired:
-            del self.sessions[sid]
-            logger.info(f"🗑️ 清理过期会话: {sid}")
-
-    def get_session_count(self) -> int:
-        """获取当前会话数量"""
-        return len(self.sessions)
-
-    def get_session(self, session_id: str) -> Optional[Session]:
-        """根据ID获取会话"""
-        return self.sessions.get(session_id)

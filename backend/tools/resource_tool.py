@@ -59,6 +59,7 @@ def llm_filter_resources(results: List[ResourceResult], title: str, author: str)
 只返回 JSON 数组，不要其他文字说明。格式示例: [1, 3, 2]
 如果所有结果都不太匹配，返回空数组: []"""
 
+        # 这里使用同步 invoke，因为此函数在 ThreadPoolExecutor 中执行
         response = llm.invoke([HumanMessage(content=prompt)])
 
         # 解析 LLM 返回的序号列表

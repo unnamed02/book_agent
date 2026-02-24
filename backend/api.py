@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_milvus import Milvus
 from utils.models import get_db, get_db_manager
-from session.session import SessionManager
+from session.session_manager import SessionManager
 from graph_workflow import stream_recommendation_workflow
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
@@ -177,20 +177,15 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         session = await session_manager.get_or_create_session(
             session_id=request.session_id,
             user_id=request.user_id,
-            db=db,
-            vectorstore=get_vectorstore()
+            db=db
         )
-
-        # 初始化 RAG 服务（懒加载）
-        # await session.initialize_rag_service(kb_vectorstore=get_kb_vectorstore())
 
         # 使用 LangGraph 工作流执行推荐流程
         async for event in stream_recommendation_workflow(
             user_query=request.message,
             session_id=session.session_id,
             user_id=session.user_id,
-            conversation_manager=session.conversation_manager,
-            rag_service=session.rag_service  # 传递 RAG 服务
+            session=session
         ):
             # 将事件转换为 SSE 格式并发送
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
