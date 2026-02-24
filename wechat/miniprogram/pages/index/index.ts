@@ -295,9 +295,10 @@ Page({
   startNewSession() {
     wx.showModal({
       title: '提示',
-      content: '确定要开始新会话吗？当前对话将被清空。',
+      content: '确定要开始新会话吗？当前对话将被删除。',
       success: (res) => {
         if (res.confirm) {
+          // 清空当前会话（后端会自动归档旧会话）
           this.setData({
             messages: [],
             sessionId: null,
@@ -354,7 +355,7 @@ Page({
       })
 
       this.setData({ messages })
-      storageService.saveMessages(messages)
+      storageService.setMessages(messages)
       this.scrollToBottom()
     }
   },
