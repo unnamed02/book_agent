@@ -19,6 +19,7 @@ import asyncio
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
+from utils.compact import run_compact_scheduler
 
 # 统一配置日志等级
 logging.basicConfig(
@@ -70,7 +71,6 @@ async def lifespan(_app: FastAPI):
 
     # 启动 Redis compact 后台任务
     if redis_client:
-        from utils.redis_compact import run_compact_scheduler
         compact_task = asyncio.create_task(run_compact_scheduler())
         logger.info("Redis compact 定时任务已启动（每10分钟执行）")
 

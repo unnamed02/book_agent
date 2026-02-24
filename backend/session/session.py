@@ -222,6 +222,28 @@ class SessionManager:
 
         # 获取或创建会话
         if session_id not in self.sessions:
+            # 检查该用户是否有旧会话，如果有则归档
+            if self.redis_client and db is not None:
+                try:
+                    from sqlalchemy import select
+                    from utils.models import UserSession
+
+                    # 查询该用户的所有会话
+                    result = await db.execute(
+                        select(UserSession).where(UserSession.user_id == user_id)
+                    )
+                    old_sessions = result.scalars().all()
+
+                    # 将旧会话加入合并归档队列
+                    for old_session in old_sessions:
+                        old_key = f"conversation:{old_session.session_id}"
+                        list_len = await self.redis_client.llen(old_key)
+                        if list_len > 0:
+                            await self.redis_client.sadd("merge_archive_list", old_key)
+                            logger.info(f"用户 {user_id} 创建新会话，旧会话 {old_session.session_id} 已加入合并归档队列 ({list_len} 条消息)")
+                except Exception as e:
+                    logger.error(f"归档旧会话失败: {e}")
+
             # 创建新会话
             session = Session(
                 session_id=session_id,
