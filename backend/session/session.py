@@ -3,7 +3,7 @@
 封装单个用户会话的所有状态和功能
 """
 
-from typing import Optional, List, Dict
+from typing import Optional, List
 from datetime import datetime
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
@@ -23,7 +23,6 @@ class Session:
         - session_id: 会话ID
         - user_id: 用户ID
         - messages: 对话消息列表
-        - history: 对话历史（简单备份）
         - last_access: 最后访问时间
     """
 
@@ -61,9 +60,6 @@ class Session:
         # 设置系统上下文
         if system_context:
             self.messages.insert(0, SystemMessage(content=system_context))
-
-        # 对话历史（备份用）
-        self.history: List[Dict] = []
 
         logger.info(f"✓ 创建会话: {session_id} (用户: {user_id})")
 
@@ -230,23 +226,6 @@ class Session:
         else:
             self.messages = []
         logger.debug("对话历史已清空")
-
-    def add_to_history(self, user_msg: str, assistant_msg: str):
-        """
-        添加对话到历史记录（简单备份）
-
-        Args:
-            user_msg: 用户消息
-            assistant_msg: 助手消息
-        """
-        self.history.append({
-            "user": user_msg,
-            "assistant": assistant_msg
-        })
-
-        # 只保留最近5轮对话
-        if len(self.history) > 5:
-            self.history = self.history[-5:]
 
     def __repr__(self) -> str:
         return f"Session(id={self.session_id}, user={self.user_id}, rounds={self.get_conversation_rounds()})"
