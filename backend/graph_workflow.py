@@ -13,6 +13,7 @@ import json
 import asyncio
 import os
 from openai import AsyncOpenAI
+import dashscope
 
 
 from tools.douban_tool import search_douban_book
@@ -463,7 +464,7 @@ async def fetch_book_details(state: BookRecommendationState) -> BookRecommendati
 
 async def handle_default_query(state: BookRecommendationState) -> BookRecommendationState:
     """
-    节点: 处理无法分类的问题 - 使用 responses API 配合 web_search 和 thinking
+    节点: 处理无法分类的问题 - 使用百炼原生 API 配合联网搜索
 
     对于无法归类到图书推荐、找书、客服的问题，使用增强的 LLM 回答
     特别适合需要查询 ISBN、出版社、版本信息等需要准确性的问题
@@ -474,16 +475,11 @@ async def handle_default_query(state: BookRecommendationState) -> BookRecommenda
     user_query = state["user_query"]
 
     try:
-        # 创建 OpenAI 客户端（兼容通义千问）
-        client = AsyncOpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            base_url=os.getenv("OPENAI_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
-        )
 
         # 设置系统提示词
         session.set_system_context(DEFAULT_QUERY_SYSTEM_PROMPT)
 
-        # 构建消息列表（复用 session.messages，包含系统消息和历史对话）
+        # 构建消息列表（包含系统消息和历史对话）
         messages = []
         for msg in session.messages:
             if isinstance(msg, SystemMessage):
@@ -496,20 +492,27 @@ async def handle_default_query(state: BookRecommendationState) -> BookRecommenda
         # 添加当前查询
         messages.append({"role": "user", "content": user_query})
 
-        # 使用 responses API 调用，启用 thinking 和所有工具
-        response = await client.chat.completions.create(
-            model="qwen3-max-2026-01-23",
+        # 使用百炼原生 API，启用联网搜索
+        response = dashscope.Generation.call(
+            api_key=os.getenv("OPENAI_API_KEY"),  # 使用 OPENAI_API_KEY 环境变量
+            model="qwen-flash",
             messages=messages,
-            tools=[
-                {"type": "web_search"},
-                {"type": "web_extractor"},
-                {"type": "code_interpreter"}
-            ],
-            extra_body={"enable_thinking": True}
+            enable_search=True,  # 开启联网搜索
+            search_options={
+                "search_strategy": "max",  # 配置搜索策略为高性能模式
+                "enable_source": True,
+                "forced_search": True 
+            },
+            result_format="message"
         )
 
+        # 检查响应状态
+        if response.status_code != 200:
+            raise Exception(f"API 调用失败: {response.code} - {response.message}")
+    
         # 提取回复内容
-        answer = response.choices[0].message.content
+        answer = response.output.choices[0].message.content
+        logger.info(response)
 
         # 保存到会话历史
         session.conversation_messages.append(HumanMessage(content=user_query))
