@@ -19,7 +19,7 @@ import asyncio
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
-from utils.compact import run_compact_scheduler
+from session.compact import run_compact_scheduler
 
 # 统一配置日志等级
 logging.basicConfig(

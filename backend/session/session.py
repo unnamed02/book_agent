@@ -3,11 +3,12 @@
 封装单个用户会话的所有状态和功能
 """
 
-from typing import Optional
+from typing import Optional, Type
 from datetime import datetime
 from collections import deque
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
+from pydantic import BaseModel
 import redis.asyncio as redis
 import logging
 import json
@@ -103,7 +104,7 @@ class Session:
         else:
             self.system_message = None
 
-    async def ainvoke(self, user_input: str, model: str = None, temperature: float = None, original_query: str = None) -> str:
+    async def ainvoke(self, user_input: str, model: str = None, temperature: float = None, need_save: bool = True, include_history: bool = True) -> str:
         """
         异步调用 LLM
 
@@ -111,7 +112,8 @@ class Session:
             user_input: 用户输入（用于 LLM 调用和内存历史）
             model: 使用的模型（不指定则使用默认模型）
             temperature: 温度参数（不指定则使用默认值）
-            original_query: 用户的原始输入（用于保存到 Redis，不指定则保存 user_input）
+            need_save: 是否保存到历史记录
+            include_history: 是否包含历史对话上下文
 
         Returns:
             LLM 回复内容
@@ -122,47 +124,91 @@ class Session:
             temperature=temperature if temperature is not None else self.default_temperature
         )
 
-        # 添加用户消息到内存历史
-        self.conversation_messages.append(HumanMessage(content=user_input))
+        # 构建消息列表
+        if include_history:
+            # 包含历史上下文
+            messages = self.messages + [HumanMessage(content=user_input)]
+        else:
+            # 只包含系统消息和当前输入
+            messages = []
+            if self.system_message:
+                messages.append(self.system_message)
+            messages.append(HumanMessage(content=user_input))
 
-        # 保存到 Redis（如果提供了 original_query 则保存它，否则保存 user_input）
-        if self.redis_client:
-            query_to_save = original_query if original_query is not None else user_input
-            asyncio.create_task(self._append_message_to_redis("human", query_to_save))
+        response = await llm.ainvoke(messages)
 
-        # 调用 LLM
-        response = await llm.ainvoke(self.messages)
+        # 保存到历史
+        if need_save:
+            self.conversation_messages.append(HumanMessage(content=user_input))
+            self.conversation_messages.append(AIMessage(content=response.content))
 
-        # 添加 AI 消息到内存历史
-        self.conversation_messages.append(AIMessage(content=response.content))
 
-        # 保存 AI 回复到 Redis
-        if self.redis_client:
-            asyncio.create_task(self._append_message_to_redis("ai", response.content))
-
+        # 异步后台写入到 Redis：将 human/ai 两条消息一次性写入，并在超过阈值时加入 compact 集合，不阻塞响应
+        if self.redis_client and need_save:
+            human_msg = json.dumps({"type": "human", "content": user_input}, ensure_ascii=False)
+            ai_msg = json.dumps({"type": "ai", "content": response.content}, ensure_ascii=False)
+            asyncio.create_task(self.bg_write(human_msg, ai_msg))
         return response.content
 
-    async def _append_message_to_redis(self, msg_type: str, content: str):
-        """追加单条消息到 Redis List"""
-        if not self.redis_client:
-            return
+    async def ainvoke_structured(
+        self,
+        user_input: str,
+        response_model: Type[BaseModel],
+        model: str = None,
+        temperature: float = None,
+        need_save: bool = True
+    ) -> BaseModel:
+        """
+        异步调用 LLM 并返回结构化输出
 
-        try:
-            msg_data = json.dumps({
-                "type": msg_type,
-                "content": content
-            }, ensure_ascii=False)
+        Args:
+            user_input: 用户输入
+            response_model: Pydantic 模型类，定义返回结构
+            model: 使用的模型（不指定则使用默认模型）
+            temperature: 温度参数（不指定则使用默认值）
+            need_save: 是否保存到历史记录
 
-            # 追加到列表末尾，返回列表长度
-            length = await self.redis_client.rpush(self.redis_key, msg_data)
+        Returns:
+            结构化的响应对象
+        """
+        # 使用指定的模型或默认模型
+        llm = ChatOpenAI(
+            model=model or self.default_model,
+            temperature=temperature if temperature is not None else self.default_temperature
+        )
 
-            # 检查是否需要 compact（超过 220 条消息）
-            if length > 220:
-                await self.redis_client.sadd("needs_compact_list", self.redis_key)
-                logger.debug(f"会话 {self.session_id} 已达到 {length} 条消息，已加入 compact 队列")
+        # 创建结构化输出的 LLM
+        structured_llm = llm.with_structured_output(response_model)
 
-        except Exception as e:
-            logger.error(f"追加消息到 Redis 失败: {e}")
+        # 添加用户消息到内存历史
+        if need_save:
+            self.conversation_messages.append(HumanMessage(content=user_input))
+
+        # 调用结构化输出
+        response = await structured_llm.ainvoke(self.messages)
+
+        # 保存 AI 响应
+        if need_save:
+            # 将响应转为字典，然后转为 JSON 字符串用于存储
+            ai_content_dict = response.model_dump()
+            ai_content_str = json.dumps(ai_content_dict, ensure_ascii=False)
+
+            self.conversation_messages.append(AIMessage(content=ai_content_str))
+
+            # 异步后台写入到 Redis
+            if self.redis_client:
+                human_msg = json.dumps({"type": "human", "content": user_input}, ensure_ascii=False)
+                ai_msg = json.dumps({"type": "ai", "content": ai_content_str}, ensure_ascii=False)
+                asyncio.create_task(self.bg_write(human_msg, ai_msg))
+
+        return response
+
+
+    async def bg_write(self, human, ai):
+        length = await self.redis_client.rpush(self.redis_key, human, ai)
+        if length > 220:
+            await self.redis_client.sadd("needs_compact_list", self.redis_key)
+            logger.debug(f"会话 {self.session_id} 已达到 {length} 条消息，已加入 compact 队列")
 
     async def load_from_redis(self):
         """从 Redis List 加载对话历史（只加载 human 和 ai 消息，system 由代码设置）"""
@@ -176,8 +222,12 @@ class Session:
                 logger.debug(f"Redis 中没有找到对话历史: {self.redis_key}")
                 return
 
-            # 获取所有消息
-            messages_json = await self.redis_client.lrange(self.redis_key, 0, -1)
+            # 只加载最近的消息，数量为 deque 的最大容量
+            max_messages = self.max_history_rounds * 2
+            start_index = max(0, list_len - max_messages)
+
+            # 获取最近的消息
+            messages_json = await self.redis_client.lrange(self.redis_key, start_index, -1)
 
             # 清空对话消息（保留 system_message）
             self.conversation_messages.clear()
@@ -191,12 +241,15 @@ class Session:
                     if msg_type == "human":
                         self.conversation_messages.append(HumanMessage(content=content))
                     elif msg_type == "ai":
+                        # 如果 content 是字典，转换为 JSON 字符串
+                        if isinstance(content, dict):
+                            content = json.dumps(content, ensure_ascii=False)
                         self.conversation_messages.append(AIMessage(content=content))
                 except Exception as e:
                     logger.error(f"解析消息失败: {e}")
                     continue
 
-            logger.info(f"✓ 从 Redis 加载了 {len(messages_json)} 条消息")
+            logger.info(f"✓ 从 Redis 加载了 {len(messages_json)} 条消息（总共 {list_len} 条）")
 
         except Exception as e:
             logger.error(f"从 Redis 加载对话历史失败: {e}")

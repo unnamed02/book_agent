@@ -175,9 +175,7 @@ class SessionManager:
                     )
                     db.add(user_session)
                     await db.commit()
-                    logger.info(f"✓ 保存会话到数据库: {session_id}")
                 except Exception as e:
-                    logger.error(f"保存会话到数据库失败: {e}")
                     await db.rollback()
 
         return session

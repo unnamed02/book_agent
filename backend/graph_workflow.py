@@ -7,10 +7,12 @@ from typing import TypedDict, List, Dict, Optional
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_openai import ChatOpenAI
+from pydantic import BaseModel, Field
 import logging
 import json
-import re
 import asyncio
+import os
+from openai import AsyncOpenAI
 
 
 from tools.douban_tool import search_douban_book
@@ -19,12 +21,39 @@ from tools.library_tool import search_library_collection
 from session.session import Session
 from service.knowledge_base_tool import RAGCustomerService, KnowledgeBase
 from prompts.system_prompts import (
+    ROUTE_QUERY_SYSTEM_PROMPT,
+    REWRITE_QUERY_SYSTEM_PROMPT,
     CUSTOMER_SERVICE_SYSTEM_PROMPT,
-    EXTRACT_BOOK_SYSTEM_PROMPT,
-    BOOK_RECOMMENDATION_SYSTEM_PROMPT
+    FIND_BOOK_SYSTEM_PROMPT,
+    BOOK_RECOMMENDATION_SYSTEM_PROMPT,
+    DEFAULT_QUERY_SYSTEM_PROMPT
 )
 
 logger = logging.getLogger(__name__)
+
+# ========== Pydantic 模型定义 ==========
+
+class BookInfo(BaseModel):
+    """书籍信息"""
+    title: str = Field(description="书名（主标题，不含版本号）")
+    author: str = Field(description="作者姓名，如果不确定则为空字符串")
+
+class ExtractBooksResponse(BaseModel):
+    """提取书籍响应结构"""
+    books: List[BookInfo] = Field(
+        description="提取的书籍列表。重要：如果用户查询的是丛书或系列（如'丁丁历险记'、'三体三部曲'、'哈利波特系列'），且该系列每册有独立书名，必须将每一册作为独立的BookInfo条目返回，不要只返回系列名"
+    )
+
+class BookRecommendation(BaseModel):
+    """单本书籍推荐"""
+    title: str = Field(description="书名")
+    author: str = Field(description="作者")
+    reason: str = Field(description="推荐理由")
+
+class RecommendationResponse(BaseModel):
+    """推荐响应结构"""
+    dialogue: str = Field(description="对话响应，向用户解释推荐的书籍")
+    books: List[BookRecommendation] = Field(description="推荐书单列表")
 
 # ========== 状态定义 ==========
 
@@ -64,54 +93,83 @@ class BookRecommendationState(TypedDict):
 
 async def route_query(state: BookRecommendationState) -> BookRecommendationState:
     """
-    节点0: 智能路由 - 分析用户查询类型和明确性
+    节点0: 智能路由 - 分析用户查询类型
 
     判断:
-    1. 是图书推荐需求还是客服咨询
+    1. 是否需要上下文解析（rewrite）
+    2. 是图书推荐、找书还是客服咨询
     """
     logger.info("📍 节点: route_query")
 
+    session = state["session"]
     user_query = state["user_query"]
 
-    route_prompt = f"""判断用户查询类型：
+    # 设置路由系统提示词
+    session.set_system_context(ROUTE_QUERY_SYSTEM_PROMPT)
 
-用户查询：{user_query}
+    route_prompt = f"用户查询：{user_query}"
 
-类型：
-- find_book：查找特定书籍（关键词：找、查、有没有、搜索 + 书名）
-- book_recommendation：需要推荐书籍（关键词：推荐、想看、想学、书单）
-- customer_service：询问系统功能、使用方法等
-
-只返回类型字符串：find_book/book_recommendation/customer_service"""
-
-    # 直接使用裸 LLM 调用
-    llm = ChatOpenAI(model="qwen-flash", temperature=0)
-    response = await llm.ainvoke([HumanMessage(content=route_prompt)])
-    route_result = response.content
-
-    # 解析路由结果 - 直接返回查询类型字符串
+    # 使用普通 ainvoke，不包含历史上下文
     try:
-        # 清理结果（去除可能的空格、换行等）
+        route_result = await session.ainvoke(
+            route_prompt,
+            model="qwen-flash",
+            temperature=0,
+            need_save=False,
+            include_history=False  # 路由判断不需要历史上下文
+        )
+
+        # 清理结果
         clean_result = route_result.strip()
 
         # 验证返回的查询类型是否有效
-        valid_types = ["find_book", "book_recommendation", "customer_service"]
+        valid_types = ["rewrite", "find_book", "book_recommendation", "customer_service", "default"]
 
         if clean_result in valid_types:
             state["query_type"] = clean_result
         else:
             logger.warning(f"无效的查询类型: {clean_result}, 使用默认值")
-            state["query_type"] = "book_recommendation"
-
-        state["is_query_clear"] = True
-        state["clarification_questions"] = []
+            state["query_type"] = "default"
 
         logger.info(f"✓ 路由结果: type={state['query_type']}")
 
     except Exception as e:
         logger.error(f"路由解析失败: {e}, 使用默认值")
-        # 默认当作图书推荐
-        state["query_type"] = "book_recommendation"
+        # 默认当作无法分类的问题
+        state["query_type"] = "default"
+
+    return state
+
+
+async def rewrite_query(state: BookRecommendationState) -> BookRecommendationState:
+    """
+    节点: 查询重写 - 将含有指代词的查询重写为明确查询
+    
+    根据对话历史，将"最后一本"、"换一本"等指代词替换为具体内容
+    """
+    logger.info("📍 节点: rewrite_query")
+
+    session = state["session"]
+    user_query = state["user_query"]
+
+    # 设置查询重写系统提示词
+    session.set_system_context(REWRITE_QUERY_SYSTEM_PROMPT)
+
+    try:
+        # 使用 ainvoke，包含历史上下文
+        rewritten_query = await session.ainvoke(
+            user_query,
+            model="qwen3-max-2026-01-23",
+            temperature=0,
+        )
+
+        # 更新 user_query 为重写后的查询
+        state["user_query"] = rewritten_query.strip()
+        logger.info(f"✓ 查询重写: {user_query} → {state['user_query']}")
+
+    except Exception as e:
+        logger.error(f"查询重写失败: {e}, 使用原查询")
+        # 失败时保持原查询
 
     return state
 
@@ -196,7 +254,8 @@ async def _fallback_customer_service(state: BookRecommendationState) -> BookReco
         user_query,
         model="qwen-flash",
         temperature=0.7,
-        original_query=user_query
+        need_save=True,
+        include_history=False,
     )
 
     state["final_response"] = cs_response
@@ -218,34 +277,19 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
     user_query = state["user_query"]
 
     # 设置提取书名系统提示词
-    session.set_system_context(EXTRACT_BOOK_SYSTEM_PROMPT)
-
-    # 使用 LLM 提取书名和作者
-    extract_prompt = f"""用户查询：{user_query}
-
-规则：
-1. 知名丛书（哈利波特、三体等）且用户只提丛书名，返回所有分册
-2. 用户指定某一册，只返回该册
-3. 作者推断（用户未指定时）：
-   - 唯一经典作品（如《活着》余华）→ 填充作者
-   - 多个同名书（如《边城》）→ 返回所有并填充各自作者
-   - 工具书/教材/其余情况 → author 为空字符串
-4. 丁丁历险记只用分册名（如"黑岛"），不加前缀
-
-只返回JSON。"""
+    session.set_system_context(FIND_BOOK_SYSTEM_PROMPT)
 
     try:
-        extract_result = await session.ainvoke(
-            extract_prompt,
+        # 使用结构化输出
+        response = await session.ainvoke_structured(
+            user_input=user_query,
+            response_model=ExtractBooksResponse,
             model="qwen3-max-2026-01-23",
             temperature=0,
-            original_query=user_query
+            need_save=True  # 提取书名不需要保存到历史
         )
-    
-        # 解析提取结果
-        book_info = json.loads(extract_result.strip())
-        books = book_info.get("books", [])
 
+        books = [book.model_dump() for book in response.books]
         logger.info(f"提取到 {len(books)} 本书")
 
         if not books:
@@ -273,7 +317,7 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
     """
     节点: 生成推荐书单
 
-    1. 使用LLM生成推荐书单和对话响应
+    1. 使用LLM结构化输出生成推荐书单和对话响应
     """
     logger.info("📍 节点: generate_recommendations")
 
@@ -285,26 +329,37 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
     # 设置图书推荐系统提示词
     session.set_system_context(BOOK_RECOMMENDATION_SYSTEM_PROMPT)
 
-    llm_response = await session.ainvoke(
-        user_query,
-        model="qwen3-max-2026-01-23",
-        temperature=0.7,
-        original_query=user_query
-    )
+    try:
+        # 使用 session 的结构化输出方法
+        response = await session.ainvoke_structured(
+            user_input=user_query,
+            response_model=RecommendationResponse,
+            model="qwen3-max-2026-01-23",
+            temperature=0.7,
+            need_save=True
+        )
 
-    # 解析响应
-    dialogue_part, books = _parse_recommendation_response(llm_response)
+        # 直接使用结构化响应
+        dialogue_part = response.dialogue
+        books = [book.model_dump() for book in response.books]
 
-    if not books:
-        state["error"] = "无法生成推荐书单"
+        if not books:
+            state["error"] = "无法生成推荐书单"
+            state["recommended_books"] = []
+            state["book_cards"] = []
+            state["final_response"] = ""
+            return state
+
+        state["dialogue_response"] = dialogue_part
+        state["recommended_books"] = books
+        logger.info(f"✓ 生成 {len(books)} 本推荐书籍")
+
+    except Exception as e:
+        logger.error(f"生成推荐失败: {e}", exc_info=True)
+        state["error"] = f"生成推荐失败: {str(e)}"
         state["recommended_books"] = []
         state["book_cards"] = []
         state["final_response"] = ""
-        return state
-
-    state["dialogue_response"] = dialogue_part
-    state["recommended_books"] = books
-    logger.info(f"✓ 生成 {len(books)} 本推荐书籍")
 
     return state
 
@@ -406,14 +461,92 @@ async def fetch_book_details(state: BookRecommendationState) -> BookRecommendati
 
 # ========== 条件路由 ==========
 
+async def handle_default_query(state: BookRecommendationState) -> BookRecommendationState:
+    """
+    节点: 处理无法分类的问题 - 使用 responses API 配合 web_search 和 thinking
+
+    对于无法归类到图书推荐、找书、客服的问题，使用增强的 LLM 回答
+    特别适合需要查询 ISBN、出版社、版本信息等需要准确性的问题
+    """
+    logger.info("📍 节点: handle_default_query")
+
+    session = state["session"]
+    user_query = state["user_query"]
+
+    try:
+        # 创建 OpenAI 客户端（兼容通义千问）
+        client = AsyncOpenAI(
+            api_key=os.getenv("OPENAI_API_KEY"),
+            base_url=os.getenv("OPENAI_API_BASE", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+        )
+
+        # 设置系统提示词
+        session.set_system_context(DEFAULT_QUERY_SYSTEM_PROMPT)
+
+        # 构建消息列表（复用 session.messages，包含系统消息和历史对话）
+        messages = []
+        for msg in session.messages:
+            if isinstance(msg, SystemMessage):
+                messages.append({"role": "system", "content": msg.content})
+            elif isinstance(msg, HumanMessage):
+                messages.append({"role": "user", "content": msg.content})
+            elif isinstance(msg, AIMessage):
+                messages.append({"role": "assistant", "content": msg.content})
+
+        # 添加当前查询
+        messages.append({"role": "user", "content": user_query})
+
+        # 使用 responses API 调用，启用 thinking 和所有工具
+        response = await client.chat.completions.create(
+            model="qwen3-max-2026-01-23",
+            messages=messages,
+            tools=[
+                {"type": "web_search"},
+                {"type": "web_extractor"},
+                {"type": "code_interpreter"}
+            ],
+            extra_body={"enable_thinking": True}
+        )
+
+        # 提取回复内容
+        answer = response.choices[0].message.content
+
+        # 保存到会话历史
+        session.conversation_messages.append(HumanMessage(content=user_query))
+        session.conversation_messages.append(AIMessage(content=answer))
+
+        # 异步保存到 Redis
+        if session.redis_client:
+            human_msg = json.dumps({"type": "human", "content": user_query}, ensure_ascii=False)
+            ai_msg = json.dumps({"type": "ai", "content": answer}, ensure_ascii=False)
+            asyncio.create_task(session.bg_write(human_msg, ai_msg))
+
+        state["dialogue_response"] = answer
+        state["final_response"] = answer
+
+        logger.info(f"默认回复生成完成，长度: {len(answer)}")
+
+    except Exception as e:
+        logger.error(f"默认回复生成失败: {e}")
+        state["error"] = str(e)
+        state["dialogue_response"] = "抱歉，我暂时无法回答您的问题。"
+        state["final_response"] = state["dialogue_response"]
+
+    return state
+
+
 def route_by_type(state: BookRecommendationState) -> str:
     """
     条件边: 根据查询类型路由
 
     Returns:
-        "customer_service" | "recommend" | "find_book"
+        "rewrite" | "customer_service" | "recommend" | "find_book" | "default"
     """
     query_type = state.get("query_type", "book_recommendation")
+
+    # 如果需要重写查询，路由到重写节点
+    if query_type == "rewrite":
+        return "rewrite"
 
     # 如果是客服咨询，直接路由到客服节点
     if query_type == "customer_service":
@@ -422,6 +555,10 @@ def route_by_type(state: BookRecommendationState) -> str:
     # 如果是找书，直接路由到找书节点
     if query_type == "find_book":
         return "find_book"
+
+    # 如果是无法分类的问题，路由到默认处理节点
+    if query_type == "default":
+        return "default"
 
     # 图书推荐需求，进入推荐流程
     return "recommend"
@@ -441,66 +578,6 @@ def has_error(state: BookRecommendationState) -> str:
 
 
 # ========== 辅助函数 ==========
-
-def _parse_recommendation_response(llm_response: str) -> tuple[str, List[Dict]]:
-    """
-    解析LLM推荐响应，提取对话部分和书籍列表
-
-    Returns:
-        (dialogue_part, books_list)
-    """
-    dialogue_part = ""
-    books = []
-
-    # 尝试提取JSON部分
-    json_match = re.search(r'\{["\']books["\']\s*:\s*\[.*?\]\s*\}', llm_response, re.DOTALL)
-
-    if json_match:
-        json_part = json_match.group(0)
-        dialogue_part = llm_response[:json_match.start()].strip()
-
-        try:
-            # 清理并解析JSON
-            clean_json = re.sub(r'```json\s*|\s*```', '', json_part).strip()
-            # 修复常见JSON格式问题
-            clean_json = re.sub(r'("reason":\s*)([^",}\]]+)([,}\]])', r'\1"\2"\3', clean_json)
-
-            book_data = json.loads(clean_json)
-            books = book_data.get("books", [])
-        except Exception as e:
-            logger.error(f"解析书单JSON失败: {e}")
-            # 尝试正则提取
-            books = _regex_extract_books(llm_response)
-    else:
-        # 没有找到标准JSON，尝试正则提取
-        books = _regex_extract_books(llm_response)
-
-    return dialogue_part, books
-
-
-
-def _regex_extract_books(text: str) -> List[Dict]:
-    """使用正则表达式提取书籍信息（带 reason）"""
-    books = []
-
-    title_pattern = r'"title":\s*"([^"]+)"'
-    author_pattern = r'"author":\s*"([^"]+)"'
-    reason_pattern = r'"reason":\s*"?([^",}]+)"?'
-
-    titles = re.findall(title_pattern, text)
-    authors = re.findall(author_pattern, text)
-    reasons = re.findall(reason_pattern, text)
-
-    for i in range(min(len(titles), len(authors))):
-        books.append({
-            "title": titles[i],
-            "author": authors[i],
-            "reason": reasons[i] if i < len(reasons) else "推荐阅读"
-        })
-
-    logger.info(f"正则提取得到 {len(books)} 本书籍")
-    return books
-
 
 
 async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Dict:
@@ -646,29 +723,35 @@ def create_recommendation_graph() -> StateGraph:
 
     工作流程：
     0. route_query（智能路由）
+       ├─ 需要重写 → rewrite_query → route_query（循环）
        ├─ 客服咨询 → customer_service → END
-       ├─ 找书 → find_book → END
-       └─ 图书推荐 → generate_recommendations → fetch_book_details → END
+       ├─ 找书 → find_book → fetch_book_details → END
+       ├─ 图书推荐 → generate_recommendations → fetch_book_details → END
+       └─ 无法分类 → default → END
 
     图书推荐路径：
     1. generate_recommendations（生成推荐书单和对话）
     2. fetch_book_details（获取书籍详情并构建卡片）
 
     节点说明：
-    - route_query: 智能路由，判断查询类型（find_book/book_recommendation/customer_service）
+    - route_query: 智能路由，判断查询类型（rewrite/find_book/book_recommendation/customer_service/default）
+    - rewrite_query: 查询重写，将指代词替换为具体内容后返回 route_query
     - customer_service: 处理客服咨询（使用 RAG）
     - find_book: 提取书名（找书流程第一步）
     - generate_recommendations: 生成推荐书单和对话响应
     - fetch_book_details: 获取书籍详情并构建卡片（找书和推荐共用）
+    - default: 处理无法分类的问题，直接调用 LLM 原始输出
     """
     workflow = StateGraph(BookRecommendationState)
 
     # 添加节点
     workflow.add_node("route", route_query)
+    workflow.add_node("rewrite", rewrite_query)
     workflow.add_node("customer_service", handle_customer_service)
     workflow.add_node("find_book", handle_find_book)
     workflow.add_node("generate_recommendations", generate_recommendations)
     workflow.add_node("fetch_book_details", fetch_book_details)
+    workflow.add_node("default", handle_default_query)
 
     # 设置入口点
     workflow.set_entry_point("route")
@@ -678,14 +761,22 @@ def create_recommendation_graph() -> StateGraph:
         "route",
         route_by_type,
         {
+            "rewrite": "rewrite",
             "customer_service": "customer_service",
             "find_book": "find_book",
-            "recommend": "generate_recommendations"
+            "recommend": "generate_recommendations",
+            "default": "default"
         }
     )
 
+    # 重写后返回路由节点
+    workflow.add_edge("rewrite", "route")
+
     # 客服分支直接结束
     workflow.add_edge("customer_service", END)
+
+    # 默认处理分支直接结束
+    workflow.add_edge("default", END)
 
     # 找书分支：提取书名 → 获取详情 → 结束
     workflow.add_edge("find_book", "fetch_book_details")
@@ -763,6 +854,15 @@ async def stream_recommendation_workflow(
             # 根据节点发送不同事件
             if node_name == "customer_service":
                 # 客服响应
+                yield {
+                    "type": "message",
+                    "content": node_state["final_response"]
+                }
+                yield {"type": "done"}
+                return
+
+            elif node_name == "default":
+                # 默认处理响应
                 yield {
                     "type": "message",
                     "content": node_state["final_response"]
