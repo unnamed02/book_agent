@@ -53,6 +53,12 @@ logs/
 *.sqlite
 *.sqlite3
 
+# Milvus 向量数据库
+milvus_memory.db
+milvus_kb.db
+backend/milvus_memory.db
+backend/milvus_kb.db
+
 # 测试覆盖率
 htmlcov/
 .tox/
@@ -95,6 +101,10 @@ frontend/dist-ssr/
 frontend/build/
 *.local
 
+# Vite
+.vite/
+frontend/.vite/
+
 # 编辑器
 *.swp
 *.swo
@@ -132,9 +142,23 @@ secrets/
 
 # Redis dumps
 dump.rdb
+appendonly.aof
+*.rdb
+*.aof
+
+# PM2
+.pm2/
+pids/
+*.pid
+*.seed
+*.pid.lock
 
 # 微信小程序
 wechat/miniprogram/node_modules/
 wechat/miniprogram_npm/
 wechat/.DS_Store
 wechat/project.private.config.json
+
+# Claude Code
+.claude/
+CLAUDE.md
