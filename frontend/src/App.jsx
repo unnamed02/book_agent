@@ -11,6 +11,41 @@ const ImageComponent = ({ src, alt }) => {
   return <img src={src} alt={alt} onError={() => setError(true)} />;
 };
 
+// 自定义加粗文本组件 - 点击可复制
+const StrongComponent = ({ children }) => {
+  const handleClick = (e) => {
+    e.preventDefault();
+    const text = e.target.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      // 显示复制成功提示
+      const target = e.target;
+      const originalText = target.innerText;
+      target.innerText = '已复制!';
+      target.style.color = '#52c41a';
+      setTimeout(() => {
+        target.innerText = originalText;
+        target.style.color = '';
+      }, 1000);
+    }).catch(err => {
+      console.error('复制失败:', err);
+    });
+  };
+
+  return (
+    <strong
+      onClick={handleClick}
+      style={{
+        cursor: 'pointer',
+        userSelect: 'none',
+        transition: 'all 0.2s'
+      }}
+      title="点击复制"
+    >
+      {children}
+    </strong>
+  );
+};
+
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 

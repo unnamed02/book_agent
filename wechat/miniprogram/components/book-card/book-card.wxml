@@ -34,42 +34,42 @@
             <text class="reason-text">{{item.reason}}</text>
           </view>
 
-          <!-- 馆藏信息 / 荐购信息 -->
-          <view class="book-section">
-            <view class="section-title">{{item.hasLibrary ? '馆藏信息' : '荐购'}}</view>
+          <!-- 馆藏信息 -->
+          <view wx:if="{{item.hasLibrary}}" class="book-section">
+            <view class="section-title">馆藏信息</view>
             <view class="library-list">
-              <!-- 有馆藏时显示馆藏信息 -->
-              <block wx:if="{{item.hasLibrary}}">
-                <view
-                  wx:for="{{item.libraryItems}}"
-                  wx:for-item="lib"
-                  wx:key="index"
-                  class="library-item"
+              <view
+                wx:for="{{item.libraryItems}}"
+                wx:for-item="lib"
+                wx:key="index"
+                class="library-item"
+              >
+                <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
+                <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
+                <view class="library-detail">所在分馆: {{lib.library}}</view>
+                <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
+                <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
+              </view>
+            </view>
+          </view>
+
+          <!-- 荐购按钮（所有书籍都显示） -->
+          <view class="book-section">
+            <view class="section-title">荐购</view>
+            <view class="library-list">
+              <view class="library-item recommend-item">
+                <view class="recommend-info">
+                  <text class="recommend-desc">如需增加馆藏或购买其他版本，可提交荐购申请</text>
+                </view>
+                <text
+                  class="recommend-link"
+                  bindtap="onRecommendTap"
+                  data-title="{{item.title}}"
+                  data-author="{{item.author}}"
                 >
-                  <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
-                  <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
-                  <view class="library-detail">所在分馆: {{lib.library}}</view>
-                  <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
-                  <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
-                </view>
-              </block>
-              <!-- 没有馆藏时显示荐购信息 -->
-              <block wx:else>
-                <view class="library-item recommend-item">
-                  <view class="recommend-info">
-                    <view class="library-title">{{item.title}}</view>
-                    <view wx:if="{{item.author}}" class="library-pub-info">{{item.author}}</view>
-                  </view>
-                  <text
-                    class="recommend-link"
-                    bindtap="onRecommendTap"
-                    data-title="{{item.title}}"
-                    data-author="{{item.author}}"
-                  >
-                    荐购
-                  </text>
-                </view>
-              </block>
+                  荐购
+                </text>
+              </view>
             </view>
           </view>
 

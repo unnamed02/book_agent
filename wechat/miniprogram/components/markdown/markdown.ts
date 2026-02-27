@@ -97,15 +97,31 @@ Component({
       this.setData({ parsedContent: parsed })
     },
 
-    // 解析行内元素（粗体、斜体、链接等）
+    // 解析行内元素（粗体、斜体、链接、特殊标记等）
     parseInline(text: string): any[] {
       const result: any[] = []
       let current = ''
       let i = 0
 
       while (i < text.length) {
+        // 特殊标记 【text】（版本信息等）
+        if (text[i] === '【') {
+          if (current) {
+            result.push({ type: 'text', content: current })
+            current = ''
+          }
+          const end = text.indexOf('】', i)
+          if (end !== -1) {
+            result.push({
+              type: 'highlight',
+              content: text.substring(i + 1, end),
+            })
+            i = end + 1
+            continue
+          }
+        }
         // 粗体 **text**
-        if (text.substr(i, 2) === '**') {
+        else if (text.substr(i, 2) === '**') {
           if (current) {
             result.push({ type: 'text', content: current })
             current = ''
@@ -198,6 +214,54 @@ Component({
             // 用户选择复制链接
             this.copyLink(url)
           }
+        },
+      })
+    },
+
+    // 处理加粗文字点击 - 复制内容
+    onBoldTap(e: any) {
+      const content = e.currentTarget.dataset.content
+      if (!content) return
+
+      wx.setClipboardData({
+        data: content,
+        success: () => {
+          wx.showToast({
+            title: '已复制',
+            icon: 'success',
+            duration: 1500,
+          })
+        },
+        fail: () => {
+          wx.showToast({
+            title: '复制失败',
+            icon: 'none',
+            duration: 2000,
+          })
+        },
+      })
+    },
+
+    // 处理高亮文字点击 - 复制内容（版本信息等）
+    onHighlightTap(e: any) {
+      const content = e.currentTarget.dataset.content
+      if (!content) return
+
+      wx.setClipboardData({
+        data: content,
+        success: () => {
+          wx.showToast({
+            title: '已复制',
+            icon: 'success',
+            duration: 1500,
+          })
+        },
+        fail: () => {
+          wx.showToast({
+            title: '复制失败',
+            icon: 'none',
+            duration: 2000,
+          })
         },
       })
     },

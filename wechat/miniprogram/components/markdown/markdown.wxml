@@ -10,7 +10,8 @@
     <view wx:elif="{{item.type === 'p'}}" class="markdown-p">
       <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
-        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
@@ -21,7 +22,8 @@
       <text class="markdown-bullet">• </text>
       <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
-        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
@@ -30,7 +32,8 @@
       <text class="markdown-number">{{index + 1}}. </text>
       <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
-        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
