@@ -56,6 +56,11 @@ class RecommendationResponse(BaseModel):
     dialogue: str = Field(description="对话响应，向用户解释推荐的书籍")
     books: List[BookRecommendation] = Field(description="推荐书单列表")
 
+class RewriteQueryResponse(BaseModel):
+    """查询重写响应结构"""
+    rewritten_query: str = Field(description="重写后的查询文本")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/customer_service/default")
+
 # ========== 状态定义 ==========
 
 class BookRecommendationState(TypedDict):
@@ -144,9 +149,9 @@ async def route_query(state: BookRecommendationState) -> BookRecommendationState
 
 async def rewrite_query(state: BookRecommendationState) -> BookRecommendationState:
     """
-    节点: 查询重写 - 将含有指代词的查询重写为明确查询
-    
-    根据对话历史，将"最后一本"、"换一本"等指代词替换为具体内容
+    节点: 查询重写和路由 - 将含有指代词的查询重写为明确查询，并判断路由类型
+
+    根据对话历史，将"最后一本"、"换一本"等指代词替换为具体内容，同时确定应该路由到哪个节点
     """
     logger.info("📍 节点: rewrite_query")
 
@@ -157,20 +162,31 @@ async def rewrite_query(state: BookRecommendationState) -> BookRecommendationSta
     session.set_system_context(REWRITE_QUERY_SYSTEM_PROMPT)
 
     try:
-        # 使用 ainvoke，包含历史上下文
-        rewritten_query = await session.ainvoke(
+        # 使用结构化输出
+        result = await session.ainvoke_structured(
             user_query,
+            response_model=RewriteQueryResponse,
             model="qwen3-max-2026-01-23",
-            temperature=0,
+            temperature=0
         )
 
-        # 更新 user_query 为重写后的查询
-        state["user_query"] = rewritten_query.strip()
-        logger.info(f"✓ 查询重写: {user_query} → {state['user_query']}")
+        # 更新状态
+        state["user_query"] = result.rewritten_query
+        state["query_type"] = result.query_type
+
+        logger.info(f"✓ 查询重写: {user_query} → {result.rewritten_query}")
+        logger.info(f"✓ 路由类型: {result.query_type}")
 
     except Exception as e:
-        logger.error(f"查询重写失败: {e}, 使用原查询")
-        # 失败时保持原查询
+        error_msg = str(e)
+        logger.error(f"查询重写失败: {error_msg}", exc_info=True)
+
+        # 判断是否是内容审核失败
+        if "data_inspection_failed" in error_msg or "inappropriate content" in error_msg:
+            logger.warning("查询重写触发内容审核，使用默认路由")
+
+        # 失败时使用默认路由
+        state["query_type"] = "default"
 
     return state
 
@@ -306,9 +322,17 @@ async def handle_find_book(state: BookRecommendationState) -> BookRecommendation
         logger.info(f"✓ 提取 {len(books)} 本书籍")
 
     except Exception as e:
-        logger.error(f"找书提取失败: {e}", exc_info=True)
-        state["error"] = str(e)
-        state["final_response"] = f"抱歉，查找时出现错误，请稍后重试。"
+        error_msg = str(e)
+        logger.error(f"找书提取失败: {error_msg}", exc_info=True)
+
+        # 判断是否是内容审核失败
+        if "data_inspection_failed" in error_msg or "inappropriate content" in error_msg:
+            state["error"] = "内容审核失败"
+            state["final_response"] = "抱歉，查询内容触发了内容审核。请尝试换一个话题。"
+        else:
+            state["error"] = error_msg
+            state["final_response"] = "抱歉，查找时出现错误，请稍后重试。"
+
         state["dialogue_response"] = state["final_response"]
 
     return state
@@ -324,7 +348,6 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
 
     session = state["session"]
     user_query = state["user_query"]
-    recent_books = state.get("recent_recommendations", [])
 
     # 更新系统上下文
     # 设置图书推荐系统提示词
@@ -348,7 +371,8 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
             state["error"] = "无法生成推荐书单"
             state["recommended_books"] = []
             state["book_cards"] = []
-            state["final_response"] = ""
+            state["final_response"] = "抱歉，我暂时无法为您生成推荐书单。请尝试更具体地描述您的需求。"
+            state["dialogue_response"] = state["final_response"]
             return state
 
         state["dialogue_response"] = dialogue_part
@@ -356,11 +380,20 @@ async def generate_recommendations(state: BookRecommendationState) -> BookRecomm
         logger.info(f"✓ 生成 {len(books)} 本推荐书籍")
 
     except Exception as e:
-        logger.error(f"生成推荐失败: {e}", exc_info=True)
-        state["error"] = f"生成推荐失败: {str(e)}"
+        error_msg = str(e)
+        logger.error(f"生成推荐失败: {error_msg}", exc_info=True)
+
+        # 判断是否是内容审核失败
+        if "data_inspection_failed" in error_msg or "inappropriate content" in error_msg:
+            state["error"] = "内容审核失败"
+            state["final_response"] = "抱歉，推荐内容触发了内容审核。请尝试换一个话题或更具体地描述您的需求。"
+        else:
+            state["error"] = f"生成推荐失败: {error_msg}"
+            state["final_response"] = "抱歉，生成推荐时出现错误。请稍后重试或尝试更换查询内容。"
+
         state["recommended_books"] = []
         state["book_cards"] = []
-        state["final_response"] = ""
+        state["dialogue_response"] = state["final_response"]
 
     return state
 
@@ -772,8 +805,17 @@ def create_recommendation_graph() -> StateGraph:
         }
     )
 
-    # 重写后返回路由节点
-    workflow.add_edge("rewrite", "route")
+    # 重写后直接路由到对应节点（不再回到 route）
+    workflow.add_conditional_edges(
+        "rewrite",
+        route_by_type,
+        {
+            "customer_service": "customer_service",
+            "find_book": "find_book",
+            "recommend": "generate_recommendations",
+            "default": "default"
+        }
+    )
 
     # 客服分支直接结束
     workflow.add_edge("customer_service", END)
