@@ -46,10 +46,9 @@ async def parse_book_list(state: "BookRecommendationState") -> "BookRecommendati
             user_input=book_list_text,
             model="qwen-flash",
             temperature=0,
-            need_save=False
+            need_save=False,
+            include_history=False,
         )
-
-        logger.info(f"🤖 LLM 解析响应: {response[:300]}...")
 
         # 提取 JSON
         json_text = response.strip()
@@ -75,13 +74,10 @@ async def parse_book_list(state: "BookRecommendationState") -> "BookRecommendati
             if end_pos > 0:
                 json_text = json_text[:end_pos]
 
-        logger.info(f"📋 提取的 JSON: {json_text[:300]}...")
 
         # 解析 JSON
         response_data = json.loads(json_text)
         books_data = response_data.get("books", [])
-
-        logger.info(f"📚 解析到的书籍数量: {len(books_data)}")
 
         if not books_data:
             logger.error("解析到的书单为空")
