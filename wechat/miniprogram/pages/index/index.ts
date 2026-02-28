@@ -24,7 +24,10 @@ Page({
     userId: null as string | null,
     scrollToView: '',
     canSend: false,
+    isUserScrolling: false,
   },
+
+  scrollTimer: null as number | null,
 
   onLoad() {
     // 恢复会话信息
@@ -292,14 +295,41 @@ Page({
     }
   },
 
-  // 滚动到底部
+  // 滚动到底部（仅在用户未手动滚动时）
   scrollToBottom() {
+    // 如果用户正在手动滚动，不自动滚动
+    if (this.data.isUserScrolling) {
+      return
+    }
+
     const messages = this.data.messages
     if (messages.length > 0) {
       this.setData({
         scrollToView: `msg-${messages.length - 1}`,
       })
     }
+  },
+
+  // 监听滚动事件
+  onScroll() {
+    // 用户开始滚动时，标记为手动滚动状态
+    this.setData({ isUserScrolling: true })
+
+    // 清除之前的定时器
+    if (this.scrollTimer) {
+      clearTimeout(this.scrollTimer)
+    }
+
+    // 2秒后恢复自动滚动（用户停止滚动）
+    this.scrollTimer = setTimeout(() => {
+      this.setData({ isUserScrolling: false })
+    }, 2000)
+  },
+
+  // 滚动到底部时触发
+  onScrollToLower() {
+    // 用户滚动到底部，恢复自动滚动
+    this.setData({ isUserScrolling: false })
   },
 
   // 开始新会话

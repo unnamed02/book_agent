@@ -155,10 +155,11 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
         # 解析豆瓣信息
         douban_data = {}
         if douban_info and douban_info != "{}":
-            try:
-                douban_data = json.loads(douban_info)
-            except:
-                pass
+            parsed_douban = json.loads(douban_info)
+            # 豆瓣数据格式: {'books': [...]}，取第一本书
+            books = parsed_douban.get('books', [])
+            douban_data = books[0]
+                   
 
         # 构建完整的书籍详情
         book_detail = {
@@ -166,7 +167,7 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
             "author": author,
             "reason": reason,
             "rating": douban_data.get("rating", ""),
-            "cover": douban_data.get("cover", ""),
+            "image": douban_data.get("cover_url", ""),  # 前端使用 image 字段
             "publisher": douban_data.get("publisher", ""),
             "pubdate": douban_data.get("pubdate", ""),
             "isbn": douban_data.get("isbn", ""),

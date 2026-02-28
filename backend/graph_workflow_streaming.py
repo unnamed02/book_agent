@@ -297,9 +297,9 @@ async def stream_recommendation_workflow_enhanced(
             elif event_type == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
 
-                # 只在 generate_recommendations 节点输出 token
+                # 在 generate_recommendations 和 default 节点输出 token
                 # parse_book_list 节点不输出 token（后台解析）
-                if hasattr(chunk, "content") and chunk.content and current_node == "generate_recommendations":
+                if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "default"]:
                     token = chunk.content
                     yield {
                         "type": "token",
@@ -349,12 +349,31 @@ async def stream_recommendation_workflow_enhanced(
                                 "type": "book_cards",
                                 "content": book_cards
                             }
-
+                        
                         books_without_resources = output.get("books_without_resources", [])
                         if books_without_resources:
                             yield {
-                                "type": "books_without_resources",
+                                "type": "books_not_found",
                                 "content": books_without_resources
+                            }
+                      
+
+                    # customer_service 节点输出对话响应
+                    elif node_name == "customer_service":
+                        dialogue_response = output.get("dialogue_response", "")
+                        if dialogue_response:
+                            yield {
+                                "type": "message",
+                                "content": dialogue_response
+                            }
+
+                    # default 节点输出对话响应
+                    elif node_name == "default":
+                        dialogue_response = output.get("dialogue_response", "")
+                        if dialogue_response:
+                            yield {
+                                "type": "message",
+                                "content": dialogue_response
                             }
 
                     logger.info(f"✓ 节点完成: {node_name}")

@@ -14,6 +14,9 @@
     scroll-y
     scroll-into-view="{{scrollToView}}"
     scroll-with-animation="{{true}}"
+    bindscroll="onScroll"
+    bindscrolltolower="onScrollToLower"
+    lower-threshold="50"
   >
     <!-- 空状态 -->
     <view wx:if="{{messages.length === 0}}" class="empty-state">
