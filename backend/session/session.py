@@ -204,6 +204,62 @@ class Session:
         return response
 
 
+    async def astream(
+        self,
+        user_input: str,
+        model: str = None,
+        temperature: float = None,
+        need_save: bool = True,
+        include_history: bool = True
+    ):
+        """
+        异步流式调用 LLM，逐 token 返回
+
+        Args:
+            user_input: 用户输入
+            model: 使用的模型（不指定则使用默认模型）
+            temperature: 温度参数（不指定则使用默认值）
+            need_save: 是否保存到历史记录
+            include_history: 是否包含历史对话上下文
+
+        Yields:
+            str: LLM 生成的 token
+        """
+        # 使用指定的模型或默认模型
+        llm = ChatOpenAI(
+            model=model or self.default_model,
+            temperature=temperature if temperature is not None else self.default_temperature,
+            streaming=True  # 启用流式输出
+        )
+
+        # 构建消息列表
+        if include_history:
+            messages = self.messages + [HumanMessage(content=user_input)]
+        else:
+            messages = []
+            if self.system_message:
+                messages.append(self.system_message)
+            messages.append(HumanMessage(content=user_input))
+
+        # 流式调用
+        full_response = ""
+        async for chunk in llm.astream(messages):
+            if chunk.content:
+                full_response += chunk.content
+                yield chunk.content
+
+        # 流式完成后保存历史
+        if need_save:
+            self.conversation_messages.append(HumanMessage(content=user_input))
+            self.conversation_messages.append(AIMessage(content=full_response))
+
+            # 异步后台写入到 Redis
+            if self.redis_client:
+                human_msg = json.dumps({"type": "human", "content": user_input}, ensure_ascii=False)
+                ai_msg = json.dumps({"type": "ai", "content": full_response}, ensure_ascii=False)
+                asyncio.create_task(self.bg_write(human_msg, ai_msg))
+
+
     async def bg_write(self, human, ai):
         length = await self.redis_client.rpush(self.redis_key, human, ai)
         if length > 220:

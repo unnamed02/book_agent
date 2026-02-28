@@ -148,6 +148,17 @@ Page({
         this.setData({ userId: data.user_id })
         storageService.setUserId(data.user_id)
       }
+    } else if (data.type === 'token') {
+      // 流式 token - 逐字追加
+      const messages = this.data.messages
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        const lastMessage = messages[messages.length - 1]
+        const newContent = lastMessage.content + (data.content || '')
+        updateContent(newContent)
+      } else {
+        // 如果还没有助手消息，创建一个
+        updateContent(data.content || '')
+      }
     } else if (data.type === 'message') {
       // 消息内容
       const content = (data.content || '') + '\n\n'

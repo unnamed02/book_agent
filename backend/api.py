@@ -7,7 +7,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_milvus import Milvus
 from utils.models import get_db, get_db_manager
 from session.session_manager import SessionManager
-from graph_workflow import stream_recommendation_workflow
+from graph_workflow_streaming import stream_recommendation_workflow_enhanced
 from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 import json
@@ -170,7 +170,7 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
-    """流式响应的聊天接口（使用 LangGraph 工作流）"""
+    """流式响应的聊天接口（使用 LangGraph 增强流式工作流）"""
 
     async def generate():
         # 获取或创建会话
@@ -180,8 +180,8 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
             db=db
         )
 
-        # 使用 LangGraph 工作流执行推荐流程
-        async for event in stream_recommendation_workflow(
+        # 使用增强版流式工作流（支持 token 级别流式输出）
+        async for event in stream_recommendation_workflow_enhanced(
             user_query=request.message,
             session_id=session.session_id,
             user_id=session.user_id,
@@ -189,9 +189,6 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
         ):
             # 将事件转换为 SSE 格式并发送
             yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
-
-        # 保存对话历史（可选，LangGraph 内部已处理）
-        # 这里可以添加额外的清理或后处理逻辑
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
