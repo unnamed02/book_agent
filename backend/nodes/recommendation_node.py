@@ -47,7 +47,8 @@ async def generate_recommendations(state: "BookRecommendationState") -> "BookRec
             user_input=user_query,
             model="qwen3-max-2026-01-23",
             temperature=0.7,
-            need_save=False  # 暂不保存，等解析成功后再保存
+            need_save=True,
+            include_history=False
         ):
             full_response += token
             state["streaming_tokens"].append(token)

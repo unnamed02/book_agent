@@ -50,9 +50,10 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
         response = await session.ainvoke_structured(
             user_input=user_query,
             response_model=ExtractBooksResponse,
-            model="qwen3-flash",
+            model="qwen-flash",
             temperature=0,
-            need_save=True  # 提取书名需要保存到历史
+            need_save=True,  # 提取书名需要保存到历史
+            include_history=False  # 提取书名不需要上下文
         )
 
         books = [book.model_dump() for book in response.books]

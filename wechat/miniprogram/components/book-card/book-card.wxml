@@ -2,14 +2,14 @@
 <view class="book-cards-container">
   <swiper
     class="book-swiper"
-    indicator-dots="{{books.length > 1}}"
+    indicator-dots="{{safeBooks.length > 1}}"
     indicator-color="rgba(0, 0, 0, .3)"
     indicator-active-color="#1890ff"
     circular="{{false}}"
     autoplay="{{false}}"
     bindchange="onSwiperChange"
   >
-    <swiper-item wx:for="{{books}}" wx:key="index">
+    <swiper-item wx:for="{{safeBooks}}" wx:key="index">
       <scroll-view class="book-card" scroll-y="{{true}}">
         <!-- 书籍封面 -->
         <image
@@ -107,7 +107,7 @@
   </swiper>
 
   <!-- 页码指示器 -->
-  <view wx:if="{{books.length > 1}}" class="page-indicator">
-    {{currentPage + 1}} / {{books.length}}
+  <view wx:if="{{safeBooks.length > 1}}" class="page-indicator">
+    {{currentPage + 1}} / {{safeBooks.length}}
   </view>
 </view>

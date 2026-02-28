@@ -8,7 +8,17 @@ Component({
   },
 
   data: {
-    currentPage: 0
+    currentPage: 0,
+    safeBooks: [] as any[]
+  },
+
+  observers: {
+    'books': function(newBooks: any) {
+      // 确保 books 始终是数组
+      this.setData({
+        safeBooks: Array.isArray(newBooks) ? newBooks : []
+      })
+    }
   },
 
   methods: {

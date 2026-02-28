@@ -156,7 +156,8 @@ class Session:
         response_model: Type[BaseModel],
         model: str = None,
         temperature: float = None,
-        need_save: bool = True
+        need_save: bool = True,
+        include_history: bool = True
     ) -> BaseModel:
         """
         异步调用 LLM 并返回结构化输出
@@ -167,7 +168,7 @@ class Session:
             model: 使用的模型（不指定则使用默认模型）
             temperature: 温度参数（不指定则使用默认值）
             need_save: 是否保存到历史记录
-
+            include_history: 是否包含历史对话上下文
         Returns:
             结构化的响应对象
         """
@@ -177,6 +178,7 @@ class Session:
             temperature=temperature if temperature is not None else self.default_temperature
         )
 
+        
         # 创建结构化输出的 LLM
         structured_llm = llm.with_structured_output(response_model)
 
@@ -184,8 +186,18 @@ class Session:
         if need_save:
             self.conversation_messages.append(HumanMessage(content=user_input))
 
+        if include_history:
+            # 包含历史上下文
+            messages = self.messages + [HumanMessage(content=user_input)]
+        else:
+            # 只包含系统消息和当前输入
+            messages = []
+            if self.system_message:
+                messages.append(self.system_message)
+            messages.append(HumanMessage(content=user_input))
+        
         # 调用结构化输出
-        response = await structured_llm.ainvoke(self.messages)
+        response = await structured_llm.ainvoke(messages)
 
         # 保存 AI 响应
         if need_save:
