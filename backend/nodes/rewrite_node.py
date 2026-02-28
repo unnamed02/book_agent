@@ -4,6 +4,14 @@
 
 import logging
 from typing import TYPE_CHECKING
+from prompts.system_prompts import REWRITE_QUERY_SYSTEM_PROMPT
+from pydantic import BaseModel, Field
+
+
+class RewriteQueryResponse(BaseModel):
+    """查询重写响应结构"""
+    rewritten_query: str = Field(description="重写后的查询文本")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/customer_service/default")
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -23,20 +31,6 @@ async def rewrite_query(state: "BookRecommendationState") -> "BookRecommendation
     user_query = state["user_query"]
 
     # 导入依赖
-    from prompts.system_prompts import REWRITE_QUERY_SYSTEM_PROMPT
-    from pydantic import BaseModel, Field
-    from typing import List
-
-    # 定义响应模型
-    class BookInfo(BaseModel):
-        """书籍信息"""
-        title: str = Field(description="书名（主标题，不含版本号）")
-        author: str = Field(description="作者姓名，如果不确定则为空字符串")
-
-    class RewriteQueryResponse(BaseModel):
-        """查询重写响应结构"""
-        rewritten_query: str = Field(description="重写后的查询文本")
-        query_type: str = Field(description="查询类型：find_book/book_recommendation/customer_service/default")
 
     # 设置查询重写系统提示词
     session.set_system_context(REWRITE_QUERY_SYSTEM_PROMPT)

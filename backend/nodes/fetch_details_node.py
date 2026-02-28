@@ -155,10 +155,14 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
         # 解析豆瓣信息
         douban_data = {}
         if douban_info and douban_info != "{}":
-            parsed_douban = json.loads(douban_info)
-            # 豆瓣数据格式: {'books': [...]}，取第一本书
-            books = parsed_douban.get('books', [])
-            douban_data = books[0]
+            try:
+                parsed_douban = json.loads(douban_info)
+                # 豆瓣数据格式: {'books': [...]}，取第一本书
+                books = parsed_douban.get('books', [])
+                if isinstance(books, list) and len(books) > 0:
+                    douban_data = books[0]
+            except Exception as e:
+                logger.error(f"解析豆瓣数据失败 ({title}): {e}")
                    
 
         # 构建完整的书籍详情
