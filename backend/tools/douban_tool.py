@@ -67,8 +67,6 @@ def search_douban_book(title: str, author: str, use_llm_optimize: bool = True) -
         }
         response = requests.get(url, headers=headers, timeout=10, verify=False)
         data = response.json()
-
-        logger.info(f"{data}")
         
         results = []
         for item in data.get("items", []):

@@ -67,8 +67,6 @@ def search_library_collection(title: str , author : str) -> str:
             logger.info(f"未找到《{title}》的馆藏信息")
             return json.dumps([], ensure_ascii=False)
 
-        logger.info(f"找到 {len(bookrecnos)} 本图书: {bookrecnos}")
-
         # 第二步：获取馆藏详情
         holdings_url = f"http://112.46.235.64:8082/opac3/book/holdingPreviews?bookrecnos={','.join(bookrecnos)}&curLibcodes=BEILIN&return_fmt=json"
         holdings_response = requests.get(holdings_url, headers=headers, timeout=30)
