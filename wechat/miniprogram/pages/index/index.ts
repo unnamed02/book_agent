@@ -353,13 +353,41 @@ Page({
   },
 
   // 处理荐购按钮点击
-  onRecommend(e: any) {
+  async onRecommend(e: any) {
     const { title, author } = e.detail
+    const { sessionId, userId } = this.data
+
+    // 生成用户消息内容
+    const messageContent = `荐购 ${title} ${author || ''}`
+
+    // 立即发送消息到后端保存
+    try {
+      const result = await apiService.saveMessage({
+        message: messageContent,
+        session_id: sessionId || undefined,
+        user_id: userId || undefined
+      })
+
+      // 后端返回的 session_id 和 user_id
+      if (result.success) {
+        if (result.session_id) {
+          this.setData({ sessionId: result.session_id })
+          storageService.setSessionId(result.session_id)
+        }
+        if (result.user_id) {
+          this.setData({ userId: result.user_id })
+          storageService.setUserId(result.user_id)
+        }
+      }
+    } catch (error) {
+      console.error('保存消息失败:', error)
+      // 继续显示消息，即使保存失败
+    }
 
     // 添加用户消息
     const userMessage: Message = {
       role: 'user',
-      content: `荐购 ${title} ${author || ''}`
+      content: messageContent
     }
 
     // 添加表单消息

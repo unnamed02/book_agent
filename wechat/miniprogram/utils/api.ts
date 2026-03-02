@@ -179,6 +179,34 @@ class ApiService {
       })
     })
   }
+
+  // 保存消息到后端会话
+  saveMessage(data: {
+    message: string
+    session_id?: string
+    user_id?: string
+  }): Promise<{ success: boolean; session_id?: string; user_id?: string }> {
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: `${this.baseUrl}/save-message`,
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/json',
+        },
+        data,
+        success: (res: any) => {
+          if (res.statusCode === 200) {
+            resolve(res.data)
+          } else {
+            reject(new Error(`请求失败: ${res.statusCode}`))
+          }
+        },
+        fail: (error: any) => {
+          reject(error)
+        },
+      })
+    })
+  }
 }
 
 // 导出单例

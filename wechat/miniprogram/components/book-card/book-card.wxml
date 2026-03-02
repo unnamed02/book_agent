@@ -46,7 +46,6 @@
               >
                 <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
                 <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
-                <view class="library-detail">所在分馆: {{lib.library}}</view>
                 <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
                 <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
               </view>

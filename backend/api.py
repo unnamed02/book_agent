@@ -266,3 +266,49 @@ async def submit_purchase_recommendation(
             "success": False,
             "message": f"提交失败: {str(e)}"
         }
+
+
+class SaveMessageRequest(BaseModel):
+    """保存消息请求"""
+    message: str
+    session_id: Optional[str] = None
+    user_id: Optional[str] = None
+
+
+@app.post("/save-message")
+async def save_message(
+    request: SaveMessageRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """保存单条用户消息到会话历史和Redis"""
+    try:
+        # 获取或创建会话
+        session = await session_manager.get_or_create_session(
+            session_id=request.session_id,
+            user_id=request.user_id,
+            db=db
+        )
+
+        # 保存消息到会话
+        from langchain_core.messages import HumanMessage
+        session.conversation_messages.append(HumanMessage(content=request.message))
+
+        # 异步保存到 Redis
+        if session.redis_client:
+            human_msg = json.dumps({"type": "human", "content": request.message}, ensure_ascii=False)
+            asyncio.create_task(session.bg_write(human_msg, ""))
+
+        logger.info(f"消息已保存: {request.session_id}")
+
+        return {
+            "success": True,
+            "session_id": session.session_id,
+            "user_id": session.user_id
+        }
+
+    except Exception as e:
+        logger.error(f"保存消息失败: {e}")
+        return {
+            "success": False,
+            "message": f"保存失败: {str(e)}"
+        }
