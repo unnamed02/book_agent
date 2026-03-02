@@ -194,6 +194,8 @@ def _format_library_info(library_info_json: str) -> Optional[List[Dict]]:
         if library_list and len(library_list) > 0:
             lib_items = []
             for lib in library_list:
+                title = lib.get("title", "")
+                pub_info = lib.get("pub_info", "")
                 library = lib.get("library", "")
                 call_number = lib.get("call_number", "")
                 location = lib.get("location", "")
@@ -202,6 +204,8 @@ def _format_library_info(library_info_json: str) -> Optional[List[Dict]]:
                 available = lib.get("available", 0)
 
                 lib_items.append({
+                    'title': title,
+                    'pub_info': pub_info,
                     'library': library,
                     'call_number': call_number,
                     'location': location,
