@@ -192,7 +192,7 @@ def create_recommendation_graph() -> StateGraph:
         }
     )
 
-    # 重写后直接路由到对应节点（不再回到 route）
+
     workflow.add_conditional_edges(
         "rewrite",
         route_by_type,
@@ -356,7 +356,6 @@ async def stream_recommendation_workflow_enhanced(
                                 "type": "books_not_found",
                                 "content": books_without_resources
                             }
-                      
 
                     # customer_service 节点输出对话响应
                     elif node_name == "customer_service":
