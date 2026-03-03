@@ -1,4 +1,3 @@
-from langchain_core.tools import tool
 from bs4 import BeautifulSoup
 import requests
 import logging
@@ -75,22 +74,22 @@ def llm_filter_resources(results: List[ResourceResult], title: str, author: str)
         logger.warning(f"LLM 筛选失败: {e}，返回原始结果")
         return results
 
-@tool
-def search_digital_resource(title: str, author: str) -> str:
-    """根据书名、作者搜索数字资源"""
+def search_digital_resource(title: str, author: str) -> List[ResourceResult]:
+    """根据书名、作者搜索数字资源
+
+    Returns:
+        资源列表，每项包含 source, title, author, publisher, link, isbn
+    """
     logger.info(f"搜索电子资源 - 书名: {title}, 作者: {author}")
 
-    # 使用线程池并发执行三个搜索任务
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        # 提交三个搜索任务
+    # 使用线程池并发执行搜索任务
+    with ThreadPoolExecutor(max_workers=2) as executor:
         future_zhangyue = executor.submit(search_zhangyue_resource, title, author)
-        # future_cxstar = executor.submit(search_cxstar_resource, title, author)
         future_chineseall = executor.submit(search_chineseall_resource, title, author)
 
         # 获取结果
-        zhangyue_list = json.loads(future_zhangyue.result())
-        # cxstar_list = json.loads(future_cxstar.result())
-        chineseall_list = json.loads(future_chineseall.result())
+        zhangyue_list = future_zhangyue.result()
+        chineseall_list = future_chineseall.result()
 
     # 合并所有结果
     all_results = zhangyue_list + chineseall_list
@@ -98,9 +97,9 @@ def search_digital_resource(title: str, author: str) -> str:
     # 使用 LLM 进行智能筛选
     filtered_results = llm_filter_resources(all_results, title, author)
 
-    return json.dumps(filtered_results, ensure_ascii=False)
+    return filtered_results
 
-def search_zhangyue_resource(title: str, author: str = "") -> str:
+def search_zhangyue_resource(title: str, author: str = "") -> List[ResourceResult]:
     """搜索掌阅资源"""
     logger.info(f"开始搜索掌阅资源: {title}, 作者: {author}")
     try:
@@ -166,10 +165,10 @@ def search_zhangyue_resource(title: str, author: str = "") -> str:
                 seen.add(key)
                 unique_results.append(item)
 
-        return json.dumps(unique_results, ensure_ascii=False)
+        return unique_results
     except Exception as e:
         logger.error(f"搜索失败: {str(e)}")
-        return json.dumps([], ensure_ascii=False)
+        return []
 
 def search_cxstar_resource(title: str, author: str = "") -> str:
     """搜索畅想之星资源"""
@@ -264,12 +263,12 @@ def search_cxstar_resource(title: str, author: str = "") -> str:
                 seen.add(key)
                 unique_results.append(item)
 
-        return json.dumps(unique_results, ensure_ascii=False)
+        return unique_results
     except Exception as e:
         logger.error(f"搜索失败: {str(e)}")
-        return json.dumps([], ensure_ascii=False)
+        return []
 
-def search_chineseall_resource(title: str, author: str = "") -> str:
+def search_chineseall_resource(title: str, author: str = "") -> List[ResourceResult]:
     """搜索中文在线（书香陕西）资源"""
     logger.info(f"开始搜索中文在线资源: {title}, 作者: {author}")
     try:
@@ -315,7 +314,7 @@ def search_chineseall_resource(title: str, author: str = "") -> str:
 
         # 如果没有任何搜索条件，返回空结果
         if not payload:
-            return json.dumps([], ensure_ascii=False)
+            return []
 
         response = requests.post(api_url, json=payload, headers=headers, timeout=10)
         data = response.json()
@@ -364,10 +363,10 @@ def search_chineseall_resource(title: str, author: str = "") -> str:
                 seen.add(key)
                 unique_results.append(item)
 
-        return json.dumps(unique_results, ensure_ascii=False)
+        return unique_results
     except Exception as e:
         logger.error(f"搜索失败: {str(e)}")
-        return json.dumps([], ensure_ascii=False)
+        return []
 
 
 if __name__ == "__main__":
@@ -381,10 +380,6 @@ if __name__ == "__main__":
 
     result = search_chineseall_resource("我只要少许","简")
     print(result)
-    
-    # result = search_digital_resource.invoke({
-    #     "title": "机械设计手册",
-    #     "author": "成大先",
-    # })    
-    
+
+    # result = search_digital_resource("机械设计手册", "成大先")
     # print(result)

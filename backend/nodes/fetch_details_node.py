@@ -3,7 +3,6 @@
 """
 
 import logging
-import json
 import asyncio
 from typing import Dict, List, Optional, TYPE_CHECKING
 from tools.douban_tool import search_douban_book
@@ -69,10 +68,10 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
         book_titles.append(f"《{detail.get('title', '')}》")
 
         # 解析电子资源并按平台分组
-        resources = _group_resources_by_source(detail.get("digital_resources", "[]"))
+        resources = _group_resources_by_source(detail.get("digital_resources", []))
 
-        # 解析馆藏信息
-        library_items = _format_library_info(detail.get("library_info", "[]"))
+        # 直接使用馆藏信息数组
+        library_items = detail.get("library_info", [])
 
         has_library = library_items is not None and len(library_items) > 0
         has_resources = len(resources) > 0
@@ -137,32 +136,20 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
     try:
         # 并行调用三个工具
         tasks = [
-            asyncio.to_thread(search_digital_resource.invoke, {"title": title, "author": author}),
-            asyncio.to_thread(search_library_collection.invoke, {"title": title, "author": author})
+            asyncio.to_thread(search_digital_resource, title, author),
+            asyncio.to_thread(search_library_collection, title, author)
         ]
 
         # 只有在需要时才获取豆瓣信息
         if fetch_douban:
-            tasks.append(asyncio.to_thread(search_douban_book.invoke, {"title": title, "author": author}))
+            tasks.append(asyncio.to_thread(search_douban_book, title, author))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # 解析结果
-        digital_resources = results[0] if not isinstance(results[0], Exception) else "[]"
-        library_info = results[1] if not isinstance(results[1], Exception) else "[]"
-        douban_info = results[2] if fetch_douban and len(results) > 2 and not isinstance(results[2], Exception) else "{}"
-
-        # 解析豆瓣信息
-        douban_data = {}
-        if douban_info and douban_info != "{}":
-            try:
-                parsed_douban = json.loads(douban_info)
-                # 豆瓣数据格式: {'books': [...]}，取第一本书
-                books = parsed_douban.get('books', [])
-                if isinstance(books, list) and len(books) > 0:
-                    douban_data = books[0]
-            except Exception as e:
-                logger.error(f"解析豆瓣数据失败 ({title}): {e}")
+        digital_resources = results[0] if not isinstance(results[0], Exception) else []
+        library_info = results[1] if not isinstance(results[1], Exception) else []
+        douban_data = results[2] if fetch_douban and len(results) > 2 and not isinstance(results[2], Exception) else {}
                    
 
         # 构建完整的书籍详情
@@ -187,46 +174,13 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
         return None
 
 
-def _format_library_info(library_info_json: str) -> Optional[List[Dict]]:
-    """格式化馆藏信息为前端需要的格式"""
-    try:
-        library_list = json.loads(library_info_json)
-        if library_list and len(library_list) > 0:
-            lib_items = []
-            for lib in library_list:
-                title = lib.get("title", "")
-                pub_info = lib.get("pub_info", "")
-                library = lib.get("library", "")
-                call_number = lib.get("call_number", "")
-                location = lib.get("location", "")
-                status = lib.get("status", "")
-                total = lib.get("total", 0)
-                available = lib.get("available", 0)
-
-                lib_items.append({
-                    'title': title,
-                    'pub_info': pub_info,
-                    'library': library,
-                    'call_number': call_number,
-                    'location': location,
-                    'status': status,
-                    'total': total,
-                    'available': available
-                })
-            return lib_items
-        else:
-            return None
-    except Exception as e:
-        logger.error(f"格式化馆藏信息失败: {e}")
-        return None
 
 
-def _group_resources_by_source(digital_resources_json: str) -> List[Dict]:
+def _group_resources_by_source(digital_resources: List[Dict]) -> List[Dict]:
     """将电子资源按平台分组"""
     resources_by_source = {}
     try:
-        resource_list = json.loads(digital_resources_json)
-        for r in resource_list:
+        for r in digital_resources:
             source = r.get("source", "")
             if source:
                 if source not in resources_by_source:
