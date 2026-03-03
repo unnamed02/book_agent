@@ -143,7 +143,7 @@ def search_zhangyue_resource(title: str, author: str = "") -> List[ResourceResul
                     # 将 detail 链接转换为 read 链接
                     if '/book/detail' in link and 'bookId=' in link:
                         book_id = re.search(r'bookId=(\d+)', link).group(1)
-                        read_link = f"https://s.zhangyue.com/read?bid={book_id}&appId=bec9564c"
+                        read_link = f"https://s.zhangyue.com/detail?bookId={book_id}&bookType=1&rentId=105244&appId=bec9564c"
                     else:
                         read_link = link if link.startswith('http') else f"https://se.zhangyue.com{link}"
 
@@ -283,7 +283,7 @@ def search_chineseall_resource(title: str, author: str = "") -> List[ResourceRes
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "Sx-Token": "0f6YHg4mo7F4e357u4B5VW259971Z451",
+            "Sx-Token": "w196dwl8YJyv7G71qR192m37JLv8o124",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
         }
         all_results: list[ResourceResult] = []
