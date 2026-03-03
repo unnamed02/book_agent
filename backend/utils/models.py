@@ -34,7 +34,7 @@ class ConversationArchive(Base):
     __tablename__ = "conversation_archives"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    session_id = Column(String(100), nullable=False, index=True, comment="会话ID")
+    session_id = Column(String(100), nullable=False, unique=True, index=True, comment="会话ID")
     messages = Column(JSONB, nullable=False, comment="消息列表（JSONB）")
     archived_at = Column(DateTime, default=func.now(), comment="归档时间")
 
