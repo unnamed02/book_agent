@@ -5,8 +5,7 @@ LangGraph 增强流式输出实现
 改造要点:
 1. 使用 astream_events(version="v2") 替代 astream()
 2. 监听 on_chat_model_stream 事件实现 token 流式
-3. 监听 on_tool_start/end 事件显示工具执行进度
-4. 监听 on_chain_start/end 事件显示节点状态
+3. 监听 on_chain_start/end 事件显示节点状态
 
 注意: 这是真正的实时流式输出，token 在生成时立即发送
 """
@@ -277,7 +276,6 @@ async def stream_recommendation_workflow_enhanced(
         # 使用 astream_events 获取细粒度事件
         async for event in graph.astream_events(initial_state, version="v2"):
             event_type = event["event"]
-            event_name = event.get("name", "")
 
             # 1. 节点开始执行
             if event_type == "on_chain_start":
@@ -307,27 +305,7 @@ async def stream_recommendation_workflow_enhanced(
                         "node": current_node
                     }
 
-            # 3. 工具开始调用
-            elif event_type == "on_tool_start":
-                tool_name = event_name
-                yield {
-                    "type": "tool_start",
-                    "tool": tool_name,
-                    "content": f"🔧 正在调用: {get_tool_description(tool_name)}"
-                }
-                logger.info(f"🔧 工具开始: {tool_name}")
-
-            # 4. 工具执行完成
-            elif event_type == "on_tool_end":
-                tool_name = event_name
-                yield {
-                    "type": "tool_end",
-                    "tool": tool_name,
-                    "content": f"✓ {tool_name} 完成"
-                }
-                logger.info(f"✓ 工具完成: {tool_name}")
-
-            # 5. 节点执行完成
+            # 3. 节点执行完成
             elif event_type == "on_chain_end":
                 metadata = event.get("metadata", {})
                 node_name = metadata.get("langgraph_node")
@@ -403,13 +381,3 @@ def get_node_description(node_name: str) -> str:
         "default": "💭 正在思考..."
     }
     return descriptions.get(node_name, f"正在执行 {node_name}...")
-
-
-def get_tool_description(tool_name: str) -> str:
-    """获取工具的用户友好描述"""
-    descriptions = {
-        "search_douban_book": "豆瓣图书搜索",
-        "search_library_collection": "图书馆馆藏查询",
-        "search_digital_resource": "电子资源检索"
-    }
-    return descriptions.get(tool_name, tool_name)
