@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Input, Button, Card, Avatar, Space, Typography, Tooltip } from 'antd';
-import { SendOutlined, BookOutlined, UserOutlined, PlusOutlined } from '@ant-design/icons';
+import { SendOutlined, BookOutlined, UserOutlined, PlusOutlined, SettingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -312,17 +312,26 @@ function App() {
               <Avatar icon={<BookOutlined />} style={{ background: '#1677ff' }} />
               <Title level={4} style={{ margin: 0 }}>碑林区图书馆AI馆员</Title>
             </Space>
-            {messages.length > 0 && (
-              <Tooltip title="清除当前会话，开始新对话">
+            <Space>
+              {messages.length > 0 && (
+                <Tooltip title="清除当前会话，开始新对话">
+                  <Button
+                    icon={<PlusOutlined />}
+                    onClick={startNewSession}
+                    disabled={loading}
+                  >
+                    新会话
+                  </Button>
+                </Tooltip>
+              )}
+              <Tooltip title="进入管理后台">
                 <Button
-                  icon={<PlusOutlined />}
-                  onClick={startNewSession}
-                  disabled={loading}
-                >
-                  新会话
-                </Button>
+                  type="text"
+                  icon={<SettingOutlined />}
+                  onClick={() => window.location.href = '/admin'}
+                />
               </Tooltip>
-            )}
+            </Space>
           </div>
 
           {/* Messages */}
