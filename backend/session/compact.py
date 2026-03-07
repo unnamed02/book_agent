@@ -47,6 +47,7 @@ async def compact_redis_to_db():
         keys = await redis_client.smembers('needs_compact_list')
         if not keys:
             await redis_client.aclose()
+            logger.info("Compact 任务完成")
             return 0
 
         archived_count = 0

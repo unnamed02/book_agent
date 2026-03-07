@@ -158,6 +158,24 @@ function App() {
                   localStorage.setItem('book_agent_user_id', data.user_id);
                   console.log('保存用户ID:', data.user_id);
                 }
+              } else if (data.type === 'token') {
+                // Token 流式输出
+                currentContent += data.content;
+                fullContent += data.content;
+
+                if (!hasCreatedMessage) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
+                  hasCreatedMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: currentContent
+                    };
+                    return newMessages;
+                  });
+                }
               } else if (data.type === 'dialogue') {
                 // 对话部分 - 第一次有内容时创建消息
                 currentContent = data.content + '\n\n';

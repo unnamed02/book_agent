@@ -51,7 +51,7 @@ class Session:
         self.last_access = datetime.now()
 
         # 对话管理相关属性
-        self.default_model = "qwen-flash"
+        self.default_model = "qwen3.5-flash"
         self.default_temperature = 0.7
         self.system_message: Optional[SystemMessage] = None
         self.conversation_messages: deque = deque(maxlen=max_history_rounds * 2)  # 每轮2条消息
@@ -222,7 +222,8 @@ class Session:
         model: str = None,
         temperature: float = None,
         need_save: bool = True,
-        include_history: bool = True
+        include_history: bool = True,
+        enable_search: bool = False
     ):
         """
         异步流式调用 LLM，逐 token 返回
@@ -233,16 +234,23 @@ class Session:
             temperature: 温度参数（不指定则使用默认值）
             need_save: 是否保存到历史记录
             include_history: 是否包含历史对话上下文
+            enable_search: 是否启用联网搜索（仅支持百炼模型）
 
         Yields:
             str: LLM 生成的 token
         """
         # 使用指定的模型或默认模型
-        llm = ChatOpenAI(
-            model=model or self.default_model,
-            temperature=temperature if temperature is not None else self.default_temperature,
-            streaming=True  # 启用流式输出
-        )
+        llm_kwargs = {
+            "model": model or self.default_model,
+            "temperature": temperature if temperature is not None else self.default_temperature,
+            "streaming": True  # 启用流式输出
+        }
+
+        # 如果启用联网搜索，添加 extra_body 参数
+        if enable_search:
+            llm_kwargs["extra_body"] = {"enable_search": True}
+
+        llm = ChatOpenAI(**llm_kwargs)
 
         # 构建消息列表
         if include_history:

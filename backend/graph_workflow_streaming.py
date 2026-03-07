@@ -344,14 +344,7 @@ async def stream_recommendation_workflow_enhanced(
                                 "content": dialogue_response
                             }
 
-                    # default 节点输出对话响应
-                    elif node_name == "default":
-                        dialogue_response = output.get("dialogue_response", "")
-                        if dialogue_response:
-                            yield {
-                                "type": "message",
-                                "content": dialogue_response
-                            }
+                    # default 节点已通过 token 流式输出，不需要再次发送完整响应
 
                     logger.info(f"✓ 节点完成: {node_name}")
 

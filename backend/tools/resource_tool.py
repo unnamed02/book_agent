@@ -334,8 +334,7 @@ def search_chineseall_resource(title: str, author: str = "") -> List[ResourceRes
             item_publisher = item.get("publisher", "")
             item_isbn = item.get("isbn", "").replace('-', '')
             item_shid = item.get("shId", "")
-            
-            logger.info(item_shid)
+        
 
             if item_title:
                 normalized_title = re.sub(r'[（）()【】\[\]《》<>""''\\s]', '', item_title.lower())
