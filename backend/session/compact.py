@@ -20,7 +20,22 @@ async def upsert_messages_to_db(db, session_id: str, messages: List):
     注意：db session 从外部传入，减少连接创建开销
     """
     if messages and isinstance(messages[0], str):
-        messages = [json.loads(m) for m in messages]
+        # 过滤掉空字符串和无效的 JSON
+        parsed_messages = []
+        for m in messages:
+            if not m or not m.strip():
+                continue
+            try:
+                parsed_messages.append(json.loads(m))
+            except json.JSONDecodeError as e:
+                logger.warning(f"跳过无效的 JSON 消息: {e}")
+                continue
+        messages = parsed_messages
+
+    # 如果过滤后没有有效消息，直接返回
+    if not messages:
+        logger.warning(f"会话 {session_id} 没有有效消息，跳过归档")
+        return
 
     stmt = insert(ConversationArchive).values(
         session_id=session_id,

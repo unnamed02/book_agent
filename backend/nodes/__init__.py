@@ -3,8 +3,7 @@
 包含所有工作流节点的实现
 """
 
-from .route_node import route_query
-from .rewrite_node import rewrite_query
+from .intent_recognition_node import recognize_intent
 from .customer_service_node import handle_customer_service
 from .find_book_node import handle_find_book
 from .recommendation_node import generate_recommendations
@@ -13,8 +12,7 @@ from .fetch_details_node import fetch_book_details
 from .default_node import handle_default_query
 
 __all__ = [
-    "route_query",
-    "rewrite_query",
+    "recognize_intent",
     "handle_customer_service",
     "handle_find_book",
     "generate_recommendations",

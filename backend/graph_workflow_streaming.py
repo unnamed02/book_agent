@@ -17,8 +17,7 @@ import logging
 
 # 导入节点函数
 from nodes import (
-    route_query,
-    rewrite_query,
+    recognize_intent,
     handle_customer_service,
     handle_find_book,
     generate_recommendations,
@@ -112,13 +111,9 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "rewrite" | "customer_service" | "recommend" | "find_book" | "default"
+        "customer_service" | "recommend" | "find_book" | "default"
     """
     query_type = state.get("query_type", "book_recommendation")
-
-    # 如果需要重写查询，路由到重写节点
-    if query_type == "rewrite":
-        return "rewrite"
 
     # 如果是客服咨询，直接路由到客服节点
     if query_type == "customer_service":
@@ -141,8 +136,7 @@ def create_recommendation_graph() -> StateGraph:
     创建图书推荐工作流图
 
     工作流程：
-    0. route_query（智能路由）
-       ├─ 需要重写 → rewrite_query → route_query（循环）
+    0. recognize_intent（统一意图识别）
        ├─ 客服咨询 → customer_service → END
        ├─ 找书 → find_book → fetch_book_details → END
        ├─ 图书推荐 → generate_recommendations → parse_book_list → fetch_book_details → END
@@ -154,8 +148,7 @@ def create_recommendation_graph() -> StateGraph:
     3. fetch_book_details（获取书籍详情并构建卡片）
 
     节点说明：
-    - route_query: 智能路由，判断查询类型（rewrite/find_book/book_recommendation/customer_service/default）
-    - rewrite_query: 查询重写，将指代词替换为具体内容后返回 route_query
+    - recognize_intent: 统一意图识别，判断查询类型并在需要时重写查询
     - customer_service: 处理客服咨询（使用 RAG）
     - find_book: 提取书名（找书流程第一步）
     - generate_recommendations: 生成人类可读书单（流式输出）
@@ -166,8 +159,7 @@ def create_recommendation_graph() -> StateGraph:
     workflow = StateGraph(BookRecommendationState)
 
     # 添加节点
-    workflow.add_node("route", route_query)
-    workflow.add_node("rewrite", rewrite_query)
+    workflow.add_node("intent", recognize_intent)
     workflow.add_node("customer_service", handle_customer_service)
     workflow.add_node("find_book", handle_find_book)
     workflow.add_node("generate_recommendations", generate_recommendations)
@@ -176,24 +168,11 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("default", handle_default_query)
 
     # 设置入口点
-    workflow.set_entry_point("route")
+    workflow.set_entry_point("intent")
 
     # 智能路由条件边
     workflow.add_conditional_edges(
-        "route",
-        route_by_type,
-        {
-            "rewrite": "rewrite",
-            "customer_service": "customer_service",
-            "find_book": "find_book",
-            "recommend": "generate_recommendations",
-            "default": "default"
-        }
-    )
-
-
-    workflow.add_conditional_edges(
-        "rewrite",
+        "intent",
         route_by_type,
         {
             "customer_service": "customer_service",
@@ -202,6 +181,7 @@ def create_recommendation_graph() -> StateGraph:
             "default": "default"
         }
     )
+
 
     # 客服分支直接结束
     workflow.add_edge("customer_service", END)
