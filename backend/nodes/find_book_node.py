@@ -3,10 +3,10 @@
 """
 
 import logging
-import json
-import asyncio
 from typing import TYPE_CHECKING
-from langchain_core.messages import HumanMessage, AIMessage
+from prompts.system_prompts import FIND_BOOK_SYSTEM_PROMPT
+from pydantic import BaseModel, Field
+from typing import List
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -26,9 +26,6 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
     user_query = state["user_query"]
 
     # 导入依赖
-    from prompts.system_prompts import FIND_BOOK_SYSTEM_PROMPT
-    from pydantic import BaseModel, Field
-    from typing import List
 
     # 定义响应模型
     class BookInfo(BaseModel):
@@ -50,7 +47,7 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
         response = await session.ainvoke_structured(
             user_input=user_query,
             response_model=ExtractBooksResponse,
-            model="qwen-flash",
+            model="qwen3-max-2026-01-23",
             temperature=0,
             need_save=True,  # 提取书名需要保存到历史
             include_history=False  # 提取书名不需要上下文
