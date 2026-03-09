@@ -7,6 +7,7 @@ import json
 import asyncio
 from typing import TYPE_CHECKING
 from langchain_core.messages import HumanMessage, AIMessage
+from prompts.system_prompts import BOOK_RECOMMENDATION_STREAMING_PROMPT
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -26,9 +27,6 @@ async def generate_recommendations(state: "BookRecommendationState") -> "BookRec
 
     session = state["session"]
     user_query = state["user_query"]
-
-    # 导入系统提示词
-    from prompts.system_prompts import BOOK_RECOMMENDATION_STREAMING_PROMPT
 
     # 设置人类可读书单生成提示词
     session.set_system_context(BOOK_RECOMMENDATION_STREAMING_PROMPT)

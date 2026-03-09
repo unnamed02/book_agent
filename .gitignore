@@ -158,6 +158,7 @@ wechat/miniprogram/node_modules/
 wechat/miniprogram_npm/
 wechat/.DS_Store
 wechat/project.private.config.json
+wechat/miniprogram/project.config.json
 
 # Claude Code
 .claude/
