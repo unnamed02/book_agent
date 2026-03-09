@@ -189,8 +189,8 @@ def create_recommendation_graph() -> StateGraph:
     # 默认处理分支直接结束
     workflow.add_edge("default", END)
 
-    # 找书分支：提取书名 → 获取详情 → 结束
-    workflow.add_edge("find_book", "fetch_book_details")
+    # 找书分支：生成书单 → 解析书单 → 获取详情 → 结束
+    workflow.add_edge("find_book", "parse_book_list")
 
     # 推荐分支：生成人类可读书单 → 解析书单 → 获取详情 → 结束
     workflow.add_edge("generate_recommendations", "parse_book_list")
@@ -275,9 +275,9 @@ async def stream_recommendation_workflow_enhanced(
             elif event_type == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
 
-                # 在 generate_recommendations 和 default 节点输出 token
+                # 在 generate_recommendations、find_book 和 default 节点输出 token
                 # parse_book_list 节点不输出 token（后台解析）
-                if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "default"]:
+                if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "find_book", "default"]:
                     token = chunk.content
                     yield {
                         "type": "token",
