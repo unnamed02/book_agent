@@ -22,9 +22,22 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
     logger.info("📍 节点: handle_find_book")
 
     session = state["session"]
-    user_query = state["user_query"]
 
-    # 导入提示词
+    # 从槽位对象中获取书名列表
+    slots_obj = state.get("slots")
+    if slots_obj and hasattr(slots_obj, 'book_titles'):
+        book_titles = slots_obj.book_titles
+    else:
+        book_titles = []
+
+    # 构建查询输入
+    if book_titles:
+        query_input = f"查找以下书籍：{', '.join(book_titles)}"
+    else:
+        # 降级到使用原始查询
+        query_input = state["user_query"]
+
+    logger.info(f"📚 从槽位提取的书名: {book_titles}")
 
     # 设置系统提示词
     session.set_system_context(FIND_BOOK_SYSTEM_PROMPT)
@@ -33,7 +46,7 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
         # 使用流式输出，让用户看到正在查找的书籍
         book_list_text = ""
         async for chunk in session.astream(
-            user_input=user_query,
+            user_input=query_input,
             model="qwen3-max-2026-01-23",
             temperature=0,
             need_save=True,

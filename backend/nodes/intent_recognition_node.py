@@ -1,18 +1,60 @@
 """
-统一意图识别节点 - 合并路由和重写功能
+统一意图识别节点 - 槽位填充设计
 """
 
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional, List, Union
+from abc import ABC
 from prompts.system_prompts import INTENT_RECOGNITION_SYSTEM_PROMPT
 from pydantic import BaseModel, Field
 
 
+# 定义槽位基类
+class IntentSlots(BaseModel, ABC):
+    """意图槽位的抽象基类"""
+    pass
+
+
+# 为每种意图类型定义独立的槽位模型
+class FindBookSlots(IntentSlots):
+    """找书意图的槽位"""
+    book_titles: List[str] = Field(description="书名列表")
+
+
+class RecommendBookSlots(IntentSlots):
+    """推荐书籍意图的槽位"""
+    topic: str = Field(description="推荐主题或类型")
+
+
+class VersionCompareSlots(IntentSlots):
+    """版本比较的槽位"""
+    book_title: str = Field(description="书名")
+    author: Optional[str] = Field(default=None, description="作者")
+    pub_info: Optional[List[str]] = Field(default=None, description="版本信息列表（出版社、译者等）")
+    
+
+class DefaultQuerySlots(IntentSlots):
+    """默认查询（闲聊等）的槽位"""
+    query_context: str = Field(description="查询上下文")
+
+
+class CustomerServiceSlots(IntentSlots):
+    """客服咨询的槽位"""
+    question: str = Field(description="用户问题")
+
+
 class IntentRecognitionResponse(BaseModel):
     """意图识别响应结构"""
-    rewritten_query: str = Field(description="重写后的查询文本（如无需重写则与原查询相同）")
-    query_type: str = Field(description="查询类型：find_book/book_recommendation/customer_service/default")
-    needs_rewrite: bool = Field(description="是否进行了查询重写")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/version_compare/customer_service/default")
+
+    # 使用联合类型表示槽位
+    slots: Optional[Union[FindBookSlots, RecommendBookSlots, VersionCompareSlots, DefaultQuerySlots, CustomerServiceSlots]] = Field(
+        default=None,
+        description="槽位信息，根据 query_type 自动选择对应的槽位类型"
+    )
+
+    # 是否需要反问
+    missing_info: Optional[str] = Field(default=None, description="缺失的信息类型：book_title/topic/none")
 
 
 if TYPE_CHECKING:
@@ -23,12 +65,12 @@ logger = logging.getLogger(__name__)
 
 async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendationState":
     """
-    节点: 统一意图识别 - 分析查询意图并在需要时重写查询
+    节点: 统一意图识别 - 分析查询意图并填充槽位
 
     功能：
-    1. 判断查询是否需要上下文解析（包含指代词）
-    2. 如需要，结合对话历史重写查询
-    3. 判断查询类型并路由到相应节点
+    1. 判断查询类型
+    2. 提取该类型所需的槽位信息
+    3. 如果信息不足，生成反问
     """
     logger.info("📍 节点: recognize_intent")
 
@@ -47,13 +89,28 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
             temperature=0
         )
 
-        # 更新状态
-        if result.needs_rewrite:
-            logger.info(f"✓ 查询重写: {user_query} → {result.rewritten_query}")
-            state["user_query"] = result.rewritten_query
-
         state["query_type"] = result.query_type
         logger.info(f"✓ 意图识别: type={result.query_type}")
+
+        # 检查槽位是否完整
+        if result.missing_info and result.missing_info != "none":
+            # 信息不足，生成反问并直接结束
+            if result.missing_info == "book_title":
+                clarify_response = "请问您想查找哪本书呢？可以告诉我书名或作者。"
+            elif result.missing_info == "topic":
+                clarify_response = "请问您想看什么类型的书呢？比如：编程、小说、历史、心理学等。"
+            else:
+                clarify_response = "抱歉，我没有理解您的需求，能否提供更多信息？"
+
+            state["query_type"] = "clarify"
+            state["dialogue_response"] = clarify_response
+            state["final_response"] = clarify_response
+            logger.info(f"⚠ 信息不足，生成反问: {clarify_response}")
+        else:
+            # 信息完整，保存槽位对象到状态
+            if result.slots:
+                state["slots"] = result.slots
+                logger.info(f"✓ 槽位填充完成: {result.slots}")
 
     except Exception as e:
         error_msg = str(e)
@@ -65,5 +122,6 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
 
         # 失败时使用默认路由
         state["query_type"] = "default"
+        state["slots"] = {"query_context": user_query, "book_titles": []}
 
     return state

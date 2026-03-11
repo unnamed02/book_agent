@@ -26,7 +26,22 @@ async def generate_recommendations(state: "BookRecommendationState") -> "BookRec
     logger.info("📍 节点: generate_recommendations")
 
     session = state["session"]
-    user_query = state["user_query"]
+
+    # 从槽位对象中获取推荐主题
+    slots_obj = state.get("slots")
+    if slots_obj and hasattr(slots_obj, 'topic'):
+        topic = slots_obj.topic
+    else:
+        topic = ""
+
+    # 构建查询输入
+    if topic:
+        query_input = f"推荐关于{topic}的书籍"
+    else:
+        # 降级到使用原始查询
+        query_input = state["user_query"]
+
+    logger.info(f"从槽位提取的主题: {topic}")
 
     # 设置人类可读书单生成提示词
     session.set_system_context(BOOK_RECOMMENDATION_STREAMING_PROMPT)
@@ -38,11 +53,11 @@ async def generate_recommendations(state: "BookRecommendationState") -> "BookRec
 
         full_response = ""
 
-        logger.info(f"🚀 开始流式生成推荐，查询: {user_query[:50]}...")
+        logger.info(f"🚀 开始流式生成推荐，查询: {query_input[:50]}...")
 
         # 流式生成人类可读的书单
         async for token in session.astream(
-            user_input=user_query,
+            user_input=query_input,
             model="qwen3-max-2026-01-23",
             temperature=0.7,
             need_save=True,

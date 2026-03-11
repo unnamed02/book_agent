@@ -22,14 +22,23 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
     """
     logger.info("📍 节点: handle_default_query")
 
-    session = state["session"]
-    user_query = state["user_query"]
+    # 从槽位对象中获取查询上下文
+    slots_obj = state.get("slots")
+    if slots_obj and hasattr(slots_obj, 'query_context'):
+        query_context = slots_obj.query_context
+    else:
+        query_context = ""
+
+    # 使用槽位中的上下文，如果没有则降级到原始查询
+    query_input = query_context if query_context else state["user_query"]
+
+    logger.info(f"📚 从槽位提取的上下文: {query_context[:50] if query_context else '(空)'}")
 
     try:
         # 导入系统提示词
         from prompts.system_prompts import DEFAULT_QUERY_SYSTEM_PROMPT
 
-        logger.info(f"🚀 开始生成默认回复，查询: {user_query[:50]}...")
+        logger.info(f"🚀 开始生成默认回复，查询: {query_input[:50]}...")
 
         # 初始化 streaming_tokens 列表
         if state.get("streaming_tokens") is None:
@@ -45,7 +54,7 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
         # 构建消息列表
         messages = [
             SystemMessage(content=DEFAULT_QUERY_SYSTEM_PROMPT),
-            HumanMessage(content=user_query)
+            HumanMessage(content=query_input)
         ]
 
         full_response = ""
