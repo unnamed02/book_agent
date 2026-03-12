@@ -20,7 +20,7 @@ from nodes import (
     recognize_intent,
     handle_customer_service,
     handle_find_book,
-    generate_recommendations,
+    handle_recommendation,
     parse_book_list,
     fetch_book_details,
     handle_default_query,
@@ -174,7 +174,7 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("intent", recognize_intent)
     workflow.add_node("customer_service", handle_customer_service)
     workflow.add_node("find_book", handle_find_book)
-    workflow.add_node("generate_recommendations", generate_recommendations)
+    workflow.add_node("generate_recommendations", handle_recommendation)
     workflow.add_node("parse_book_list", parse_book_list)
     workflow.add_node("fetch_book_details", fetch_book_details)
     workflow.add_node("default", handle_default_query)

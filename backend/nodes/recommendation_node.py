@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 
-async def generate_recommendations(state: "BookRecommendationState") -> "BookRecommendationState":
+async def handle_recommendation(state: "BookRecommendationState") -> "BookRecommendationState":
     """
     节点: 生成人类可读的推荐书单（流式输出）
 
@@ -23,7 +23,7 @@ async def generate_recommendations(state: "BookRecommendationState") -> "BookRec
     1. 首先，用2-3句话说明推荐思路
     2. 然后，列出推荐的书籍，每本书一行，格式：《书名》 - 作者：推荐理由
     """
-    logger.info("📍 节点: generate_recommendations")
+    logger.info("📍 节点: handle_recommendation")
 
     session = state["session"]
 

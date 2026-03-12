@@ -60,11 +60,21 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
         if state.get("streaming_tokens") is None:
             state["streaming_tokens"] = []
 
-        # 创建 ChatTongyi 实例，启用联网搜索
+        # 创建 ChatTongyi 实例，启用联网搜索，限制从豆瓣搜索
         llm = ChatTongyi(
             model="qwen3-max-2026-01-23",
             streaming=True,
-            model_kwargs={"enable_search": True}
+            model_kwargs={
+                "enable_search": True,
+                "search_options": {
+                    "search_strategy": "turbo",
+                    "forced_search": True,
+                     "enable_source": True,       # 必须开启才能使用角标标注
+                    "enable_citation": True,     # 开启角标标注
+                    "citation_format": "[ref_<number>]", # 设置角标样式
+                    "assigned_site_list": ["douban.com"]  # 仅从豆瓣检索
+                }
+            }
         )
 
         # 构建消息列表
@@ -79,10 +89,15 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
 
         # 流式调用
         async for chunk in llm.astream(messages):
+            # 1. 提取引用信息 (通常在 additional_kwargs 中)
+            logger.info(chunk)
+
+            # 2. 提取正文内容
             if chunk.content:
                 token = chunk.content
                 full_response += token
                 state["streaming_tokens"].append(token)
+
 
         logger.info(f"✓ 版本比较完成，长度: {len(full_response)}")
 
