@@ -76,9 +76,14 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
             search_options={
                 "enable_source": True,
                 "prepend_search_result": True,  # 首包只返回搜索来源
-                "search_strategy": "turbo",
+                "search_strategy": "max",
+                "enable_citation": True,     # 开启角标标注
+                "citation_format": "[ref_<number>]", # 设置角标样式
                 "forced_search": True,
-                "assigned_site_list": ["douban.com"]  # 仅从豆瓣检索
+                "assigned_site_list": ["book.douban.com","search.douban.com/book/"],  # 仅从豆瓣检索
+                "intention_options": {
+                    "prompt_intervene": "优先去https://search.douban.com/book/subject_search?{book_title}搜书名"
+                }
             },
             result_format="message",
             stream=True,

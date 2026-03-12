@@ -306,8 +306,8 @@ async def stream_recommendation_workflow_enhanced(
             elif event_type == "on_custom_event" and event["name"] == "on_chat_model_stream_manual":
                 token = event["data"]["chunk"]
                 
-                logger.info(f"received {token}")
-                yield {
+                if token:
+                    yield {
                         "type": "token",
                         "content": token,
                         "node": current_node
