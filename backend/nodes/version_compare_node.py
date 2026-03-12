@@ -73,6 +73,7 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
                 {"role": "user", "content": query_input}
             ],
             enable_search=True,
+            enable_thinking=True,
             search_options={
                 "enable_source": True,
                 "prepend_search_result": True,  # 首包只返回搜索来源
@@ -93,6 +94,7 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
         full_response = ""
         first_chunk = True
 
+        reasoning_content = ''
         # 流式处理响应
         async for resp in responses:
             if resp.status_code == 200:
@@ -106,8 +108,13 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
                             logger.info(f"  [{web['index']}]: [{web['title']}]({web['url']})")
                     first_chunk = False
 
+                logger.info(resp.output.choices[0])
                 # 2. 提取正文内容
-                
+                reasoning_content_chunk = resp.output.choices[0].get("reasoning_content", None)
+                if reasoning_content_chunk is not None:
+                    reasoning_content += resp.output.choices[0].reasoning_content
+                    logger.info(reasoning_content)
+
                 content = resp.output.choices[0].message.content
                 if content:
                     dispatch_custom_event(
