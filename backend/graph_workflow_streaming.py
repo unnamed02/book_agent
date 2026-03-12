@@ -302,6 +302,17 @@ async def stream_recommendation_workflow_enhanced(
                         "content": token,
                         "node": current_node
                     }
+            
+            elif event_type == "on_custom_event" and event["name"] == "on_chat_model_stream_manual":
+                token = event["data"]["chunk"]
+                
+                logger.info(f"received {token}")
+                yield {
+                        "type": "token",
+                        "content": token,
+                        "node": current_node
+                    }
+
 
             # 3. 节点执行完成
             elif event_type == "on_chain_end":

@@ -3,10 +3,12 @@
 """
 
 import logging
+import os
 from typing import TYPE_CHECKING
-from langchain_community.chat_models.tongyi import ChatTongyi
-from langchain_core.messages import HumanMessage, SystemMessage
+import dashscope
 from prompts.system_prompts import VERSION_COMPARE_SYSTEM_PROMPT
+from dashscope import AioGeneration
+from langchain_core.callbacks.manager import dispatch_custom_event
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -60,44 +62,56 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
         if state.get("streaming_tokens") is None:
             state["streaming_tokens"] = []
 
-        # 创建 ChatTongyi 实例，启用联网搜索，限制从豆瓣搜索
-        llm = ChatTongyi(
-            model="qwen3-max-2026-01-23",
-            streaming=True,
-            model_kwargs={
-                "enable_search": True,
-                "search_options": {
-                    "search_strategy": "turbo",
-                    "forced_search": True,
-                     "enable_source": True,       # 必须开启才能使用角标标注
-                    "enable_citation": True,     # 开启角标标注
-                    "citation_format": "[ref_<number>]", # 设置角标样式
-                    "assigned_site_list": ["douban.com"]  # 仅从豆瓣检索
-                }
-            }
-        )
-
-        # 构建消息列表
-        messages = [
-            SystemMessage(content=VERSION_COMPARE_SYSTEM_PROMPT),
-            HumanMessage(content=query_input)
-        ]
-
-        full_response = ""
-
         logger.info(f"🚀 开始版本比较，查询: {query_input[:50]}...")
 
-        # 流式调用
-        async for chunk in llm.astream(messages):
-            # 1. 提取引用信息 (通常在 additional_kwargs 中)
-            logger.info(chunk)
+        # 使用原生 DashScope API 进行流式调用
+        responses = await AioGeneration.call(
+            api_key=os.getenv("DASHSCOPE_API_KEY"),
+            model="qwen3-max-2026-01-23",
+            messages=[
+                {"role": "system", "content": VERSION_COMPARE_SYSTEM_PROMPT},
+                {"role": "user", "content": query_input}
+            ],
+            enable_search=True,
+            search_options={
+                "enable_source": True,
+                "prepend_search_result": True,  # 首包只返回搜索来源
+                "search_strategy": "turbo",
+                "forced_search": True,
+                "assigned_site_list": ["douban.com"]  # 仅从豆瓣检索
+            },
+            result_format="message",
+            stream=True,
+            incremental_output=True
+        )
 
-            # 2. 提取正文内容
-            if chunk.content:
-                token = chunk.content
-                full_response += token
-                state["streaming_tokens"].append(token)
+        full_response = ""
+        first_chunk = True
 
+        # 流式处理响应
+        async for resp in responses:
+            if resp.status_code == 200:
+                # 1. 提取搜索来源（首包）
+                if first_chunk:
+                    search_info = resp.output.get("search_info", {})
+                    if search_info and "search_results" in search_info:
+                        search_results = search_info["search_results"]
+                        logger.info(f"🔍 已阅读 {len(search_results)} 个页面")
+                        for web in search_results:
+                            logger.info(f"  [{web['index']}]: [{web['title']}]({web['url']})")
+                    first_chunk = False
+
+                # 2. 提取正文内容
+                
+                content = resp.output.choices[0].message.content
+                if content:
+                    dispatch_custom_event(
+                    "on_chat_model_stream_manual", 
+                    {"chunk": content}
+                    )
+                    state["streaming_tokens"].append(content)
+            else:
+                raise Exception(f"DashScope Error: {resp.message}")
 
         logger.info(f"✓ 版本比较完成，长度: {len(full_response)}")
 
