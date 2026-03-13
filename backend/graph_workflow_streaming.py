@@ -24,7 +24,7 @@ from nodes import (
     parse_book_list,
     fetch_book_details,
     handle_default_query,
-    handle_version_compare
+    handle_book_info
 )
 from nodes.intent_recognition_node import IntentSlots
 from session.session import Session
@@ -114,7 +114,7 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "clarify" | "customer_service" | "recommend" | "find_book" | "version_compare" | "default"
+        "clarify" | "customer_service" | "recommend" | "find_book" | "book_info" | "default"
     """
     query_type = state.get("query_type", "book_recommendation")
 
@@ -130,9 +130,9 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "find_book":
         return "find_book"
 
-    # 如果是版本比较，直接路由到版本比较节点
-    if query_type == "version_compare":
-        return "version_compare"
+    # 如果是书籍信息查询，直接路由到书籍信息节点
+    if query_type == "book_info":
+        return "book_info"
 
     # 如果是无法分类的问题，路由到默认处理节点
     if query_type == "default":
@@ -151,7 +151,7 @@ def create_recommendation_graph() -> StateGraph:
        ├─ 客服咨询 → customer_service → END
        ├─ 找书 → find_book → parse_book_list → fetch_book_details → END
        ├─ 图书推荐 → generate_recommendations → parse_book_list → fetch_book_details → END
-       ├─ 版本比较 → version_compare → END
+       ├─ 书籍信息查询 → book_info → END
        └─ 无法分类 → default → END
 
     图书推荐路径：
@@ -178,7 +178,7 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("parse_book_list", parse_book_list)
     workflow.add_node("fetch_book_details", fetch_book_details)
     workflow.add_node("default", handle_default_query)
-    workflow.add_node("version_compare", handle_version_compare)
+    workflow.add_node("book_info", handle_book_info)
 
     # 设置入口点
     workflow.set_entry_point("intent")
@@ -192,7 +192,7 @@ def create_recommendation_graph() -> StateGraph:
             "customer_service": "customer_service",
             "find_book": "find_book",
             "recommend": "generate_recommendations",
-            "version_compare": "version_compare",
+            "book_info": "book_info",
             "default": "default"
         }
     )
@@ -204,8 +204,8 @@ def create_recommendation_graph() -> StateGraph:
     # 默认处理分支直接结束
     workflow.add_edge("default", END)
 
-    # 版本比较分支直接结束
-    workflow.add_edge("version_compare", END)
+    # 书籍信息查询分支直接结束
+    workflow.add_edge("book_info", END)
 
     # 找书分支：生成书单 → 解析书单 → 获取详情 → 结束
     workflow.add_edge("find_book", "parse_book_list")
@@ -293,9 +293,9 @@ async def stream_recommendation_workflow_enhanced(
             elif event_type == "on_chat_model_stream":
                 chunk = event["data"]["chunk"]
 
-                # 在 generate_recommendations、find_book、default 和 version_compare 节点输出 token
+                # 在 generate_recommendations、find_book、default 和 book_info 节点输出 token
                 # parse_book_list 节点不输出 token（后台解析）
-                if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "find_book", "default", "version_compare"]:
+                if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "find_book", "default", "book_info"]:
                     token = chunk.content
                     yield {
                         "type": "token",
@@ -391,7 +391,7 @@ def get_node_description(node_name: str) -> str:
         "generate_recommendations": "📚 正在生成推荐...",
         "parse_book_list": "📋 正在解析书单...",
         "fetch_book_details": "📖 正在获取书籍详情...",
-        "version_compare": "📊 正在比较版本...",
+        "book_info": "📊 正在查询书籍信息...",
         "default": "💭 正在思考..."
     }
     return descriptions.get(node_name, f"正在执行 {node_name}...")

@@ -26,12 +26,12 @@ class RecommendBookSlots(IntentSlots):
     topic: str = Field(description="推荐主题或类型")
 
 
-class VersionCompareSlots(IntentSlots):
-    """版本比较的槽位"""
+class BookInfoSlots(IntentSlots):
+    """书籍信息查询的槽位（版本比较、梗概、导读等）"""
+    query: str = Field(description="查询类型描述，如：版本比较、梗概介绍、导读、书评等")
     book_title: str = Field(description="书名")
     author: Optional[str] = Field(default=None, description="作者")
     pub_info: Optional[List[str]] = Field(default=None, description="版本信息列表（出版社、译者等）")
-    
 
 class DefaultQuerySlots(IntentSlots):
     """默认查询（闲聊等）的槽位"""
@@ -45,10 +45,10 @@ class CustomerServiceSlots(IntentSlots):
 
 class IntentRecognitionResponse(BaseModel):
     """意图识别响应结构"""
-    query_type: str = Field(description="查询类型：find_book/book_recommendation/version_compare/customer_service/default")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/default")
 
     # 使用联合类型表示槽位
-    slots: Optional[Union[FindBookSlots, RecommendBookSlots, VersionCompareSlots, DefaultQuerySlots, CustomerServiceSlots]] = Field(
+    slots: Optional[Union[FindBookSlots, RecommendBookSlots, BookInfoSlots, DefaultQuerySlots, CustomerServiceSlots]] = Field(
         default=None,
         description="槽位信息，根据 query_type 自动选择对应的槽位类型"
     )

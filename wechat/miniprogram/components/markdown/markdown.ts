@@ -28,6 +28,8 @@ Component({
       let inCodeBlock = false
       let codeBlockContent = ''
       let codeBlockLang = ''
+      let inTable = false
+      let tableRows: string[] = []
 
       for (let i = 0; i < lines.length; i++) {
         const line = lines[i]
@@ -57,13 +59,28 @@ Component({
           continue
         }
 
+        // 表格处理
+        if (line.includes('|')) {
+          if (!inTable) {
+            inTable = true
+            tableRows = []
+          }
+          tableRows.push(line)
+          continue
+        } else if (inTable) {
+          // 表格结束
+          parsed.push(this.parseTable(tableRows))
+          inTable = false
+          tableRows = []
+        }
+
         // 标题处理
         if (line.startsWith('### ')) {
-          parsed.push({ type: 'h3', content: line.slice(4) })
+          parsed.push({ type: 'h3', content: this.parseInline(line.slice(4)) })
         } else if (line.startsWith('## ')) {
-          parsed.push({ type: 'h2', content: line.slice(3) })
+          parsed.push({ type: 'h2', content: this.parseInline(line.slice(3)) })
         } else if (line.startsWith('# ')) {
-          parsed.push({ type: 'h1', content: line.slice(2) })
+          parsed.push({ type: 'h1', content: this.parseInline(line.slice(2)) })
         }
         // 列表处理
         else if (line.match(/^[\d]+\.\s/)) {
@@ -94,7 +111,45 @@ Component({
         }
       }
 
+      // 处理未结束的表格
+      if (inTable && tableRows.length > 0) {
+        parsed.push(this.parseTable(tableRows))
+      }
+
       this.setData({ parsedContent: parsed })
+    },
+
+    // 解析表格
+    parseTable(rows: string[]): any {
+      if (rows.length < 2) {
+        return { type: 'p', content: [{ type: 'text', content: rows.join('\n') }] }
+      }
+
+      const headers = rows[0].split('|').map(cell => cell.trim()).filter(cell => cell)
+      const alignRow = rows[1]
+
+      // 解析对齐方式
+      const aligns = alignRow.split('|').map(cell => {
+        const trimmed = cell.trim()
+        if (trimmed.startsWith(':') && trimmed.endsWith(':')) return 'center'
+        if (trimmed.endsWith(':')) return 'right'
+        return 'left'
+      }).filter((_, i) => i < headers.length)
+
+      // 解析数据行，对每个单元格应用行内解析
+      const dataRows = rows.slice(2).map(row =>
+        row.split('|').map(cell => cell.trim()).filter(cell => cell).map(cell => this.parseInline(cell))
+      ).filter(row => row.length > 0)
+
+      // 对表头也应用行内解析
+      const parsedHeaders = headers.map(header => this.parseInline(header))
+
+      return {
+        type: 'table',
+        headers: parsedHeaders,
+        aligns,
+        rows: dataRows
+      }
     },
 
     // 解析行内元素（粗体、斜体、链接、特殊标记等）
@@ -128,9 +183,10 @@ Component({
           }
           const end = text.indexOf('**', i + 2)
           if (end !== -1) {
+            const boldContent = text.substring(i + 2, end)
             result.push({
               type: 'bold',
-              content: text.substring(i + 2, end),
+              content: boldContent,
             })
             i = end + 2
             continue

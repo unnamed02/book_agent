@@ -10,7 +10,7 @@ from .recommendation_node import handle_recommendation
 from .parse_book_list_node import parse_book_list
 from .fetch_details_node import fetch_book_details
 from .default_node import handle_default_query
-from .version_compare_node import handle_version_compare
+from .book_info_node import handle_book_info
 
 __all__ = [
     "recognize_intent",
@@ -18,7 +18,7 @@ __all__ = [
     "handle_find_book",
     "handle_recommendation",
     "handle_default_query",
-    "handle_version_compare"
+    "handle_book_info",
     "parse_book_list",
     "fetch_book_details",
 ]

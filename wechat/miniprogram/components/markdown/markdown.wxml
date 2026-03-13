@@ -2,9 +2,33 @@
 <view class="markdown-content">
   <block wx:for="{{parsedContent}}" wx:key="index">
     <!-- 标题 -->
-    <view wx:if="{{item.type === 'h1'}}" class="markdown-h1">{{item.content}}</view>
-    <view wx:elif="{{item.type === 'h2'}}" class="markdown-h2">{{item.content}}</view>
-    <view wx:elif="{{item.type === 'h3'}}" class="markdown-h3">{{item.content}}</view>
+    <view wx:if="{{item.type === 'h1'}}" class="markdown-h1">
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+      </block>
+    </view>
+    <view wx:elif="{{item.type === 'h2'}}" class="markdown-h2">
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+      </block>
+    </view>
+    <view wx:elif="{{item.type === 'h3'}}" class="markdown-h3">
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+      </block>
+    </view>
 
     <!-- 段落 -->
     <view wx:elif="{{item.type === 'p'}}" class="markdown-p">
@@ -53,6 +77,32 @@
     <!-- 代码块 -->
     <view wx:elif="{{item.type === 'code'}}" class="markdown-code">
       <text class="markdown-code-text">{{item.content}}</text>
+    </view>
+
+    <!-- 表格 -->
+    <view wx:elif="{{item.type === 'table'}}" class="markdown-table">
+      <view class="markdown-table-header">
+        <view wx:for="{{item.headers}}" wx:for-item="header" wx:key="index" class="markdown-table-cell markdown-table-header-cell" style="text-align: {{item.aligns[index] || 'left'}}">
+          <block wx:for="{{header}}" wx:for-item="inline" wx:key="index">
+            <text wx:if="{{inline.type === 'text'}}" class="markdown-text">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+          </block>
+        </view>
+      </view>
+      <view wx:for="{{item.rows}}" wx:for-item="row" wx:key="index" class="markdown-table-row">
+        <view wx:for="{{row}}" wx:for-item="cell" wx:key="index" class="markdown-table-cell" style="text-align: {{item.aligns[index] || 'left'}}">
+          <block wx:for="{{cell}}" wx:for-item="inline" wx:key="index">
+            <text wx:if="{{inline.type === 'text'}}" class="markdown-text">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+            <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+          </block>
+        </view>
+      </view>
     </view>
 
     <!-- 空行 -->
