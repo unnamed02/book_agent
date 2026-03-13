@@ -41,7 +41,7 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
 
     # 构建查询输入
     if book_title:
-        query_parts = [book_title]
+        query_parts = [f"《{book_title}》"]
         if author:
             query_parts.append(f"作者：{author}")
 
@@ -73,7 +73,6 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
                 {"role": "user", "content": query_input}
             ],
             enable_search=True,
-            enable_thinking=True,
             search_options={
                 "enable_source": True,
                 "prepend_search_result": True,  # 首包只返回搜索来源
@@ -94,7 +93,6 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
         full_response = ""
         first_chunk = True
 
-        reasoning_content = ''
         # 流式处理响应
         async for resp in responses:
             if resp.status_code == 200:
@@ -108,17 +106,19 @@ async def handle_version_compare(state: "BookRecommendationState") -> "BookRecom
                             logger.info(f"  [{web['index']}]: [{web['title']}]({web['url']})")
                     first_chunk = False
 
-                logger.info(resp.output.choices[0])
-                # 2. 提取正文内容
-                reasoning_content_chunk = resp.output.choices[0].get("reasoning_content", None)
+                # 2. 提取思考内容
+                reasoning_content_chunk = resp.output.choices[0].message.get("reasoning_content", None)
                 if reasoning_content_chunk is not None:
-                    reasoning_content += resp.output.choices[0].reasoning_content
-                    logger.info(reasoning_content)
+                    dispatch_custom_event(
+                        "on_tongyi_thinking",
+                        {"chunk": reasoning_content_chunk}
+                    )
 
+                # 3. 提取正文内容
                 content = resp.output.choices[0].message.content
                 if content:
                     dispatch_custom_event(
-                    "on_chat_model_stream_manual", 
+                    "on_tongyi_chat",
                     {"chunk": content}
                     )
                     state["streaming_tokens"].append(content)

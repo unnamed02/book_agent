@@ -5,8 +5,8 @@
 import logging
 import os
 from typing import TYPE_CHECKING
-from langchain_community.chat_models.tongyi import ChatTongyi
-from langchain_core.messages import HumanMessage, SystemMessage
+from dashscope import AioGeneration
+from langchain_core.callbacks.manager import dispatch_custom_event
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -44,27 +44,44 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
         if state.get("streaming_tokens") is None:
             state["streaming_tokens"] = []
 
-        # 创建 ChatTongyi 实例，启用联网搜索
-        llm = ChatTongyi(
+        # 使用原生 DashScope API 进行流式调用
+        responses = await AioGeneration.call(
+            api_key=os.getenv("DASHSCOPE_API_KEY"),
             model="qwen3-max-2026-01-23",
-            streaming=True,
-            model_kwargs={"enable_search": True}
+            messages=[
+                {"role": "system", "content": DEFAULT_QUERY_SYSTEM_PROMPT},
+                {"role": "user", "content": query_input}
+            ],
+            enable_search=True,
+            result_format="message",
+            stream=True,
+            incremental_output=True
         )
-
-        # 构建消息列表
-        messages = [
-            SystemMessage(content=DEFAULT_QUERY_SYSTEM_PROMPT),
-            HumanMessage(content=query_input)
-        ]
 
         full_response = ""
 
-        # 流式调用
-        async for chunk in llm.astream(messages):
-            if chunk.content:  # 确保有内容
-                token = chunk.content
-                full_response += token
-                state["streaming_tokens"].append(token)
+        # 流式处理响应
+        async for resp in responses:
+            if resp.status_code == 200:
+                # 提取思考内容
+                reasoning_content_chunk = resp.output.choices[0].message.get("reasoning_content", None)
+                if reasoning_content_chunk is not None:
+                    dispatch_custom_event(
+                        "on_tongyi_thinking",
+                        {"chunk": reasoning_content_chunk}
+                    )
+
+                # 提取正文内容
+                content = resp.output.choices[0].message.content
+                if content:
+                    dispatch_custom_event(
+                        "on_tongyi_chat",
+                        {"chunk": content}
+                    )
+                    state["streaming_tokens"].append(content)
+                    full_response += content
+            else:
+                raise Exception(f"DashScope Error: {resp.message}")
 
         logger.info(f"✓ 默认回复生成完成，长度: {len(full_response)}")
 

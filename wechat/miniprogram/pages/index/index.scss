@@ -241,3 +241,37 @@ page {
 .dot:nth-child(1) { animation-delay: -0.32s; }
 .dot:nth-child(2) { animation-delay: -0.16s; }
 @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+
+/* 思考过程样式 */
+.thinking-container {
+  margin-bottom: 16rpx;
+  padding: 20rpx;
+  background: #f8f9fa;
+  border-left: 4rpx solid #1677ff;
+  border-radius: 8rpx;
+}
+
+.thinking-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.thinking-icon {
+  font-size: 32rpx;
+}
+
+.thinking-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1677ff;
+}
+
+.thinking-content {
+  font-size: 26rpx;
+  line-height: 1.6;
+  color: #666;
+  white-space: pre-wrap;
+  word-break: break-all;
+}

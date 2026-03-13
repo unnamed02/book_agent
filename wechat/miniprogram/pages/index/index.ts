@@ -13,6 +13,8 @@ interface Message {
   appendContent?: string
   purchaseTitle?: string
   purchaseAuthor?: string
+  thinkingContent?: string  // 思考过程内容
+  isThinking?: boolean      // 是否正在思考
 }
 
 Page({
@@ -36,12 +38,10 @@ Page({
 
     if (sessionId) {
       this.setData({ sessionId })
-      console.log('恢复会话:', sessionId)
     }
 
     if (userId) {
       this.setData({ userId })
-      console.log('恢复用户ID:', userId)
     }
 
     // 可选：恢复消息历史
@@ -123,7 +123,6 @@ Page({
       },
       // onComplete
       () => {
-        console.log('消息发送完成')
         this.setData({ loading: false })
 
         // 标记消息为非流式
@@ -151,11 +150,42 @@ Page({
         this.setData({ userId: data.user_id })
         storageService.setUserId(data.user_id)
       }
+    } else if (data.type === 'thinking') {
+      // 思考过程流式输出
+      const messages = this.data.messages
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        const lastMessage = messages[messages.length - 1]
+        const newThinkingContent = (lastMessage.thinkingContent || '') + (data.content || '')
+        messages[messages.length - 1] = {
+          ...lastMessage,
+          thinkingContent: newThinkingContent,
+          isThinking: true
+        }
+        this.setData({ messages })
+        this.scrollToBottom()
+      } else {
+        // 创建新的助手消息，包含思考内容
+        const assistantMessage: Message = {
+          role: 'assistant',
+          content: '',
+          thinkingContent: data.content || '',
+          isThinking: true,
+          isStreaming: true
+        }
+        this.setData({
+          messages: [...this.data.messages, assistantMessage]
+        })
+        this.scrollToBottom()
+      }
     } else if (data.type === 'token') {
       // 流式 token - 逐字追加
       const messages = this.data.messages
       if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
         const lastMessage = messages[messages.length - 1]
+        // 当开始输出正文时，标记思考结束
+        if (lastMessage.isThinking) {
+          lastMessage.isThinking = false
+        }
         const newContent = lastMessage.content + (data.content || '')
         updateContent(newContent)
       } else {
@@ -346,7 +376,6 @@ Page({
           })
           storageService.clearSessionId()
           storageService.setMessages([])
-          console.log('已清除会话，开始新对话')
         }
       },
     })

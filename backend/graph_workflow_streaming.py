@@ -303,13 +303,24 @@ async def stream_recommendation_workflow_enhanced(
                         "node": current_node
                     }
             
-            elif event_type == "on_custom_event" and event["name"] == "on_chat_model_stream_manual":
+            elif event_type == "on_custom_event" and event["name"] == "on_tongyi_chat":
                 token = event["data"]["chunk"]
-                
+
                 if token:
                     yield {
                         "type": "token",
                         "content": token,
+                        "node": current_node
+                    }
+
+            # 3. 通义思考过程流式输出
+            elif event_type == "on_custom_event" and event["name"] == "on_tongyi_thinking":
+                chunk = event["data"]["chunk"]
+
+                if chunk:
+                    yield {
+                        "type": "thinking",
+                        "content": chunk,
                         "node": current_node
                     }
 
