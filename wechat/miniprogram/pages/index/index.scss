@@ -275,3 +275,55 @@ page {
   white-space: pre-wrap;
   word-break: break-all;
 }
+
+/* 搜索结果样式 */
+.search-results-container {
+  margin-bottom: 16rpx;
+  padding: 20rpx;
+  background: #f0f9ff;
+  border-left: 4rpx solid #0ea5e9;
+  border-radius: 8rpx;
+}
+
+.search-results-header {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 12rpx;
+}
+
+.search-results-icon {
+  font-size: 32rpx;
+}
+
+.search-results-title {
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #0ea5e9;
+}
+
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8rpx;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8rpx;
+  font-size: 24rpx;
+  line-height: 1.5;
+  color: #666;
+}
+
+.search-result-index {
+  color: #0ea5e9;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.search-result-title {
+  flex: 1;
+  word-break: break-all;
+}

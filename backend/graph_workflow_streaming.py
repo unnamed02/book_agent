@@ -324,8 +324,19 @@ async def stream_recommendation_workflow_enhanced(
                         "node": current_node
                     }
 
+            # 4. 搜索结果
+            elif event_type == "on_custom_event" and event["name"] == "on_search_results":
+                search_results = event["data"]["search_results"]
 
-            # 3. 节点执行完成
+                if search_results:
+                    yield {
+                        "type": "search_results",
+                        "content": search_results,
+                        "node": current_node
+                    }
+
+
+            # 5. 节点执行完成
             elif event_type == "on_chain_end":
                 metadata = event.get("metadata", {})
                 node_name = metadata.get("langgraph_node")

@@ -8,8 +8,8 @@ interface ChatRequest {
 }
 
 interface SSEData {
-  type: 'session' | 'token' | 'dialogue' | 'books' | 'status' | 'message' | 'done' | 'book_cards' | 'append_message' | 'books_not_found' | 'thinking'
-  content?: string
+  type: 'session' | 'token' | 'dialogue' | 'books' | 'status' | 'message' | 'done' | 'book_cards' | 'append_message' | 'books_not_found' | 'thinking' | 'search_results'
+  content?: string | any[]
   session_id?: string
   user_id?: string
 }

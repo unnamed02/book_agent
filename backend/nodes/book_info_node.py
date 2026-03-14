@@ -112,6 +112,12 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                         logger.info(f"🔍 已阅读 {len(search_results)} 个页面")
                         for web in search_results:
                             logger.info(f"  [{web['index']}]: [{web['title']}]({web['url']})")
+
+                        # 发送搜索结果事件
+                        dispatch_custom_event(
+                            "on_search_results",
+                            {"search_results": search_results}
+                        )
                     first_chunk = False
 
                 # 2. 提取思考内容

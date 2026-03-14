@@ -57,6 +57,20 @@
             <!-- 普通 Markdown 内容 -->
             <markdown wx:if="{{item.content}}" content="{{item.content}}" />
 
+            <!-- 搜索结果 -->
+            <view wx:if="{{item.searchResults && item.searchResults.length > 0}}" class="search-results-container">
+              <view class="search-results-header">
+                <text class="search-results-icon">🔍</text>
+                <text class="search-results-title">已阅读 {{item.searchResults.length}} 个页面</text>
+              </view>
+              <view class="search-results-list">
+                <view wx:for="{{item.searchResults}}" wx:for-item="result" wx:key="index" class="search-result-item">
+                  <text class="search-result-index">[{{result.index}}]</text>
+                  <text class="search-result-title">{{result.title}}</text>
+                </view>
+              </view>
+            </view>
+
             <!-- 书籍卡片 -->
             <book-card wx:if="{{item.type === 'book_cards' && item.books}}" books="{{item.books}}" bind:recommend="onRecommend" />
 
