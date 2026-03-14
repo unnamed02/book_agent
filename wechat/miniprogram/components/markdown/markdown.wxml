@@ -29,6 +29,15 @@
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
       </block>
     </view>
+    <view wx:elif="{{item.type === 'h4'}}" class="markdown-h4">
+      <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
+        <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+      </block>
+    </view>
 
     <!-- 段落 -->
     <view wx:elif="{{item.type === 'p'}}" class="markdown-p">
@@ -38,6 +47,7 @@
         <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">{{inline.content}}</text>
       </block>
     </view>
 
@@ -50,6 +60,7 @@
         <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">{{inline.content}}</text>
       </block>
     </view>
     <view wx:elif="{{item.type === 'ol'}}" class="markdown-ol">
@@ -60,6 +71,7 @@
         <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
+        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">{{inline.content}}</text>
       </block>
     </view>
 
@@ -78,6 +90,9 @@
     <view wx:elif="{{item.type === 'code'}}" class="markdown-code">
       <text class="markdown-code-text">{{item.content}}</text>
     </view>
+
+    <!-- 分割线 -->
+    <view wx:elif="{{item.type === 'hr'}}" class="markdown-hr"></view>
 
     <!-- 表格 -->
     <view wx:elif="{{item.type === 'table'}}" class="markdown-table">

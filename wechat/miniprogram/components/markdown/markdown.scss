@@ -26,6 +26,13 @@
   color: #000;
 }
 
+.markdown-h4 {
+  font-size: 30rpx;
+  font-weight: bold;
+  margin: 20rpx 0 10rpx 0;
+  color: #000;
+}
+
 .markdown-p {
   margin: 8px 0;
   line-height: 1.8;
@@ -48,6 +55,14 @@
 .markdown-link {
   color: #1677ff;
   text-decoration: underline;
+}
+
+.markdown-reference {
+  color: #0ea5e9;
+  font-size: 24rpx;
+  vertical-align: super;
+  font-weight: 600;
+  padding: 0 4rpx;
 }
 
 .markdown-ul,
@@ -86,6 +101,13 @@
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-all;
+}
+
+.markdown-hr {
+  height: 2rpx;
+  background: #e5e7eb;
+  border: none;
+  margin: 32rpx 0;
 }
 
 .markdown-br {

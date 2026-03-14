@@ -109,9 +109,6 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                     search_info = resp.output.get("search_info", {})
                     if search_info and "search_results" in search_info:
                         search_results = search_info["search_results"]
-                        logger.info(f"🔍 已阅读 {len(search_results)} 个页面")
-                        for web in search_results:
-                            logger.info(f"  [{web['index']}]: [{web['title']}]({web['url']})")
 
                         # 发送搜索结果事件
                         dispatch_custom_event(

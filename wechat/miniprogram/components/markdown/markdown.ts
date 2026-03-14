@@ -6,6 +6,10 @@ Component({
       type: String,
       value: '',
     },
+    searchResults: {
+      type: Array,
+      value: [],
+    },
   },
   data: {
     parsedContent: [] as any[],
@@ -75,12 +79,18 @@ Component({
         }
 
         // 标题处理
-        if (line.startsWith('### ')) {
+        if (line.startsWith('#### ')) {
+          parsed.push({ type: 'h4', content: this.parseInline(line.slice(5)) })
+        } else if (line.startsWith('### ')) {
           parsed.push({ type: 'h3', content: this.parseInline(line.slice(4)) })
         } else if (line.startsWith('## ')) {
           parsed.push({ type: 'h2', content: this.parseInline(line.slice(3)) })
         } else if (line.startsWith('# ')) {
           parsed.push({ type: 'h1', content: this.parseInline(line.slice(2)) })
+        }
+        // 分割线处理 --- 或 ***
+        else if (line.trim().match(/^(-{3,}|\*{3,})$/)) {
+          parsed.push({ type: 'hr' })
         }
         // 列表处理
         else if (line.match(/^[\d]+\.\s/)) {
@@ -208,23 +218,44 @@ Component({
             continue
           }
         }
-        // 链接 [text](url)
+        // 链接 [text](url) 或引用标注 [ref_1]
         else if (text[i] === '[') {
           const textEnd = text.indexOf(']', i)
-          const urlStart = text.indexOf('(', textEnd)
-          const urlEnd = text.indexOf(')', urlStart)
-          if (textEnd !== -1 && urlStart === textEnd + 1 && urlEnd !== -1) {
-            if (current) {
-              result.push({ type: 'text', content: current })
-              current = ''
+          if (textEnd !== -1) {
+            const linkText = text.substring(i + 1, textEnd)
+
+            // 检查是否是引用标注 [ref_n]
+            const refMatch = linkText.match(/^ref_(\d+)$/)
+            if (refMatch) {
+              if (current) {
+                result.push({ type: 'text', content: current })
+                current = ''
+              }
+              result.push({
+                type: 'reference',
+                index: parseInt(refMatch[1]),
+                content: `[${refMatch[1]}]`
+              })
+              i = textEnd + 1
+              continue
             }
-            result.push({
-              type: 'link',
-              text: text.substring(i + 1, textEnd),
-              url: text.substring(urlStart + 1, urlEnd),
-            })
-            i = urlEnd + 1
-            continue
+
+            // 检查是否是普通链接 [text](url)
+            const urlStart = text.indexOf('(', textEnd)
+            const urlEnd = text.indexOf(')', urlStart)
+            if (urlStart === textEnd + 1 && urlEnd !== -1) {
+              if (current) {
+                result.push({ type: 'text', content: current })
+                current = ''
+              }
+              result.push({
+                type: 'link',
+                text: linkText,
+                url: text.substring(urlStart + 1, urlEnd),
+              })
+              i = urlEnd + 1
+              continue
+            }
           }
         }
 
@@ -242,6 +273,55 @@ Component({
     // 处理图片加载错误
     onImageError(e: any) {
       console.error('图片加载失败:', e)
+    },
+
+    // 处理引用标注点击
+    onReferenceTap(e: any) {
+      const index = e.currentTarget.dataset.index
+      if (!index) return
+
+      const searchResults = this.properties.searchResults as any[]
+      if (!searchResults || searchResults.length === 0) {
+        wx.showToast({
+          title: '未找到引用来源',
+          icon: 'none',
+          duration: 2000,
+        })
+        return
+      }
+
+      // 查找对应的搜索结果
+      const result = searchResults.find((r: any) => r.index === index)
+      if (!result) {
+        wx.showToast({
+          title: '未找到引用来源',
+          icon: 'none',
+          duration: 2000,
+        })
+        return
+      }
+
+      // 显示引用来源信息
+      wx.showModal({
+        title: result.title || '引用来源',
+        content: result.url || '',
+        confirmText: '打开',
+        cancelText: '复制',
+        success: (res) => {
+          if (res.confirm && result.url) {
+            // 打开链接
+            wx.navigateTo({
+              url: `/pages/webview/webview?url=${encodeURIComponent(result.url)}`,
+              fail: () => {
+                this.copyLink(result.url)
+              },
+            })
+          } else if (res.cancel && result.url) {
+            // 复制链接
+            this.copyLink(result.url)
+          }
+        },
+      })
     },
 
     // 处理链接点击

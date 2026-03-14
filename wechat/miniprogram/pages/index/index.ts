@@ -157,12 +157,13 @@ Page({
       if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
         const lastMessage = messages[messages.length - 1]
         const newThinkingContent = (lastMessage.thinkingContent || '') + (data.content || '')
-        messages[messages.length - 1] = {
+        const newMessages = [...messages]
+        newMessages[newMessages.length - 1] = {
           ...lastMessage,
           thinkingContent: newThinkingContent,
           isThinking: true
         }
-        this.setData({ messages })
+        this.setData({ messages: newMessages })
         this.scrollToBottom()
       } else {
         // 创建新的助手消息，包含思考内容
@@ -396,6 +397,53 @@ Page({
   onScrollToLower() {
     // 用户滚动到底部，恢复自动滚动
     this.setData({ isUserScrolling: false })
+  },
+
+  // 处理搜索结果点击
+  onSearchResultTap(e: any) {
+    const url = e.currentTarget.dataset.url
+    const title = e.currentTarget.dataset.title
+    if (!url) return
+
+    wx.showModal({
+      title: title || '打开链接',
+      content: url,
+      confirmText: '打开',
+      cancelText: '复制',
+      success: (res) => {
+        if (res.confirm) {
+          // 打开链接
+          wx.navigateTo({
+            url: `/pages/webview/webview?url=${encodeURIComponent(url)}`,
+            fail: () => {
+              // 如果没有 webview 页面，则复制链接
+              wx.setClipboardData({
+                data: url,
+                success: () => {
+                  wx.showToast({
+                    title: '链接已复制',
+                    icon: 'success',
+                    duration: 2000,
+                  })
+                },
+              })
+            },
+          })
+        } else if (res.cancel) {
+          // 复制链接
+          wx.setClipboardData({
+            data: url,
+            success: () => {
+              wx.showToast({
+                title: '链接已复制',
+                icon: 'success',
+                duration: 2000,
+              })
+            },
+          })
+        }
+      },
+    })
   },
 
   // 开始新会话
