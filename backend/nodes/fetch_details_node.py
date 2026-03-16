@@ -158,7 +158,7 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
             "author": author,
             "reason": reason,
             "rating": douban_data.get("rating", ""),
-            "image": douban_data.get("cover_url", ""),  # 前端使用 image 字段
+            "image": douban_data.get("cover_url", ""),
             "publisher": douban_data.get("publisher", ""),
             "pubdate": douban_data.get("pubdate", ""),
             "isbn": douban_data.get("isbn", ""),

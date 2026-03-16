@@ -14,6 +14,7 @@ from typing import AsyncIterator, Dict, Any, Optional, TypedDict, List, Union
 from langgraph.graph import StateGraph, END
 from pydantic import BaseModel, Field
 import logging
+import re
 
 # 导入节点函数
 from nodes import (
@@ -151,7 +152,7 @@ def create_recommendation_graph() -> StateGraph:
        ├─ 客服咨询 → customer_service → END
        ├─ 找书 → find_book → parse_book_list → fetch_book_details → END
        ├─ 图书推荐 → generate_recommendations → parse_book_list → fetch_book_details → END
-       ├─ 书籍信息查询 → book_info → END
+       ├─ 书籍信息查询 → book_info → ENDaa
        └─ 无法分类 → default → END
 
     图书推荐路径：
@@ -296,15 +297,15 @@ async def stream_recommendation_workflow_enhanced(
                 # 在 generate_recommendations、find_book、default 和 book_info 节点输出 token
                 # parse_book_list 节点不输出 token（后台解析）
                 if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "find_book", "default", "book_info"]:
-                    token = chunk.content
+                    token = re.sub(r'^\d+\.\s+', '', chunk.content)
                     yield {
                         "type": "token",
                         "content": token,
                         "node": current_node
                     }
-            
+
             elif event_type == "on_custom_event" and event["name"] == "on_tongyi_chat":
-                token = event["data"]["chunk"]
+                token = re.sub(r'^\d+\.\s+', '', event["data"]["chunk"])
 
                 if token:
                     yield {

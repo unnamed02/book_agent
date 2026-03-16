@@ -29,7 +29,7 @@ class RecommendBookSlots(IntentSlots):
 class BookInfoSlots(IntentSlots):
     """书籍信息查询的槽位（版本比较、梗概、导读等）"""
     query: str = Field(description="查询类型描述，如：版本比较、梗概介绍、导读、书评等")
-    book_title: str = Field(description="书名")
+    book_title: Optional[str] = Field(default=None, description="书名")
     author: Optional[str] = Field(default=None, description="作者")
     pub_info: Optional[List[str]] = Field(default=None, description="版本信息列表（出版社、译者等）")
 
@@ -94,6 +94,14 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
 
         # 检查槽位是否完整
         if result.missing_info and result.missing_info != "none":
+            # book_info 类型：title 和 author 有一个就不反问
+            if result.missing_info == "book_title" and result.query_type == "book_info":
+                slots = result.slots
+                if slots and (getattr(slots, "book_title", None) or getattr(slots, "author", None)):
+                    state["slots"] = slots
+                    logger.info(f"✓ 槽位填充完成: {slots}")
+                    return state
+
             # 信息不足，生成反问并直接结束
             if result.missing_info == "book_title":
                 clarify_response = "请问您想查找哪本书呢？可以告诉我书名或作者。"
