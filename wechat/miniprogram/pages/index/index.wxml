@@ -45,10 +45,6 @@
           <view class="message-content assistant-content">
             <!-- 思考过程 -->
             <view wx:if="{{item.thinkingContent}}" class="thinking-container">
-              <view class="thinking-header">
-                <text class="thinking-icon">💭</text>
-                <text class="thinking-title">思考中...</text>
-              </view>
               <view class="thinking-content">
                 <text>{{item.thinkingContent}}</text>
               </view>

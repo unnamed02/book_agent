@@ -81,10 +81,11 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                 {"role": "user", "content": query_input}
             ],
             enable_search=True,
+            # enable_thinking=True,
             search_options={
                 "enable_source": True,
                 "prepend_search_result": True,  # 首包只返回搜索来源
-                "search_strategy": "max",
+                "search_strategy": "agent",
                 "enable_citation": True,     # 开启角标标注
                 "citation_format": "[ref_<number>]", # 设置角标样式
                 "forced_search": True,
@@ -100,10 +101,12 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
 
         full_response = ""
         first_chunk = True
+        last_resp = None
 
         # 流式处理响应
         async for resp in responses:
             if resp.status_code == 200:
+                last_resp = resp
                 # 1. 提取搜索来源（首包）
                 if first_chunk:
                     search_info = resp.output.get("search_info", {})
@@ -135,6 +138,11 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                     state["streaming_tokens"].append(content)
             else:
                 raise Exception(f"DashScope Error: {resp.message}")
+
+        # 打印最后一个响应的 token 用量
+        if last_resp and last_resp.usage:
+            usage = last_resp.usage
+            logger.info(f"📊 Token 用量 - 输入: {usage.input_tokens}, 输出: {usage.output_tokens}, 总计: {usage.total_tokens}")
 
         logger.info(f"✓ 书籍信息查询完成，长度: {len(full_response)}")
 

@@ -342,7 +342,8 @@ async def stream_recommendation_workflow_enhanced(
                 node_name = metadata.get("langgraph_node")
 
                 if node_name:
-                    output = event["data"].get("output", {})
+                    raw_output = event["data"].get("output", {})
+                    output = raw_output if isinstance(raw_output, dict) else raw_output.model_dump() if hasattr(raw_output, "model_dump") else {}
 
                     yield {
                         "type": "node_end",
@@ -364,6 +365,15 @@ async def stream_recommendation_workflow_enhanced(
                             yield {
                                 "type": "books_not_found",
                                 "content": books_without_resources
+                            }
+
+                    # intent 节点反问（信息不足时直接结束）
+                    if node_name == "intent":
+                        dialogue_response = output.get("dialogue_response", "")
+                        if dialogue_response:
+                            yield {
+                                "type": "message",
+                                "content": dialogue_response
                             }
 
                     # customer_service 节点输出对话响应
