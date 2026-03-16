@@ -163,3 +163,6 @@ wechat/miniprogram/project.config.json
 # Claude Code
 .claude/
 CLAUDE.md
+
+# 文档
+docs/
