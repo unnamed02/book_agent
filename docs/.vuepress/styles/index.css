@@ -1,0 +1,139 @@
+/* VuePress 自定义样式 */
+
+:root {
+  --c-brand: #0066cc;
+  --c-brand-light: #4da6ff;
+  --c-brand-dark: #004499;
+}
+
+/* 改进表格样式 */
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+}
+
+table th,
+table td {
+  border: 1px solid var(--c-divider);
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+table th {
+  background-color: var(--c-bg-soft);
+  color: var(--c-brand);
+  font-weight: 600;
+}
+
+table tr:nth-child(even) {
+  background-color: var(--c-bg-soft);
+}
+
+table tr:hover {
+  background-color: var(--c-bg-mute);
+}
+
+/* 改进代码块样式 */
+.language-bash::before,
+.language-python::before,
+.language-javascript::before,
+.language-typescript::before,
+.language-json::before {
+  font-weight: 600;
+  color: var(--c-brand);
+}
+
+/* 改进列表样式 */
+ul, ol {
+  margin: 1rem 0;
+}
+
+li {
+  margin: 0.5rem 0;
+}
+
+/* 改进链接样式 */
+a {
+  color: var(--c-brand);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+a:hover {
+  color: var(--c-brand-light);
+  text-decoration: underline;
+}
+
+/* 改进标题样式 */
+h1 {
+  border-bottom: 2px solid var(--c-brand);
+  padding-bottom: 0.5rem;
+}
+
+h2 {
+  color: var(--c-brand);
+  border-left: 4px solid var(--c-brand);
+  padding-left: 1rem;
+  margin-top: 2rem;
+}
+
+h3 {
+  color: var(--c-brand);
+}
+
+/* 提示框样式 */
+.custom-container {
+  border-left: 4px solid var(--c-brand);
+  padding: 0.5rem 1rem;
+  margin: 1rem 0;
+  background-color: var(--c-bg-soft);
+  border-radius: 4px;
+}
+
+.custom-container.warning {
+  border-left-color: #ff9900;
+}
+
+.custom-container.danger {
+  border-left-color: #ff3333;
+}
+
+.custom-container.tip {
+  border-left-color: #00aa44;
+}
+
+/* 改进导航栏 */
+.navbar {
+  background-color: var(--c-bg);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* 改进侧边栏 */
+.sidebar {
+  background-color: var(--c-bg);
+}
+
+/* 改进代码高亮 */
+div[class*="language-"] {
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 1rem 0;
+}
+
+/* 响应式调整 */
+@media (max-width: 719px) {
+  table {
+    font-size: 0.875rem;
+  }
+
+  table th,
+  table td {
+    padding: 0.5rem;
+  }
+
+  h2 {
+    padding-left: 0.5rem;
+    border-left-width: 3px;
+  }
+}

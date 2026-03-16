@@ -164,5 +164,8 @@ wechat/miniprogram/project.config.json
 .claude/
 CLAUDE.md
 
-# 文档
-docs/
+# 文档（node_modules 和构建输出除外）
+docs/node_modules/
+docs/.vuepress/.temp/
+docs/.vuepress/.dist/
+docs/dist/

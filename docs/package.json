@@ -1,0 +1,33 @@
+{
+  "name": "book-agent-docs-vuepress",
+  "version": "1.0.0",
+  "description": "Book Agent - AI 智能推荐系统 VuePress 文档",
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vuepress dev .",
+    "docs:build": "vuepress build .",
+    "docs:clean": "rm -rf .vuepress/.cache .vuepress/.temp",
+    "dev": "npm run docs:dev",
+    "build": "npm run docs:build"
+  },
+  "keywords": [
+    "book-recommendation",
+    "ai",
+    "langraph",
+    "fastapi",
+    "react",
+    "vuepress"
+  ],
+  "author": "Book Agent Team",
+  "license": "MIT",
+  "dependencies": {
+    "vue": "^3.3.4"
+  },
+  "devDependencies": {
+    "@vuepress/bundler-vite": "2.0.0-rc.0",
+    "@vuepress/plugin-search": "2.0.0-rc.0",
+    "@vuepress/plugin-toc": "2.0.0-rc.0",
+    "@vuepress/theme-default": "2.0.0-rc.0",
+    "vuepress": "2.0.0-rc.0"
+  }
+}
