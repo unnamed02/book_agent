@@ -4,7 +4,11 @@
 
 ## 功能演示
 
-[![功能演示](https://img.shields.io/badge/B站-功能演示-ff69b4)](https://www.bilibili.com/video/BV1bSwizkEdS/?spm_id_from=333.1365.list.card_archive.click&vd_source=531309240069252bb300dc8ae876c5b3)
+<div style="text-align: center; margin: 30px 0;">
+  <a href="https://www.bilibili.com/video/BV1bSwizkEdS/?spm_id_from=333.1365.list.card_archive.click&vd_source=531309240069252bb300dc8ae876c5b3">
+    <img alt="B站功能演示" src="https://img.shields.io/badge/B站-功能演示-ff69b4?style=for-the-badge&logo=bilibili&logoColor=white&labelColor=ff69b4&color=ff69b4" width="200" height="50">
+  </a>
+</div>
 
 ## 功能特点
 
