@@ -182,4 +182,11 @@ book_agent/
 
 ## 许可证
 
-MIT License
+GPLv3 (General Public License v3.0)
+
+本项目采用 GPLv3 许可证。根据 GPLv3，任何使用、修改或分发本项目代码的人必须：
+- 保持相同的 GPLv3 许可证
+- 公开源代码
+- 保留原始版权声明
+
+详见 [LICENSE](./LICENSE) 文件

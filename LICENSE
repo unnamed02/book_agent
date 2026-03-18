@@ -1,21 +1,55 @@
-MIT License
+GNU GENERAL PUBLIC LICENSE
+Version 3, 29 June 2007
 
-Copyright (c) 2025 tianyuan
+Copyright (C) 2026 Book Agent Contributors
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+ADDITIONAL TERMS
+
+If you modify this program, you must clearly mark the modifications
+made by you and provide a notice stating that you have modified the
+program. You must also inform recipients that the modified program
+is covered by the same GPL license.
+
+If you distribute this program or modified versions of it, you must:
+
+1. Cause the modified files to carry prominent notices stating that
+   you changed the files and the date of any change.
+
+2. Cause the whole of the work to be licensed at no charge to all
+   third parties under the terms of this GPL.
+
+3. If the modified program normally reads commands interactively
+   when run, you must cause it, when started running for such
+   interactive use in the most ordinary way, to print or display an
+   announcement including an appropriate copyright notice and a
+   notice that there is no warranty (or else, saying that you provide
+   a warranty) and that users may redistribute the program under
+   these conditions, and telling the user how to view a copy of this
+   License.
+
+EXCEPTIONS
+
+Nothing in this License shall be construed as excluding or limiting
+any implied license or other defenses to infringement that may
+otherwise be available to you under applicable patent law.
+
+If you distribute copies of this program (or works based on it)
+to others, you must also pass on to them the same freedoms that
+you received. You must make sure that they, too, receive or can
+get the source code.
+
+For more information about GNU General Public License, visit:
+<https://www.gnu.org/licenses/gpl-3.0.html>
