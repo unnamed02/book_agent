@@ -1,6 +1,8 @@
 # 📚 AI图书推荐助手
 
-基于 React + FastAPI + LangChain 的智能图书推荐系统
+基于 WeChat 小程序 + FastAPI + LangGraph 的智能图书推荐系统
+
+> 前端：WeChat 小程序 | 后端：FastAPI + LangGraph | 数据库：Redis + PostgreSQL + Milvus
 
 ## 功能演示
 
@@ -17,6 +19,7 @@
 - **RAG 智能客服**：基于知识库的问答系统，自动处理系统使用、功能咨询等问题
 - **个性化学习**：记住用户阅读偏好，避免重复推荐
 - **多源信息整合**：提供馆藏信息、电子资源、购买链接
+- **图书荐购**：图书荐购、版本推荐
 
 ### 交互体验
 - 现代化聊天界面
@@ -26,64 +29,139 @@
 
 ## 技术栈
 
-### 前端
-- React 19
-- Ant Design 6
-- Tailwind CSS 4
-- Vite
+### 前端（已停止维护 React 版本）
+- **WeChat 小程序**：原生 WXML + TypeScript
+- 自定义 Markdown 渲染组件
+- SSE 流式响应支持
 
 ### 后端
 - **FastAPI**：高性能异步 Web 框架
 - **LangChain & LangGraph**：智能工作流编排
 - **OpenAI API**：大语言模型（支持 DeepSeek、GPT 等）
-- **Milvus Lite**：向量数据库，支持记忆存储和 RAG 检索
-- **SQLAlchemy**：数据持久化（用户偏好、推荐历史）
+- **SQLAlchemy**：ORM 框架
 
-## 安装运行
+### 数据库（推荐 Docker 部署）
+- **Redis**：会话缓存、对话历史存储
+- **PostgreSQL**：用户数据、推荐历史持久化
+- **Milvus**：向量数据库，支持记忆存储和 RAG 检索
 
-### 1. 后端设置
+## 快速开始
+
+### 第一步：安装依赖服务
+
+需要安装以下三个数据库服务。建议使用 Docker，但也可以本地安装。
+
+#### 方案 A：Docker 安装（推荐）
+
+```bash
+# Redis（启用 AOF 和自动重写）
+docker run -d --name book_agent_redis -p 6379:6379 redis:7-alpine \
+  redis-server --appendonly yes --appendfsync everysec \
+  --auto-aof-rewrite-percentage 100 --auto-aof-rewrite-min-size 268435456
+
+# PostgreSQL
+docker run -d --name book_agent_postgres \
+  -e POSTGRES_USER=book_agent \
+  -e POSTGRES_PASSWORD=book_agent_password \
+  -e POSTGRES_DB=book_agent \
+  -p 5432:5432 \
+  -v postgres_data:/var/lib/postgresql/data \
+  postgres:15-alpine
+
+# Milvus
+docker run -d --name book_agent_milvus \
+  -p 19530:19530 \
+  -p 9091:9091 \
+  -e COMMON_STORAGETYPE=local \
+  milvusdb/milvus:latest
+```
+
+#### 方案 B：本地安装
+
+参考各服务官方文档：
+- [Redis 安装](https://redis.io/docs/install/)
+- [PostgreSQL 安装](https://www.postgresql.org/download/)
+- [Milvus 安装](https://milvus.io/docs/install_standalone-docker.md)
+
+### 第二步：后端设置
 
 ```bash
 cd backend
 
 # 安装依赖
-pip install fastapi uvicorn langchain langchain-openai langchain-milvus sqlalchemy aiosqlite
+pip install -r requirements.txt
+
+# 配置环境变量（复制并编辑 .env 文件）
+cp .env.example .env
 
 # 初始化知识库（首次运行）
-python init_knowledge_base.py
+python service/init_knowledge_base.py
 
 # 启动服务
 uvicorn api:app --reload --port 8000
 ```
 
-### 2. 前端设置
+**环境变量配置** (`.env`)：
+```env
+# LLM 配置
+OPENAI_API_KEY=your_api_key
+OPENAI_API_BASE=https://api.openai.com/v1
+DASHSCOPE_API_KEY=your_dashscope_key  # 必填，book_info以来通义联网搜索
+
+# 数据库配置
+DATABASE_URL=postgresql+asyncpg://book_agent:your_password@localhost:5432/book_agent
+REDIS_URL=redis://localhost:6379/0
+MILVUS_URI=http://localhost:19530
+
+# 豆瓣 API 配置  
+DOUBAN_API_KEY=your_douban_key
+
+# CORS 配置
+ALLOWED_ORIGINS=http://localhost:8000,http://localhost:5173
+
+
+## 环境需求
+
+- **Python**: 3.10+
+- **Node.js**: 18+
+- **Docker**: 最新版本
+- **WeChat DevTools**: 用于小程序开发
+
+## 数据库说明
+
+### Redis
+- 用途：会话缓存、对话历史、临时数据
+- 端口：6379
+- Docker 启动：已在 docker-compose 中配置
+
+### PostgreSQL
+- 用途：用户信息、推荐历史、会话记录持久化
+- 端口：5432
+- 用户名：book_agent
+- Docker 启动：已在 docker-compose 中配置
+
+### Milvus
+- 用途：向量存储、RAG 知识库、用户记忆
+- 端口：19530（grpc）、9091（http）
+- 推荐：Docker 部署
+
+## Redis 配置
+
+启用 AOF 持久化和自动重写，确保数据安全性：
 
 ```bash
-cd frontend
-npm install
-npm run dev
+# redis.conf
+appendonly yes
+appendfsync everysec
+auto-aof-rewrite-percentage 100
+auto-aof-rewrite-min-size 268435456  # 256MB
 ```
 
-### 3. 访问应用
-
-打开浏览器访问: http://localhost:5173
-
-## 环境变量
-
-在 `backend/.env` 文件中配置:
-
-```env
-# OpenAI API 配置（支持 DeepSeek 等兼容服务）
-OPENAI_API_KEY=your_api_key
-OPENAI_BASE_URL=your_base_url
-
-# 数据库配置（可选，默认使用 SQLite）
-DATABASE_URL=sqlite+aiosqlite:///./book_agent.db
-
-# Milvus 配置（可选，默认使用 Milvus Lite）
-MILVUS_URI=./milvus_memory.db
-MILVUS_KB_URI=./milvus_kb.db
-```
+**配置说明**：
+- `appendonly yes`：启用 AOF 持久化，记录每个写入命令
+- `appendfsync everysec`：每秒同步一次，平衡性能和安全性
+- `auto-aof-rewrite-percentage 100`：当 AOF 文件大小增长 100% 时自动重写
+- `auto-aof-rewrite-min-size 256MB`：AOF 文件至少达到 256MB 才触发重写
 
 ## 核心功能说明
 
@@ -106,17 +184,13 @@ MILVUS_KB_URI=./milvus_kb.db
 - 推荐策略说明
 - 数据来源说明
 
-### 3. 个性化推荐
-- **用户画像**：自动学习用户阅读偏好
-- **记忆系统**：记住历史推荐，避免重复
-- **向量检索**：基于语义相似度匹配相关书籍
 
-### 4. 多源信息整合
+### 3. 多源信息整合
 每本推荐书籍都包含：
 - 📊 豆瓣评分和详细简介
 - 📍 图书馆馆藏信息（索书号、位置、可借状态）
 - 📥 电子资源链接（PDF、EPUB 等）
-- 🛒 购买链接（当当、京东等电商平台）
+- 🛒 购买链接（当当、京东等电商平台）#现移除，后续有需要可以补充
 
 ## 使用示例
 
@@ -151,33 +225,61 @@ MILVUS_KB_URI=./milvus_kb.db
 
 ```
 book_agent/
-├── backend/
-│   ├── api.py                    # FastAPI 主应用
-│   ├── graph_workflow.py         # LangGraph 工作流
-│   ├── knowledge_base_tool.py    # RAG 客服系统
-│   ├── init_knowledge_base.py    # 知识库初始化
-│   ├── memory_manager.py         # 用户记忆管理
-│   ├── conversation_manager.py   # 对话管理
-│   ├── session.py                # 会话管理
-│   ├── models.py                 # 数据模型
-│   ├── douban_tool.py            # 豆瓣 API
-│   ├── resource_tool.py          # 电子资源搜索
-│   ├── shop_tool.py              # 购买链接
-│   └── library_tool.py           # 馆藏查询
-└── frontend/
-    ├── src/
-    │   ├── App.tsx               # 主组件
-    │   └── ...
-    └── ...
+├── backend/                         # FastAPI 后端
+│   ├── api.py                       # 主应用、SSE 流式端点
+│   ├── graph_workflow.py            # LangGraph 工作流
+│   ├── service/
+│   │   ├── knowledge_base_tool.py   # RAG 客服系统
+│   │   ├── init_knowledge_base.py   # 知识库初始化
+│   │   └── ...
+│   ├── nodes/                       # 8 个工作流节点
+│   │   ├── intent_recognition.py    # 意图识别
+│   │   ├── find_book_node.py        # 查找书籍
+│   │   ├── recommendation_node.py   # 书籍推荐
+│   │   └── ...
+│   ├── session/                     # Redis + PostgreSQL + LRU 三层会话管理
+│   ├── tools/
+│   │   ├── douban_tool.py           # 豆瓣数据源
+│   │   ├── resource_tool.py         # 电子资源
+│   │   ├── shop_tool.py             # 购买链接
+│   │   └── library_tool.py          # 馆藏查询
+│   ├── utils/
+│   │   └── models.py                # SQLAlchemy 数据模型
+│   ├── requirements.txt
+│   └── .env.example
+│
+├── wechat/                          # WeChat 小程序（原生 WXML）
+│   ├── miniprogram/
+│   │   ├── pages/index/             # 聊天页面
+│   │   ├── components/              # 自定义 Markdown 组件
+│   │   ├── utils/api.ts             # API 通信
+│   │   └── app.json
+│   └── project.config.json
+│
+├── frontend/                        # React Web 版本（已停止维护）
+│   └── ...
+│
+├── docs/                            # VuePress 2 文档
+│   ├── backend/
+│   │   ├── session.md               # 会话管理详解
+│   │   ├── workflow.md              # 工作流说明
+│   │   └── nodes/                   # 8 个节点详细文档
+│   └── ...
+│
+├── README.md                        # 项目说明
+├── LICENSE                          # GPLv3 许可证
+└── CLAUDE.md                        # Claude Code 项目指南
 ```
 
 ## 技术亮点
 
-1. **LangGraph 工作流编排**：使用状态图实现复杂的推荐流程
-2. **RAG 增强客服**：向量检索 + LLM 生成，提供准确的客服回答
-3. **流式响应**：实时反馈，提升用户体验
-4. **向量数据库**：Milvus Lite 支持记忆存储和语义检索
-5. **异步架构**：FastAPI + async/await 实现高性能
+1. **LangGraph 工作流**：8 个专用节点，自动意图识别和智能路由
+2. **三层会话管理**：LRU 内存缓存 + Redis 高速缓存 + PostgreSQL 持久化
+3. **RAG 增强客服**：向量检索 + LLM 生成，动态知识库
+4. **SSE 流式响应**：真实时响应流，前端和小程序都支持
+5. **微信小程序原生**：WXML 原生实现，自定义 Markdown 渲染
+6. **Docker 一键部署**：Redis、PostgreSQL、Milvus 容器化
+7. **异步高性能**：FastAPI + asyncio 处理并发请求
 
 
 ## 许可证
