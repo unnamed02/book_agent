@@ -10,9 +10,13 @@ uvicorn
 sqlalchemy[asyncio]
 aiosqlite
 asyncpg
+redis
+dashscope
 pymilvus==2.6.5
 langchain-milvus==0.2.2
 psutil
 httpx[http2]
 beautifulsoup4
 rapidfuzz
+# requests  好像不需要单独安装，httpx会自动安装它
+# urllib3   好像不需要单独安装，httpx会自动安装它
