@@ -4,10 +4,7 @@
 
 ## 功能演示
 
-<video width="100%" height="auto" controls style="border-radius: 8px; margin: 20px 0;">
-  <source src="./docs/video/2026-03-18 20-12-44.mp4" type="video/mp4">
-  您的浏览器不支持视频播放
-</video>
+[![功能演示](https://img.shields.io/badge/B站-功能演示-ff69b4)](https://www.bilibili.com/video/BV1bSwizkEdS/?spm_id_from=333.1365.list.card_archive.click&vd_source=531309240069252bb300dc8ae876c5b3)
 
 ## 功能特点
 
