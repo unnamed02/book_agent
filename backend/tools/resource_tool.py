@@ -283,7 +283,7 @@ def search_chineseall_resource(title: str, author: str = "") -> List[ResourceRes
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "Sx-Token": "w196dwl8YJyv7G71qR192m37JLv8o124",
+            "Sx-Token": "sBcr9381620A1C10u2Q6pV02Aa57OOtQ",
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
         }
         all_results: list[ResourceResult] = []
