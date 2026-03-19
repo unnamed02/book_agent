@@ -106,7 +106,7 @@ uvicorn api:app --reload --port 8000
 # LLM 配置
 OPENAI_API_KEY=your_api_key
 OPENAI_API_BASE=https://api.openai.com/v1
-DASHSCOPE_API_KEY=your_dashscope_key  # 必填，book_info以来通义联网搜索
+DASHSCOPE_API_KEY=your_dashscope_key  # 必填，book_info使用通义联网搜索
 
 # 数据库配置
 DATABASE_URL=postgresql+asyncpg://book_agent:your_password@localhost:5432/book_agent
