@@ -572,19 +572,14 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
             "| --- | --- | --- |"
         ]
 
-        for idx, book in enumerate(books):
+        def search_book(book):
+            """搜索单本书的信息"""
             title = book["title"]
             author = book["author"]
 
             try:
-                # 频率控制：每次调用前等待0.2秒（第一次除外）
-                if idx > 0:
-                    logger.info("等待0.2秒，避免频率限制...")
-                    await asyncio.sleep(0.2)
+                logger.info(f"正在搜索《{title}》...")
 
-                # 直接调用商城 API 搜索图书（只用书名，不加作者）
-                logger.info(f"[{idx + 1}/{len(books)}] 正在搜索《{title}》...")
-                
                 import requests
                 api_url = "https://fx.cnpdx.com/fxpms/commodity/searchProduct/gp"
                 headers = {
@@ -635,16 +630,13 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
 
                 # 检查响应状态
                 if not response_data.get("success") or not response_data.get("data", {}).get("rows"):
-                    # 未找到，使用原始信息
-                    table_lines.append(f"| {title} | {author} | |")
                     logger.warning(f"未找到《{title}》")
-                    continue
+                    return f"| {title} | {author} | |"
 
                 # 提取搜索结果
                 rows = response_data["data"]["rows"]
 
                 # 构建候选书籍列表（用于 LLM 筛选）
-                import re
                 candidates = []
                 for row in rows:
                     clean_title = re.sub(r'<[^>]+>', '', row.get("bookTitle", ""))
@@ -684,22 +676,26 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
                         actual_author = selected["author"]
                         isbn = selected["isbn"]
 
-                        table_lines.append(f"| {actual_title} | {actual_author} | {isbn} |")
                         logger.info(f"✓ 获取《{title}》信息成功")
+                        return f"| {actual_title} | {actual_author} | {isbn} |"
                     else:
-                        # LLM 返回 -1，没有合适的匹配
-                        table_lines.append(f"| {title} | {author} | |")
                         logger.warning(f"LLM 未找到《{title}》的合适匹配")
+                        return f"| {title} | {author} | |"
                 except ValueError:
-                    # LLM 返回格式错误，使用第一个结果
                     logger.warning(f"LLM 返回格式错误，使用第一个结果")
                     selected = candidates[0]
-                    table_lines.append(f"| {selected['title']} | {selected['author']} | {selected['isbn']} |")
+                    return f"| {selected['title']} | {selected['author']} | {selected['isbn']} |"
 
             except Exception as e:
                 logger.error(f"获取《{title}》信息失败: {e}")
-                # 失败时也添加到表格，ISBN 为空
-                table_lines.append(f"| {title} | {author} | |")
+                return f"| {title} | {author} | |"
+
+        # 并发搜索，最多5个并发任务
+        from concurrent.futures import ThreadPoolExecutor
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(executor.map(search_book, books))
+
+        table_lines.extend(results)
 
         # 直接设置最终响应（Markdown 表格格式）
         state["final_response"] = "\n".join(table_lines)
