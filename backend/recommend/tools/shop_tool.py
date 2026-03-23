@@ -25,38 +25,71 @@ def search_and_filter_book(book_name: str, author: str = "") -> str:
 
     try:
         # 调用商城 API 搜索（只用书名）
-        api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
+        api_url = "https://fx.cnpdx.com/fxpms/commodity/searchProduct/gp"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Content-Type": "application/json;charset=UTF-8"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "Content-Type": "application/json;charset=UTF-8",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "zh-CN,zh;q=0.9"
         }
         payload = {
+            "merchantType": 0,
+            "userCode": "SXXH01",
+            "channelCode": "915",
+            "shopNo": "915",
+            "classifications": [],
+            "subjectClassCodes": [],
+            "publisherCodes": [],
+            "yunhanProTypeCodeAll": [],
             "searchField": "searchAll",
             "searchContent": book_name,
+            "isbns": [],
+            "authoreditors": [],
+            "bookTitles": [],
+            "ecIds": [],
+            "purchaserId": "0004100173",
+            "minListDate": "",
+            "maxListDate": "",
+            "minPublishDate": "",
+            "maxPublishDate": "",
+            "paperbacks": [],
+            "format": "",
+            "minPrice": "",
+            "maxPrice": "",
+            "minSingleMatchStock": "",
+            "maxSingleMatchStock": "",
+            "minDiscount": "",
+            "maxDiscount": "",
+            "supplyTypes": [],
+            "sendOutStgEcds": ["SW_CHENGDU_STOCK", "SW_WUXI_STOCK", "SW_TIANJIN_STOCK", "DC_JIT_RENTIAN", "SW_QINGYUAN_STOCK"],
+            "mainSupplierCodes": [],
+            "sort": {"editionyearmonth": "desc"},
             "page": 1,
-            "rows": 10
+            "rows": 50
         }
 
         response = requests.post(api_url, json=payload, headers=headers, timeout=10)
-        raw_data = response.text
+        response_data = response.json()
 
-        # 提取所有搜索结果
-        book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
-        isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
-        authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
-
-        if not book_titles:
+        # 检查响应状态
+        if not response_data.get("success") or not response_data.get("data", {}).get("rows"):
             return json.dumps({"error": "未找到搜索结果"}, ensure_ascii=False)
+
+        # 提取搜索结果
+        rows = response_data["data"]["rows"]
 
         # 构建候选书籍列表
         candidates = []
-        for i in range(min(len(book_titles), len(isbns), len(authors_list))):
-            clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
-            clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
+        for row in rows:
+            clean_title = re.sub(r'<[^>]+>', '', row.get("bookTitle", ""))
+            clean_author = re.sub(r'<[^>]+>', '', row.get("authoreditor", ""))
             candidates.append({
                 "title": clean_title,
                 "author": clean_author,
-                "isbn": isbns[i]
+                "isbn": row.get("isbn", ""),
+                "price": row.get("price", 0),
+                "publisher": row.get("publisherName", "")
             })
 
         # 使用 LLM 筛选最匹配的书籍
@@ -103,40 +136,68 @@ def search_shop_by_isbn(isbn: str) -> str:
     logger.info(f"开始通过ISBN搜索在线商城: {isbn}")
     try:
         import json
-        api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
+        api_url = "https://fx.cnpdx.com/fxpms/commodity/searchProduct/gp"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Content-Type": "application/json;charset=UTF-8"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "Content-Type": "application/json;charset=UTF-8",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "zh-CN,zh;q=0.9"
         }
 
         payload = {
+            "merchantType": 0,
+            "userCode": "SXXH01",
+            "channelCode": "915",
+            "shopNo": "915",
+            "classifications": [],
+            "subjectClassCodes": [],
+            "publisherCodes": [],
+            "yunhanProTypeCodeAll": [],
             "searchField": "searchAll",
             "searchContent": isbn,
+            "isbns": [],
+            "authoreditors": [],
+            "bookTitles": [],
+            "ecIds": [],
+            "purchaserId": "0004100173",
+            "minListDate": "",
+            "maxListDate": "",
+            "minPublishDate": "",
+            "maxPublishDate": "",
+            "paperbacks": [],
+            "format": "",
+            "minPrice": "",
+            "maxPrice": "",
+            "minSingleMatchStock": "",
+            "maxSingleMatchStock": "",
+            "minDiscount": "",
+            "maxDiscount": "",
+            "supplyTypes": [],
+            "sendOutStgEcds": ["SW_CHENGDU_STOCK", "SW_WUXI_STOCK", "SW_TIANJIN_STOCK", "DC_JIT_RENTIAN", "SW_QINGYUAN_STOCK"],
+            "mainSupplierCodes": [],
+            "sort": {"editionyearmonth": "desc"},
             "page": 1,
-            "rows": 5
+            "rows": 50
         }
 
         response = requests.post(api_url, json=payload, headers=headers, timeout=10)
-        data = response.text
-
-        # 提取书名、价格、ISBN、作者
-        book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', data)
-        prices = re.findall(r'"price":((?:\\"|[^"])*),', data)
-        isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', data)
-        authors = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
+        response_data = response.json()
 
         results = []
-        for i in range(min(len(book_titles), len(prices), len(isbns), len(authors))):
-            if isbn in isbns[i]:
-                title = re.sub(r'<[^>]+>', '', book_titles[i])
-                author = re.sub(r'<[^>]+>', '', authors[i])
-                results.append({
-                    "source": "新华书店在线商城",
-                    "title": title,
-                    "author": author,
-                    "price": f"¥{prices[i]}",
-                    "link": "https://fx.cnpdx.com/s_fxpms/query"
-                })
+        if response_data.get("success") and response_data.get("data", {}).get("rows"):
+            rows = response_data["data"]["rows"]
+            for row in rows:
+                if isbn in row.get("isbn", ""):
+                    title = re.sub(r'<[^>]+>', '', row.get("bookTitle", ""))
+                    author = re.sub(r'<[^>]+>', '', row.get("authoreditor", ""))
+                    results.append({
+                        "source": "新华书店在线商城",
+                        "title": title,
+                        "author": author,
+                        "price": f"¥{row.get('price', 0)}",
+                        "link": "https://fx.cnpdx.com/s_fxpms/query"
+                    })
 
         return json.dumps(results[:3], ensure_ascii=False)
     except Exception as e:
@@ -149,43 +210,71 @@ def search_online_shop(book_name: str, author: str = "") -> str:
     logger.info(f"开始搜索在线商城: {book_name}, 作者: {author}")
     try:
         import json
-        api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
+        api_url = "https://fx.cnpdx.com/fxpms/commodity/searchProduct/gp"
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-            "Content-Type": "application/json;charset=UTF-8"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+            "Content-Type": "application/json;charset=UTF-8",
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Encoding": "gzip, deflate, br, zstd",
+            "Accept-Language": "zh-CN,zh;q=0.9"
         }
-        
+
         query = f"{book_name} {author}"
 
         payload = {
+            "merchantType": 0,
+            "userCode": "SXXH01",
+            "channelCode": "915",
+            "shopNo": "915",
+            "classifications": [],
+            "subjectClassCodes": [],
+            "publisherCodes": [],
+            "yunhanProTypeCodeAll": [],
             "searchField": "searchAll",
             "searchContent": query,
+            "isbns": [],
+            "authoreditors": [],
+            "bookTitles": [],
+            "ecIds": [],
+            "purchaserId": "0004100173",
+            "minListDate": "",
+            "maxListDate": "",
+            "minPublishDate": "",
+            "maxPublishDate": "",
+            "paperbacks": [],
+            "format": "",
+            "minPrice": "",
+            "maxPrice": "",
+            "minSingleMatchStock": "",
+            "maxSingleMatchStock": "",
+            "minDiscount": "",
+            "maxDiscount": "",
+            "supplyTypes": [],
+            "sendOutStgEcds": ["SW_CHENGDU_STOCK", "SW_WUXI_STOCK", "SW_TIANJIN_STOCK", "DC_JIT_RENTIAN", "SW_QINGYUAN_STOCK"],
+            "mainSupplierCodes": [],
+            "sort": {"editionyearmonth": "desc"},
             "page": 1,
-            "rows": 10
+            "rows": 50
         }
 
         response = requests.post(api_url, json=payload, headers=headers, timeout=10)
-        data = response.text
-
-        # 提取书名、价格、ISBN、作者
-        book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', data)
-        prices = re.findall(r'"price":((?:\\"|[^"])*),', data)
-        isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', data)
-        author_editor = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', data)
+        response_data = response.json()
 
         results = []
 
-        for i in range(min(len(book_titles), len(prices), len(isbns), len(author_editor))):
-            title = re.sub(r'<[^>]+>', '', book_titles[i])
-            author = re.sub(r'<[^>]+>', '', author_editor[i])
+        if response_data.get("success") and response_data.get("data", {}).get("rows"):
+            rows = response_data["data"]["rows"]
+            for row in rows:
+                title = re.sub(r'<[^>]+>', '', row.get("bookTitle", ""))
+                author = re.sub(r'<[^>]+>', '', row.get("authoreditor", ""))
 
-            results.append({
-                "source": "新华书店在线商城",
-                "title": title,
-                "author": author,
-                "price": f"¥{prices[i]}",
-                "link": "https://fx.cnpdx.com/s_fxpms/query"
-            })
+                results.append({
+                    "source": "新华书店在线商城",
+                    "title": title,
+                    "author": author,
+                    "price": f"¥{row.get('price', 0)}",
+                    "link": "https://fx.cnpdx.com/s_fxpms/query"
+                })
 
         return json.dumps(results[:5], ensure_ascii=False)
     except Exception as e:

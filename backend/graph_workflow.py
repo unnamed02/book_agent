@@ -586,42 +586,75 @@ async def search_booklist(state: BookRecommendationState) -> BookRecommendationS
                 logger.info(f"[{idx + 1}/{len(books)}] 正在搜索《{title}》...")
                 
                 import requests
-                api_url = "https://fx.cnpdx.com/fxpms/commodity/pageQuery"
+                api_url = "https://fx.cnpdx.com/fxpms/commodity/searchProduct/gp"
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-                    "Content-Type": "application/json;charset=UTF-8"
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36",
+                    "Content-Type": "application/json;charset=UTF-8",
+                    "Accept": "application/json, text/plain, */*",
+                    "Accept-Encoding": "gzip, deflate, br, zstd",
+                    "Accept-Language": "zh-CN,zh;q=0.9"
                 }
                 payload = {
+                    "merchantType": 0,
+                    "userCode": "SXXH01",
+                    "channelCode": "915",
+                    "shopNo": "915",
+                    "classifications": [],
+                    "subjectClassCodes": [],
+                    "publisherCodes": [],
+                    "yunhanProTypeCodeAll": [],
                     "searchField": "searchAll",
-                    "searchContent": title,  # 只用书名搜索
+                    "searchContent": title,
+                    "isbns": [],
+                    "authoreditors": [],
+                    "bookTitles": [],
+                    "ecIds": [],
+                    "purchaserId": "0004100173",
+                    "minListDate": "",
+                    "maxListDate": "",
+                    "minPublishDate": "",
+                    "maxPublishDate": "",
+                    "paperbacks": [],
+                    "format": "",
+                    "minPrice": "",
+                    "maxPrice": "",
+                    "minSingleMatchStock": "",
+                    "maxSingleMatchStock": "",
+                    "minDiscount": "",
+                    "maxDiscount": "",
+                    "supplyTypes": [],
+                    "sendOutStgEcds": ["SW_CHENGDU_STOCK", "SW_WUXI_STOCK", "SW_TIANJIN_STOCK", "DC_JIT_RENTIAN", "SW_QINGYUAN_STOCK"],
+                    "mainSupplierCodes": [],
+                    "sort": {"editionyearmonth": "desc"},
                     "page": 1,
-                    "rows": 10
+                    "rows": 50
                 }
 
                 response = requests.post(api_url, json=payload, headers=headers, timeout=10)
-                raw_data = response.text
+                response_data = response.json()
 
-                # 提取所有搜索结果
-                import re
-                book_titles = re.findall(r'"bookTitle":"((?:\\"|[^"])*)"', raw_data)
-                isbns = re.findall(r'"isbn":"((?:\\"|[^"])*)"', raw_data)
-                authors_list = re.findall(r'"authoreditor":"((?:\\"|[^"])*)"', raw_data)
-
-                if not book_titles:
+                # 检查响应状态
+                if not response_data.get("success") or not response_data.get("data", {}).get("rows"):
                     # 未找到，使用原始信息
                     table_lines.append(f"| {title} | {author} | |")
                     logger.warning(f"未找到《{title}》")
                     continue
 
+                # 提取搜索结果
+                rows = response_data["data"]["rows"]
+
                 # 构建候选书籍列表（用于 LLM 筛选）
+                import re
                 candidates = []
-                for i in range(min(len(book_titles), len(isbns), len(authors_list))):
-                    clean_title = re.sub(r'<[^>]+>', '', book_titles[i])
-                    clean_author = re.sub(r'<[^>]+>', '', authors_list[i])
+                for row in rows:
+                    clean_title = re.sub(r'<[^>]+>', '', row.get("bookTitle", ""))
+                    clean_author = re.sub(r'<[^>]+>', '', row.get("authoreditor", ""))
                     candidates.append({
                         "title": clean_title,
                         "author": clean_author,
-                        "isbn": isbns[i]
+                        "isbn": row.get("isbn", ""),
+                        "price": row.get("price", 0),
+                        "publisher": row.get("publisherName", "")
                     })
 
                 # 使用 LLM 筛选最匹配的书籍
