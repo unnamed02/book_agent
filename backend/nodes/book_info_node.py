@@ -4,11 +4,14 @@
 
 import logging
 import os
+import json
+import asyncio
 from typing import TYPE_CHECKING
 import dashscope
 from prompts.system_prompts import BOOK_INFO_SYSTEM_PROMPT
 from dashscope import AioGeneration
 from langchain_core.callbacks.manager import dispatch_custom_event
+from langchain_core.messages import HumanMessage, AIMessage
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -135,6 +138,7 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                     "on_tongyi_chat",
                     {"chunk": content}
                     )
+                    full_response += content
                     state["streaming_tokens"].append(content)
             else:
                 raise Exception(f"DashScope Error: {resp.message}")
@@ -148,6 +152,17 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
 
         state["dialogue_response"] = full_response
         state["final_response"] = full_response
+
+        # 持久化到 session（只保存 AI 回复）
+        session = state.get("session")
+        if session:
+            # 保存到内存历史
+            session.conversation_messages.append(AIMessage(content=full_response))
+            
+            # 异步写入 Redis
+            if session.redis_client:
+                ai_msg = json.dumps({"type": "ai", "content": full_response}, ensure_ascii=False)
+                asyncio.create_task(session.redis_client.rpush(session.redis_key, ai_msg))
 
     except Exception as e:
         logger.error(f"书籍信息查询失败: {e}", exc_info=True)
