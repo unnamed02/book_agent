@@ -18,7 +18,8 @@ class IntentSlots(BaseModel, ABC):
 # 为每种意图类型定义独立的槽位模型
 class FindBookSlots(IntentSlots):
     """找书意图的槽位"""
-    book_titles: List[str] = Field(description="书名列表")
+    book_titles: Optional[List[str]] = Field(default=None, description="书名列表")
+    author: Optional[List[str]] = Field(default=None, description="作者列表")
 
 
 class RecommendBookSlots(IntentSlots):
@@ -94,10 +95,22 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
 
         # 检查槽位是否完整
         if result.missing_info and result.missing_info != "none":
-            # book_info 类型：title 和 author 有一个就不反问
-            if result.missing_info == "book_title" and result.query_type == "book_info":
+            # book_info 类型：有 title 或 author 任一就不反问
+            if result.query_type == "book_info":
                 slots = result.slots
-                if slots and (getattr(slots, "book_title", None) or getattr(slots, "author", None)):
+                has_title = slots and getattr(slots, "book_title", None)
+                has_author = slots and getattr(slots, "author", None)
+                if has_title or has_author:
+                    state["slots"] = slots
+                    logger.info(f"✓ 槽位填充完成: {slots}")
+                    return state
+
+            # find_book 类型：有 title 或 author 任一就不反问
+            if result.query_type == "find_book":
+                slots = result.slots
+                has_title = slots and getattr(slots, "book_titles", None) and len(slots.book_titles) > 0
+                has_author = slots and getattr(slots, "author", None) and len(slots.author) > 0
+                if has_title or has_author:
                     state["slots"] = slots
                     logger.info(f"✓ 槽位填充完成: {slots}")
                     return state
@@ -113,7 +126,7 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
             state["query_type"] = "clarify"
             state["dialogue_response"] = clarify_response
             state["final_response"] = clarify_response
-            logger.info(f"⚠ 信息不足，生成反问: {clarify_response}")
+            logger.info(f"信息不足，生成反问: {clarify_response}")
         else:
             # 信息完整，保存槽位对象到状态
             if result.slots:
