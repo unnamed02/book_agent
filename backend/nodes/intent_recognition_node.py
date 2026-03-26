@@ -47,7 +47,7 @@ class CustomerServiceSlots(IntentSlots):
 
 class IntentRecognitionResponse(BaseModel):
     """意图识别响应结构"""
-    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/default/greeting")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/default")
 
     # 使用联合类型表示槽位
     slots: Optional[Union[FindBookSlots, RecommendBookSlots, BookInfoSlots, DefaultQuerySlots, CustomerServiceSlots]] = Field(

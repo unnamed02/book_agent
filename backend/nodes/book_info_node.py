@@ -148,13 +148,13 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
         # 持久化到 session（只保存 AI 回复）
         session = state.get("session")
         if session:
-            # 保存到内存历史
+            # 保存到内存历史（只存 AI）
             session.conversation_messages.append(AIMessage(content=full_response))
             
-            # 异步写入 Redis
+            # 异步写入 Redis（只存 AI）
             if session.redis_client:
                 ai_msg = json.dumps({"type": "ai", "content": full_response}, ensure_ascii=False)
-                asyncio.create_task(session.bg_write(None, ai_msg))
+                asyncio.create_task(session.bg_write(ai=ai_msg))
 
     except Exception as e:
         error_msg = str(e)

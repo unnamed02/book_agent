@@ -203,10 +203,7 @@ class Session:
         # 保存 AI 响应
         if need_save:
             # 将响应转为字典，然后转为 JSON 字符串用于存储
-            # 使用 mode='json' 避免 Pydantic v2 序列化警告
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
-                ai_content_dict = response.model_dump(mode="json")
+            ai_content_dict = response.model_dump()
             ai_content_str = json.dumps(ai_content_dict, ensure_ascii=False)
 
             self.conversation_messages.append(AIMessage(content=ai_content_str))
@@ -276,8 +273,18 @@ class Session:
                 asyncio.create_task(self.bg_write(human_msg, ai_msg))
 
 
-    async def bg_write(self, human, ai):
-        length = await self.redis_client.rpush(self.redis_key, human, ai)
+    async def bg_write(self, human: Optional[str] = None, ai: Optional[str] = None):
+        """后台写入 Redis：支持只存 AI 消息，或同时存 human+ai"""
+        items = []
+        if human:
+            items.append(human)
+        if ai:
+            items.append(ai)
+        
+        if not items:
+            return
+            
+        length = await self.redis_client.rpush(self.redis_key, *items)
         if length > 220:
             await self.redis_client.sadd("needs_compact_list", self.redis_key)
             logger.debug(f"会话 {self.session_id} 已达到 {length} 条消息，已加入 compact 队列")
