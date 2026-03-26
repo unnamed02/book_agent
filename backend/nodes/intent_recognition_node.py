@@ -131,7 +131,7 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
             # 信息完整，保存槽位对象到状态
             if result.slots:
                 state["slots"] = result.slots
-                logger.info(f"✓ 槽位填充完成: {result.slots}")
+                logger.debug(f"槽位: {result.slots}")
 
     except Exception as e:
         error_msg = str(e)
