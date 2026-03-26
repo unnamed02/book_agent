@@ -13,6 +13,7 @@ import redis.asyncio as redis
 import logging
 import json
 import asyncio
+import warnings
 
 logger = logging.getLogger(__name__)
 
@@ -202,7 +203,10 @@ class Session:
         # 保存 AI 响应
         if need_save:
             # 将响应转为字典，然后转为 JSON 字符串用于存储
-            ai_content_dict = response.model_dump()
+            # 使用 mode='json' 避免 Pydantic v2 序列化警告
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
+                ai_content_dict = response.model_dump(mode="json")
             ai_content_str = json.dumps(ai_content_dict, ensure_ascii=False)
 
             self.conversation_messages.append(AIMessage(content=ai_content_str))

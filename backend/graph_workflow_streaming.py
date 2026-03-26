@@ -27,6 +27,7 @@ from nodes import (
     handle_default_query,
     handle_book_info
 )
+from nodes.intent_recognition_node import IntentSlots
 
 from session.session import Session
 from service.knowledge_base_tool import RAGCustomerService
@@ -83,7 +84,7 @@ class BookRecommendationState(TypedDict):
 
     # 路由结果
     query_type: str  # "book_recommendation" | "customer_service" | "find_book"
-    slots: Optional[Dict[str, Any]]  # 槽位信息字典
+    slots: Optional[IntentSlots]  # 槽位信息（Pydantic 对象）
 
     # 推荐结果
     recommended_books: List[Dict]  # [{"title": "", "author": "", "reason": ""}]
@@ -135,8 +136,8 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "book_info":
         return "book_info"
 
-    # 如果是无法分类的问题，路由到默认处理节点
-    if query_type == "default":
+    # 如果是无法分类或闲聊/问候，路由到默认处理节点
+    if query_type in ("default", "greeting"):
         return "default"
 
     # 图书推荐需求，进入推荐流程

@@ -29,6 +29,10 @@ logging.basicConfig(
 logging.root.setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 过滤 Pydantic v2 序列化警告（LangChain 内部问题）
+import warnings
+warnings.filterwarnings("ignore", message="Pydantic serializer warnings")
+
 load_dotenv()
 
 # 全局Redis客户端

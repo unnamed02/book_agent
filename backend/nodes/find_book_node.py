@@ -23,9 +23,12 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
 
     session = state["session"]
 
-    # 从槽位字典中获取书名列表
-    slots = state.get("slots") or {}
-    book_titles = slots.get("book_titles", [])
+    # 从槽位对象中获取书名列表
+    slots_obj = state.get("slots")
+    if slots_obj and hasattr(slots_obj, 'book_titles'):
+        book_titles = slots_obj.book_titles
+    else:
+        book_titles = []
 
     # 构建查询输入
     if book_titles:

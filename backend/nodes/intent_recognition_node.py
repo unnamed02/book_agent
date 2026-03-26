@@ -3,15 +3,59 @@
 """
 
 import logging
-from typing import TYPE_CHECKING, Optional, Dict, Any
+from typing import TYPE_CHECKING, Optional, List, Union
+from abc import ABC
 from pydantic import BaseModel, Field
 from prompts.system_prompts import INTENT_RECOGNITION_SYSTEM_PROMPT
 
 
+# 定义槽位基类
+class IntentSlots(BaseModel, ABC):
+    """意图槽位的抽象基类"""
+    pass
+
+
+# 为每种意图类型定义独立的槽位模型
+class FindBookSlots(IntentSlots):
+    """找书意图的槽位"""
+    book_titles: Optional[List[str]] = Field(default=None, description="书名列表")
+    author: Optional[List[str]] = Field(default=None, description="作者列表")
+
+
+class RecommendBookSlots(IntentSlots):
+    """推荐书籍意图的槽位"""
+    topic: str = Field(description="推荐主题或类型")
+
+
+class BookInfoSlots(IntentSlots):
+    """书籍信息查询的槽位（版本比较、梗概、导读等）"""
+    query: str = Field(description="查询类型描述，如：版本比较、梗概介绍、导读、书评等")
+    book_title: Optional[str] = Field(default=None, description="书名")
+    author: Optional[str] = Field(default=None, description="作者")
+    pub_info: Optional[List[str]] = Field(default=None, description="版本信息列表（出版社、译者等）")
+
+
+class DefaultQuerySlots(IntentSlots):
+    """默认查询（闲聊等）的槽位"""
+    query_context: str = Field(description="查询上下文")
+
+
+class CustomerServiceSlots(IntentSlots):
+    """客服咨询的槽位"""
+    question: str = Field(description="用户问题")
+
+
 class IntentRecognitionResponse(BaseModel):
     """意图识别响应结构"""
-    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/default")
-    slots: Dict[str, Any] = Field(default_factory=dict, description="槽位数据字典")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/default/greeting")
+
+    # 使用联合类型表示槽位
+    slots: Optional[Union[FindBookSlots, RecommendBookSlots, BookInfoSlots, DefaultQuerySlots, CustomerServiceSlots]] = Field(
+        default=None,
+        description="槽位信息，根据 query_type 自动选择对应的槽位类型"
+    )
+
+    # 是否需要反问
     missing_info: Optional[str] = Field(default=None, description="缺失的信息类型：book_title/topic/none")
 
 
@@ -50,14 +94,13 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
         state["query_type"] = result.query_type
         logger.info(f"意图: {result.query_type}")
 
-        slots = result.slots or {}
-
         # 检查槽位是否完整
         if result.missing_info and result.missing_info != "none":
             # book_info 类型：有 title 或 author 任一就不反问
             if result.query_type == "book_info":
-                has_title = slots.get("book_title")
-                has_author = slots.get("author")
+                slots = result.slots
+                has_title = slots and getattr(slots, "book_title", None)
+                has_author = slots and getattr(slots, "author", None)
                 if has_title or has_author:
                     state["slots"] = slots
                     logger.debug(f"槽位: {slots}")
@@ -65,8 +108,9 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
 
             # find_book 类型：有 title 或 author 任一就不反问
             if result.query_type == "find_book":
-                has_title = slots.get("book_titles") and len(slots["book_titles"]) > 0
-                has_author = slots.get("author") and len(slots["author"]) > 0
+                slots = result.slots
+                has_title = slots and getattr(slots, "book_titles", None) and len(slots.book_titles) > 0
+                has_author = slots and getattr(slots, "author", None) and len(slots.author) > 0
                 if has_title or has_author:
                     state["slots"] = slots
                     logger.debug(f"槽位: {slots}")
@@ -85,9 +129,10 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
             state["final_response"] = clarify_response
             logger.info(f"信息不足，生成反问: {clarify_response}")
         else:
-            # 信息完整，保存槽位字典到状态
-            state["slots"] = slots
-            logger.debug(f"槽位: {slots}")
+            # 信息完整，保存槽位对象到状态
+            if result.slots:
+                state["slots"] = result.slots
+                logger.debug(f"槽位: {result.slots}")
 
     except Exception as e:
         error_msg = str(e)
@@ -99,6 +144,6 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
 
         # 失败时使用默认路由
         state["query_type"] = "default"
-        state["slots"] = {"query_context": user_query, "book_titles": []}
+        state["slots"] = DefaultQuerySlots(query_context=user_query)
 
     return state

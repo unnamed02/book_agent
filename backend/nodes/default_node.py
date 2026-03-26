@@ -22,9 +22,12 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
     """
     logger.debug("[节点] handle_default_query")
 
-    # 从槽位字典中获取查询上下文
-    slots = state.get("slots") or {}
-    query_context = slots.get("query_context", "")
+    # 从槽位对象中获取查询上下文
+    slots_obj = state.get("slots")
+    if slots_obj and hasattr(slots_obj, 'query_context'):
+        query_context = slots_obj.query_context
+    else:
+        query_context = ""
 
     # 使用槽位中的上下文，如果没有则降级到原始查询
     query_input = query_context if query_context else state["user_query"]

@@ -30,15 +30,22 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
     """
     logger.debug("[节点] handle_book_info")
 
-    # 从槽位字典中获取书名、作者、查询类型和版本信息
-    slots = state.get("slots") or {}
-    book_title = slots.get("book_title", "")
-    query = slots.get("query", "相关信息")
-    author = slots.get("author")
-    pub_info = slots.get("pub_info") or []
+    # 调试：打印完整的 slots 对象
+    slots_obj = state.get("slots")
+    logger.debug(f"slots类型: {type(slots_obj)}")
+    logger.debug(f"slots内容: {slots_obj}")
 
-    logger.debug(f"slots类型: {type(slots)}")
-    logger.debug(f"slots内容: {slots}")
+    # 从槽位对象中获取书名、作者、查询类型和版本信息
+    if slots_obj and hasattr(slots_obj, 'book_title'):
+        book_title = slots_obj.book_title
+        query = getattr(slots_obj, 'query', None)
+        author = getattr(slots_obj, 'author', None)
+        pub_info = getattr(slots_obj, 'pub_info', None) or []
+    else:
+        book_title = ""
+        author = None
+        query = '相关信息'
+        pub_info = []
 
     # 构建查询输入
     if book_title:

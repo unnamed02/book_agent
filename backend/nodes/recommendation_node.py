@@ -24,9 +24,12 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
 
     session = state["session"]
 
-    # 从槽位字典中获取推荐主题
-    slots = state.get("slots") or {}
-    topic = slots.get("topic", "")
+    # 从槽位对象中获取推荐主题
+    slots_obj = state.get("slots")
+    if slots_obj and hasattr(slots_obj, 'topic'):
+        topic = slots_obj.topic
+    else:
+        topic = ""
 
     # 构建查询输入
     if topic:
