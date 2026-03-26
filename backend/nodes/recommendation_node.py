@@ -1,12 +1,9 @@
 """
-推荐节点 - 生成人类可读的推荐书单（流式输出）
+推荐节点 - 流式生成人类可读的推荐书单
 """
 
 import logging
-import json
-import asyncio
 from typing import TYPE_CHECKING
-from langchain_core.messages import HumanMessage, AIMessage
 from prompts.system_prompts import BOOK_RECOMMENDATION_STREAMING_PROMPT
 
 if TYPE_CHECKING:
@@ -27,12 +24,9 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
 
     session = state["session"]
 
-    # 从槽位对象中获取推荐主题
-    slots_obj = state.get("slots")
-    if slots_obj and hasattr(slots_obj, 'topic'):
-        topic = slots_obj.topic
-    else:
-        topic = ""
+    # 从槽位字典中获取推荐主题
+    slots = state.get("slots") or {}
+    topic = slots.get("topic", "")
 
     # 构建查询输入
     if topic:
@@ -78,11 +72,11 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
 
         if "data_inspection_failed" in error_msg or "inappropriate content" in error_msg:
             state["error"] = "内容审核失败"
-            state["dialogue_response"] = "抱歉，内容触发了审核。"
+            state["book_list_text"] = ""
+            state["dialogue_response"] = "抱歉，推荐内容触发了审核。"
         else:
-            state["error"] = f"推荐生成失败: {error_msg}"
+            state["error"] = f"生成失败: {error_msg}"
+            state["book_list_text"] = ""
             state["dialogue_response"] = "抱歉，生成推荐时出现错误。"
-
-        state["book_list_text"] = ""
 
     return state

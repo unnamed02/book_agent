@@ -22,12 +22,9 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
     """
     logger.debug("[节点] handle_default_query")
 
-    # 从槽位对象中获取查询上下文
-    slots_obj = state.get("slots")
-    if slots_obj and hasattr(slots_obj, 'query_context'):
-        query_context = slots_obj.query_context
-    else:
-        query_context = ""
+    # 从槽位字典中获取查询上下文
+    slots = state.get("slots") or {}
+    query_context = slots.get("query_context", "")
 
     # 使用槽位中的上下文，如果没有则降级到原始查询
     query_input = query_context if query_context else state["user_query"]
@@ -52,46 +49,54 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
                 {"role": "system", "content": DEFAULT_QUERY_SYSTEM_PROMPT},
                 {"role": "user", "content": query_input}
             ],
-            enable_search=True,
             result_format="message",
             stream=True,
             incremental_output=True
         )
 
         full_response = ""
-
-        # 流式处理响应
         async for resp in responses:
             if resp.status_code == 200:
-                # 提取思考内容
-                reasoning_content_chunk = resp.output.choices[0].message.get("reasoning_content", None)
-                if reasoning_content_chunk is not None:
-                    dispatch_custom_event(
-                        "on_tongyi_thinking",
-                        {"chunk": reasoning_content_chunk}
-                    )
-
                 # 提取正文内容
                 content = resp.output.choices[0].message.content
                 if content:
+                    full_response += content
+                    # 发送自定义事件供外层捕获
                     dispatch_custom_event(
                         "on_tongyi_chat",
                         {"chunk": content}
                     )
-                    state["streaming_tokens"].append(content)
-                    full_response += content
             else:
-                raise Exception(f"DashScope Error: {resp.message}")
+                # 处理错误
+                error_msg = f"API错误: {resp.code} - {resp.message}"
+                logger.error(error_msg)
+                state["error"] = error_msg
+                state["final_response"] = "抱歉，服务暂时不可用，请稍后再试。"
+                return state
 
-        logger.info(f"默认回复完成，长度: {len(full_response)}")
-
+        # 保存完整响应
         state["dialogue_response"] = full_response
         state["final_response"] = full_response
+        logger.info(f"默认回复完成，长度: {len(full_response)}")
+
+        # 保存到会话历史
+        session = state.get("session")
+        if session:
+            from langchain_core.messages import AIMessage
+            session.conversation_messages.append(AIMessage(content=full_response))
 
     except Exception as e:
-        logger.error(f"默认回复生成失败: {e}", exc_info=True)
-        state["error"] = str(e)
-        state["dialogue_response"] = "抱歉，我暂时无法回答您的问题。"
-        state["final_response"] = state["dialogue_response"]
+        error_msg = str(e)
+        logger.error(f"默认回复生成失败: {error_msg}", exc_info=True)
+
+        # 判断是否是内容审核失败
+        if "data_inspection_failed" in error_msg or "inappropriate content" in error_msg:
+            state["error"] = "内容审核失败"
+            state["dialogue_response"] = "抱歉，内容触发了审核。"
+            state["final_response"] = "抱歉，内容触发了审核。"
+        else:
+            state["error"] = f"生成失败: {error_msg}"
+            state["dialogue_response"] = "抱歉，处理您的请求时出现错误。"
+            state["final_response"] = "抱歉，处理您的请求时出现错误。"
 
     return state

@@ -27,7 +27,7 @@ from nodes import (
     handle_default_query,
     handle_book_info
 )
-from nodes.intent_recognition_node import IntentSlots
+
 from session.session import Session
 from service.knowledge_base_tool import RAGCustomerService
 
@@ -83,7 +83,7 @@ class BookRecommendationState(TypedDict):
 
     # 路由结果
     query_type: str  # "book_recommendation" | "customer_service" | "find_book"
-    slots: Optional[IntentSlots]  # 槽位信息（IntentSlots 对象）
+    slots: Optional[Dict[str, Any]]  # 槽位信息字典
 
     # 推荐结果
     recommended_books: List[Dict]  # [{"title": "", "author": "", "reason": ""}]

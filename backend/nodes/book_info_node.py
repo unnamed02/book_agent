@@ -1,17 +1,16 @@
 """
-书籍信息查询节点 - 处理书籍相关的各种查询（版本比较、梗概、导读等）
+书籍信息查询节点 - 处理版本比较、梗概、导读等
 """
 
+import asyncio
+import json
 import logging
 import os
-import json
-import asyncio
 from typing import TYPE_CHECKING
-import dashscope
-from prompts.system_prompts import BOOK_INFO_SYSTEM_PROMPT
 from dashscope import AioGeneration
 from langchain_core.callbacks.manager import dispatch_custom_event
-from langchain_core.messages import HumanMessage, AIMessage
+from langchain_core.messages import AIMessage
+from prompts.system_prompts import BOOK_INFO_SYSTEM_PROMPT
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -21,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendationState":
     """
-    节点: 查询书籍信息
+    节点: 处理书籍信息查询
 
     使用联网搜索功能，回答关于特定书籍的各种问题：
     - 版本比较：比较不同出版社、译者的版本差异，给出推荐意见
@@ -31,22 +30,15 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
     """
     logger.debug("[节点] handle_book_info")
 
-    # 调试：打印完整的 slots 对象
-    slots_obj = state.get("slots")
-    logger.debug(f"slots类型: {type(slots_obj)}")
-    logger.debug(f"slots内容: {slots_obj}")
+    # 从槽位字典中获取书名、作者、查询类型和版本信息
+    slots = state.get("slots") or {}
+    book_title = slots.get("book_title", "")
+    query = slots.get("query", "相关信息")
+    author = slots.get("author")
+    pub_info = slots.get("pub_info") or []
 
-    # 从槽位对象中获取书名、作者、查询类型和版本信息
-    if slots_obj and hasattr(slots_obj, 'book_title'):
-        book_title = slots_obj.book_title
-        query = getattr(slots_obj, 'query', None)
-        author = getattr(slots_obj, 'author', None)
-        pub_info = getattr(slots_obj, 'pub_info', None) or []
-    else:
-        book_title = ""
-        author = None
-        query = '相关信息'
-        pub_info = []
+    logger.debug(f"slots类型: {type(slots)}")
+    logger.debug(f"slots内容: {slots}")
 
     # 构建查询输入
     if book_title:
@@ -83,47 +75,35 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                 {"role": "system", "content": BOOK_INFO_SYSTEM_PROMPT},
                 {"role": "user", "content": query_input}
             ],
-            enable_search=True,
-            # enable_thinking=True,
-            search_options={
-                "enable_source": True,
-                "prepend_search_result": True,  # 首包只返回搜索来源
-                "search_strategy": "agent",
-                "enable_citation": True,     # 开启角标标注
-                "citation_format": "[ref_<number>]", # 设置角标样式
-                "forced_search": True,
-                "assigned_site_list": ["book.douban.com","search.douban.com/book/"],  # 仅从豆瓣检索
-                "intention_options": {
-                    "prompt_intervene": "优先去https://search.douban.com/book/subject_search?{book_title}搜书名"
-                }
-            },
             result_format="message",
             stream=True,
-            incremental_output=True
+            incremental_output=True,
+            enable_search=True,
+            search_options={
+                "enable_source": True,
+                "enable_citation": True,
+                "citation_format": "【index】"
+            }
         )
 
         full_response = ""
         first_chunk = True
         last_resp = None
 
-        # 流式处理响应
         async for resp in responses:
             if resp.status_code == 200:
                 last_resp = resp
-                # 1. 提取搜索来源（首包）
+                # 提取搜索来源（首包）
                 if first_chunk:
                     search_info = resp.output.get("search_info", {})
                     if search_info and "search_results" in search_info:
-                        search_results = search_info["search_results"]
-
-                        # 发送搜索结果事件
                         dispatch_custom_event(
                             "on_search_results",
-                            {"search_results": search_results}
+                            {"search_results": search_info["search_results"]}
                         )
                     first_chunk = False
 
-                # 2. 提取思考内容
+                # 提取思考内容
                 reasoning_content_chunk = resp.output.choices[0].message.get("reasoning_content", None)
                 if reasoning_content_chunk is not None:
                     dispatch_custom_event(
@@ -131,17 +111,22 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
                         {"chunk": reasoning_content_chunk}
                     )
 
-                # 3. 提取正文内容
+                # 提取正文内容
                 content = resp.output.choices[0].message.content
                 if content:
                     dispatch_custom_event(
-                    "on_tongyi_chat",
-                    {"chunk": content}
+                        "on_tongyi_chat",
+                        {"chunk": content}
                     )
                     full_response += content
                     state["streaming_tokens"].append(content)
             else:
-                raise Exception(f"DashScope Error: {resp.message}")
+                error_msg = f"API错误: {resp.code} - {resp.message}"
+                logger.error(error_msg)
+                state["error"] = error_msg
+                state["dialogue_response"] = "抱歉，服务暂时不可用，请稍后再试。"
+                state["final_response"] = "抱歉，服务暂时不可用，请稍后再试。"
+                return state
 
         # 打印最后一个响应的 token 用量
         if last_resp and last_resp.usage:
@@ -162,12 +147,19 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
             # 异步写入 Redis
             if session.redis_client:
                 ai_msg = json.dumps({"type": "ai", "content": full_response}, ensure_ascii=False)
-                asyncio.create_task(session.redis_client.rpush(session.redis_key, ai_msg))
+                asyncio.create_task(session.bg_write(None, ai_msg))
 
     except Exception as e:
-        logger.error(f"书籍信息查询失败: {e}", exc_info=True)
-        state["error"] = str(e)
-        state["dialogue_response"] = "抱歉，查询书籍信息时出现错误。"
-        state["final_response"] = state["dialogue_response"]
+        error_msg = str(e)
+        logger.error(f"书籍信息查询失败: {error_msg}", exc_info=True)
+
+        if "data_inspection_failed" in error_msg or "inappropriate content" in error_msg:
+            state["error"] = "内容审核失败"
+            state["dialogue_response"] = "抱歉，内容触发了审核。"
+            state["final_response"] = "抱歉，内容触发了审核。"
+        else:
+            state["error"] = f"查询失败: {error_msg}"
+            state["dialogue_response"] = "抱歉，查询书籍信息时出现错误。"
+            state["final_response"] = "抱歉，查询书籍信息时出现错误。"
 
     return state
