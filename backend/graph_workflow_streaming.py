@@ -297,20 +297,19 @@ async def stream_recommendation_workflow_enhanced(
                 # 在 generate_recommendations、find_book、default 和 book_info 节点输出 token
                 # parse_book_list 节点不输出 token（后台解析）
                 if hasattr(chunk, "content") and chunk.content and current_node in ["generate_recommendations", "find_book", "default", "book_info"]:
-                    token = re.sub(r'^\d+\.\s+', '', chunk.content)
                     yield {
                         "type": "token",
-                        "content": token,
+                        "content": chunk.content,
                         "node": current_node
                     }
 
             elif event_type == "on_custom_event" and event["name"] == "on_tongyi_chat":
-                token = re.sub(r'^\d+\.\s+', '', event["data"]["chunk"])
+                chunk = event["data"]["chunk"]
 
-                if token:
+                if chunk:
                     yield {
                         "type": "token",
-                        "content": token,
+                        "content": chunk,
                         "node": current_node
                     }
 
