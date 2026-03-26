@@ -19,7 +19,7 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
     类似推荐节点，先流式输出告诉用户正在查找哪些书
     然后交给 parse_book_list 节点解析书名
     """
-    logger.info("📍 节点: handle_find_book")
+    logger.debug("[节点] handle_find_book")
 
     session = state["session"]
 
@@ -37,7 +37,7 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
         # 降级到使用原始查询
         query_input = state["user_query"]
 
-    logger.info(f"📚 从槽位提取的书名: {book_titles}")
+    logger.debug(f"书名: {book_titles}")
 
     # 设置系统提示词
     session.set_system_context(FIND_BOOK_SYSTEM_PROMPT)
@@ -57,7 +57,7 @@ async def handle_find_book(state: "BookRecommendationState") -> "BookRecommendat
         # 保存生成的书单文本，供后续解析
         state["book_list_text"] = book_list_text
         state["dialogue_response"] = book_list_text
-        logger.info(f"✓ 生成查找书籍列表: {len(book_list_text)} 字符")
+        logger.info(f"查找书籍列表生成: {len(book_list_text)}字符")
 
     except Exception as e:
         error_msg = str(e)

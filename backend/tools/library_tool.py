@@ -54,7 +54,7 @@ def search_library_collection(title: str, author: str) -> list:
         bookrecnos = list(books_info.keys())
 
         if not bookrecnos:
-            logger.info(f"未找到《{title}》的馆藏信息")
+            logger.debug(f"馆藏未找到: {title}")
             return []
 
         # 第二步：获取馆藏详情
@@ -79,7 +79,7 @@ def search_library_collection(title: str, author: str) -> list:
                         'available': holding.get('loanableCount', 0)
                     })
 
-        logger.info(f"找到 {len(lib_items)} 条馆藏记录")
+        logger.debug(f"馆藏记录: {len(lib_items)}条")
         return lib_items
 
     except Exception as e:

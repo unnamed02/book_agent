@@ -73,7 +73,7 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
     2. 提取该类型所需的槽位信息
     3. 如果信息不足，生成反问
     """
-    logger.info("📍 节点: recognize_intent")
+    logger.debug("[节点] recognize_intent")
 
     session = state["session"]
     user_query = state["user_query"]
@@ -91,7 +91,7 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
         )
 
         state["query_type"] = result.query_type
-        logger.info(f"✓ 意图识别: type={result.query_type}")
+        logger.info(f"意图: {result.query_type}")
 
         # 检查槽位是否完整
         if result.missing_info and result.missing_info != "none":
@@ -102,7 +102,7 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
                 has_author = slots and getattr(slots, "author", None)
                 if has_title or has_author:
                     state["slots"] = slots
-                    logger.info(f"✓ 槽位填充完成: {slots}")
+                    logger.debug(f"槽位: {slots}")
                     return state
 
             # find_book 类型：有 title 或 author 任一就不反问
@@ -112,7 +112,7 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
                 has_author = slots and getattr(slots, "author", None) and len(slots.author) > 0
                 if has_title or has_author:
                     state["slots"] = slots
-                    logger.info(f"✓ 槽位填充完成: {slots}")
+                    logger.debug(f"槽位: {slots}")
                     return state
 
             # 信息不足，生成反问并直接结束

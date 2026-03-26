@@ -54,7 +54,7 @@ async def upsert_messages_to_db(db, session_id: str, messages: List):
 
 
 async def compact_redis_to_db():
-    logger.info("开始 Redis compact 任务...")
+    logger.debug("开始Redis compact任务")
     try:
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
         redis_client = await redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
@@ -62,7 +62,7 @@ async def compact_redis_to_db():
         keys = await redis_client.smembers('needs_compact_list')
         if not keys:
             await redis_client.aclose()
-            logger.info("Compact 任务完成")
+            logger.debug("Compact任务完成")
             return 0
 
         archived_count = 0
@@ -92,7 +92,7 @@ async def compact_redis_to_db():
                     await redis_client.srem('needs_compact_list', key)
 
                     archived_count += 1
-                    logger.info(f"已归档会话: {session_id}，保留最后 {KEEP_LATEST_COUNT} 条")
+                    logger.debug(f"归档会话: {session_id}")
 
                 except Exception as e:
                     logger.error(f"归档会话失败 {key}: {e}")
@@ -100,7 +100,7 @@ async def compact_redis_to_db():
 
         remaining = await redis_client.scard('needs_compact_list')
         await redis_client.aclose()
-        logger.info(f"Compact 任务完成，归档 {archived_count} 个会话，剩余 {remaining} 个待处理")
+        logger.info(f"Compact完成: 归档{archived_count}个会话")
         return archived_count
 
     except Exception as e:
@@ -109,7 +109,7 @@ async def compact_redis_to_db():
 
 
 async def merge_archive_sessions():
-    logger.info("开始处理合并归档队列...")
+    logger.debug("开始合并归档队列")
     try:
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
         redis_client = await redis.from_url(redis_url, encoding="utf-8", decode_responses=True)
@@ -141,14 +141,14 @@ async def merge_archive_sessions():
                     await redis_client.srem('merge_archive_list', key)
 
                     merged_count += 1
-                    logger.info(f"已合并归档会话: {session_id}")
+                    logger.debug(f"合并归档: {session_id}")
 
                 except Exception as e:
                     logger.error(f"合并归档会话失败 {key}: {e}")
                     continue
 
         await redis_client.aclose()
-        logger.info(f"合并归档任务完成，归档 {merged_count} 个会话")
+        logger.info(f"合并归档完成: {merged_count}个会话")
         return merged_count
 
     except Exception as e:

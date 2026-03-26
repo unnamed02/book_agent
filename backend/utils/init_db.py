@@ -22,7 +22,7 @@ async def init_database():
         # 创建所有表
         await db_manager.init_db()
 
-        logger.info("✅ 数据库初始化成功!")
+        logger.info("数据库初始化成功")
 
         # 关闭连接
         await db_manager.close()
@@ -30,7 +30,7 @@ async def init_database():
         return True
 
     except Exception as e:
-        logger.error(f"❌ 数据库初始化失败: {e}")
+        logger.error(f"数据库初始化失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -39,7 +39,7 @@ async def init_database():
 async def reset_database():
     """重置数据库(删除所有表并重建)"""
     try:
-        logger.warning("⚠️  警告: 即将删除所有数据库表!")
+        logger.warning("警告: 即将删除所有数据库表!")
         response = input("确认要重置数据库吗? (yes/no): ")
 
         if response.lower() != "yes":
@@ -53,20 +53,20 @@ async def reset_database():
         # 删除所有表
         async with db_manager.engine.begin() as conn:
             await conn.run_sync(Base.metadata.drop_all)
-            logger.info("✅ 已删除所有表")
+            logger.info("已删除所有表")
 
         # 重建所有表
         async with db_manager.engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-            logger.info("✅ 已重建所有表")
+            logger.info("已重建所有表")
 
         await db_manager.close()
 
-        logger.info("✅ 数据库重置完成!")
+        logger.info("数据库重置完成")
         return True
 
     except Exception as e:
-        logger.error(f"❌ 数据库重置失败: {e}")
+        logger.error(f"数据库重置失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -83,7 +83,7 @@ async def check_database():
         async with db_manager.async_session_maker() as session:
             from sqlalchemy import text
             result = await session.execute(text("SELECT 1"))
-            logger.info("✅ 数据库连接成功!")
+            logger.info("数据库连接成功")
 
         # 检查表是否存在
         async with db_manager.engine.begin() as conn:
@@ -104,13 +104,13 @@ async def check_database():
                 logger.info("如需创建表，请运行: python init_db.py --init")
                 return True
             else:
-                logger.info("✅ 数据库检查完成!")
+                logger.info("数据库检查完成")
                 return True
 
         await db_manager.close()
 
     except Exception as e:
-        logger.error(f"❌ 数据库检查失败: {e}")
+        logger.error(f"数据库检查失败: {e}")
         import traceback
         traceback.print_exc()
         return False
@@ -126,7 +126,7 @@ def print_usage():
 
 命令:
     --init      初始化数据库(创建表)
-    --reset     重置数据库(删除所有表并重建) ⚠️ 危险操作
+    --reset     重置数据库(删除所有表并重建) 危险操作
     --check     检查数据库状态
     --help      显示此帮助信息
 

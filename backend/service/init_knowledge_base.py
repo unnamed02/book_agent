@@ -55,7 +55,7 @@ async def initialize_knowledge_base(
         # 初始化知识库
         await kb.initialize_kb(default_knowledge)
 
-        logger.info("✅ 知识库初始化完成！")
+        logger.info("知识库初始化完成")
         logger.info(f"  - Milvus URI: {milvus_uri}")
         logger.info(f"  - 集合名称: {collection_name}")
         logger.info(f"  - 文档数量: {len(default_knowledge)}")
@@ -63,7 +63,7 @@ async def initialize_knowledge_base(
         return kb
 
     except Exception as e:
-        logger.error(f"❌ 知识库初始化失败: {e}")
+        logger.error(f"知识库初始化失败: {e}")
         raise
 
 
@@ -156,7 +156,7 @@ async def add_custom_knowledge(kb: KnowledgeBase):
         category=custom_knowledge["category"]
     )
 
-    logger.info(f"✅ 成功添加知识: {custom_knowledge['title']}")
+    logger.info(f"添加知识: {custom_knowledge['title']}")
 
 
 async def main():
@@ -185,7 +185,7 @@ async def main():
             logger.info(f"找到: {docs[0].metadata.get('title')}")
             logger.info(f"内容: {docs[0].page_content}")
 
-        logger.info("\n🎉 所有测试完成！")
+        logger.info("所有测试完成")
 
     except Exception as e:
         logger.error(f"执行失败: {e}", exc_info=True)

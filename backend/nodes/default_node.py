@@ -20,7 +20,7 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
 
     对于无法归类到图书推荐、找书、客服的问题，使用 LLM 直接回答
     """
-    logger.info("📍 节点: handle_default_query")
+    logger.debug("[节点] handle_default_query")
 
     # 从槽位对象中获取查询上下文
     slots_obj = state.get("slots")
@@ -32,13 +32,13 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
     # 使用槽位中的上下文，如果没有则降级到原始查询
     query_input = query_context if query_context else state["user_query"]
 
-    logger.info(f"📚 从槽位提取的上下文: {query_context[:50] if query_context else '(空)'}")
+    logger.debug(f"上下文: {query_context[:50] if query_context else '(空)'}")
 
     try:
         # 导入系统提示词
         from prompts.system_prompts import DEFAULT_QUERY_SYSTEM_PROMPT
 
-        logger.info(f"🚀 开始生成默认回复，查询: {query_input[:50]}...")
+        logger.info(f"开始生成回复: {query_input[:50]}...")
 
         # 初始化 streaming_tokens 列表
         if state.get("streaming_tokens") is None:
@@ -83,7 +83,7 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
             else:
                 raise Exception(f"DashScope Error: {resp.message}")
 
-        logger.info(f"✓ 默认回复生成完成，长度: {len(full_response)}")
+        logger.info(f"默认回复完成，长度: {len(full_response)}")
 
         state["dialogue_response"] = full_response
         state["final_response"] = full_response

@@ -23,7 +23,7 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
     1. 首先，用2-3句话说明推荐思路
     2. 然后，列出推荐的书籍，每本书一行，格式：《书名》 - 作者：推荐理由
     """
-    logger.info("📍 节点: handle_recommendation")
+    logger.debug("[节点] handle_recommendation")
 
     session = state["session"]
 
@@ -41,7 +41,7 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
         # 降级到使用原始查询
         query_input = state["user_query"]
 
-    logger.info(f"从槽位提取的主题: {topic}")
+    logger.debug(f"主题: {topic}")
 
     # 设置人类可读书单生成提示词
     session.set_system_context(BOOK_RECOMMENDATION_STREAMING_PROMPT)
@@ -53,7 +53,7 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
 
         full_response = ""
 
-        logger.info(f"🚀 开始流式生成推荐，查询: {query_input[:50]}...")
+        logger.info(f"开始生成推荐: {query_input[:50]}...")
 
         # 流式生成人类可读的书单
         async for token in session.astream(
@@ -69,8 +69,8 @@ async def handle_recommendation(state: "BookRecommendationState") -> "BookRecomm
         # 保存完整的书单文本
         state["book_list_text"] = full_response
         state["dialogue_response"] = full_response
-        logger.info(f"✓ 书单生成完成，长度: {len(full_response)}")
-        logger.info(f"📝 生成的书单内容: {full_response[:300]}...")
+        logger.info(f"书单生成完成，长度: {len(full_response)}")
+        logger.debug(f"书单内容: {full_response[:300]}...")
 
     except Exception as e:
         error_msg = str(e)

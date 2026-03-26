@@ -43,7 +43,7 @@ def optimize_query(query: str) -> str:
     # 清理多余空格
     query = re.sub(r'\s+', ' ', query).strip()
 
-    logger.info(f"Query优化: '{query}' (正则优化)")
+    logger.debug(f"Query优化: {query}")
     return query
 
 
@@ -58,7 +58,7 @@ def search_douban_book(title: str, author: str, use_llm_optimize: bool = True) -
     else:
         query = f"{title} {author}"
 
-    logger.info(f"开始搜索图书: {query}")
+    logger.debug(f"搜索豆瓣: {query}")
     try:
         url = f"https://frodo.douban.com/api/v2/search/book?q={query}&count=3&apiKey={DOUBAN_API_KEY}"
         headers = {
@@ -83,7 +83,7 @@ def search_douban_book(title: str, author: str, use_llm_optimize: bool = True) -
                 "uri": target.get("uri", "").split("/")[-1] if target.get("uri") else ""
             }
         else:
-            logger.info(f"未找到《{title}》的豆瓣信息")
+            logger.debug(f"豆瓣未找到: {title}")
             return {}
     except Exception as e:
         logger.error(f"搜索失败: {str(e)}")

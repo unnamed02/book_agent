@@ -49,7 +49,7 @@ class KnowledgeBase:
             separators=["\n\n", "\n", "。", "！", "?", ".", "!", "?"]
         )
 
-        logger.info(f"知识库初始化完成: {collection_name}")
+        logger.debug(f"知识库初始化: {collection_name}")
 
     async def initialize_kb(self, knowledge_docs: List[Dict]):
         """
@@ -87,7 +87,7 @@ class KnowledgeBase:
                     self.vectorstore.add_documents,
                     documents
                 )
-                logger.info(f"✓ 知识库初始化完成: {len(documents)} 个文档块")
+                logger.info(f"知识库初始化完成: {len(documents)}个文档")
 
         except Exception as e:
             logger.error(f"初始化知识库失败: {e}")
@@ -126,7 +126,7 @@ class KnowledgeBase:
                 **search_kwargs
             )
 
-            logger.info(f"检索到 {len(docs)} 个相关知识片段")
+            logger.debug(f"检索到{len(docs)}个知识片段")
             return docs
 
         except Exception as e:
@@ -173,7 +173,7 @@ class KnowledgeBase:
                 documents
             )
 
-            logger.info(f"✓ 添加知识: {title}")
+            logger.debug(f"添加知识: {title}")
 
         except Exception as e:
             logger.error(f"添加知识失败: {e}")

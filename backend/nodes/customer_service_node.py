@@ -20,7 +20,7 @@ async def handle_customer_service(state: "BookRecommendationState") -> "BookReco
 
     使用知识库检索 + LLM 生成，提供更准确的回答
     """
-    logger.info("📍 节点: handle_customer_service (RAG)")
+    logger.debug("[节点] handle_customer_service (RAG)")
 
     user_query = state["user_query"]
     rag_service = state.get("rag_service")
@@ -53,19 +53,19 @@ async def handle_customer_service(state: "BookRecommendationState") -> "BookReco
 
             # 如果置信度较低，添加提示
             if confidence < 0.5 and sources:
-                answer += "\n\n💡 *以上回答基于系统知识库，如需更多帮助请提供更多细节。*"
+                answer += "\n\n*以上回答基于系统知识库，如需更多帮助请提供更多细节。*"
             elif not sources:
-                answer += "\n\n💡 *如需更详细的帮助，欢迎联系人工客服。*"
+                answer += "\n\n*如需更详细的帮助，欢迎联系人工客服。*"
 
             # 添加知识来源（如果有）
             if sources:
-                source_text = "\n\n📚 **参考来源**: " + "、".join(sources)
+                source_text = "\n\n**参考来源**: " + "、".join(sources)
                 answer += source_text
 
             state["final_response"] = answer
             state["dialogue_response"] = answer
 
-            logger.info(f"✓ RAG 客服响应生成完成 (置信度: {confidence:.2f})")
+            logger.info(f"客服响应完成 (置信度: {confidence:.2f})")
 
         except Exception as e:
             logger.error(f"RAG 客服失败，回退到默认模式: {e}")
@@ -103,5 +103,5 @@ async def _fallback_customer_service(state: "BookRecommendationState") -> "BookR
     state["final_response"] = cs_response
     state["dialogue_response"] = cs_response
 
-    logger.info("✓ 默认客服响应生成完成")
+    logger.info("客服响应完成")
     return state

@@ -19,13 +19,13 @@ async def parse_book_list(state: "BookRecommendationState") -> "BookRecommendati
     1. 用 LLM 从文本中提取书籍信息
     2. 调用 fetch_book_details 获取详情
     """
-    logger.info("📍 节点: parse_book_list")
+    logger.debug("[节点] parse_book_list")
 
     session = state["session"]
     book_list_text = state.get("book_list_text", "")
 
-    logger.info(f"📝 书单文本长度: {len(book_list_text)}")
-    logger.info(f"📝 书单文本内容: {book_list_text[:200]}...")
+    logger.debug(f"书单长度: {len(book_list_text)}")
+    logger.debug(f"书单内容: {book_list_text[:200]}...")
 
     if not book_list_text:
         logger.error("没有书单文本")
@@ -97,7 +97,7 @@ async def parse_book_list(state: "BookRecommendationState") -> "BookRecommendati
         ]
 
         state["recommended_books"] = books
-        logger.info(f"✓ 解析到 {len(books)} 本书籍: {[b['title'] for b in books]}")
+        logger.info(f"解析到{len(books)}本书")
 
         # 不直接调用 fetch_book_details，而是返回状态
         # 让工作流通过边自动路由到 fetch_book_details 节点

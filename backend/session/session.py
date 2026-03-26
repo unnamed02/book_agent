@@ -64,7 +64,7 @@ class Session:
         if system_context:
             self.system_message = SystemMessage(content=system_context)
 
-        logger.info(f"✓ 创建会话: {session_id} (用户: {user_id})")
+        logger.debug(f"创建会话: {session_id} (用户: {user_id})")
 
     @property
     def messages(self):
@@ -100,7 +100,7 @@ class Session:
         # 更新系统消息
         if system_prompt:
             self.system_message = SystemMessage(content=system_prompt)
-            logger.debug("✓ 系统上下文已设置")
+            logger.debug("系统上下文已设置")
         else:
             self.system_message = None
 
@@ -317,7 +317,7 @@ class Session:
                     logger.error(f"解析消息失败: {e}")
                     continue
 
-            logger.info(f"✓ 从 Redis 加载了 {len(messages_json)} 条消息（总共 {list_len} 条）")
+            logger.info(f"从Redis加载 {len(messages_json)} 条消息")
 
         except Exception as e:
             logger.error(f"从 Redis 加载对话历史失败: {e}")

@@ -29,12 +29,12 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
     - 导读：提供阅读建议和重点章节推荐
     - 其他书籍相关问题
     """
-    logger.info("📍 节点: handle_book_info")
+    logger.debug("[节点] handle_book_info")
 
     # 调试：打印完整的 slots 对象
     slots_obj = state.get("slots")
-    logger.info(f"🔍 slots 对象类型: {type(slots_obj)}")
-    logger.info(f"🔍 slots 对象内容: {slots_obj}")
+    logger.debug(f"slots类型: {type(slots_obj)}")
+    logger.debug(f"slots内容: {slots_obj}")
 
     # 从槽位对象中获取书名、作者、查询类型和版本信息
     if slots_obj and hasattr(slots_obj, 'book_title'):
@@ -63,17 +63,17 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
         # 降级到使用原始查询
         query_input = state["user_query"]
 
-    logger.info(f"📚 从槽位提取的书名: {book_title}")
-    logger.info(f"👤 作者: {author}")
-    logger.info(f"🔖 查询类型: {query}")
-    logger.info(f"📝 版本信息: {pub_info}")
+    logger.info(f"书名: {book_title}")
+    logger.info(f"作者: {author}")
+    logger.info(f"查询: {query}")
+    logger.debug(f"版本信息: {pub_info}")
 
     try:
         # 初始化 streaming_tokens 列表
         if state.get("streaming_tokens") is None:
             state["streaming_tokens"] = []
 
-        logger.info(f"🚀 开始书籍信息查询，查询: {query_input[:50]}...")
+        logger.info(f"开始书籍查询: {query_input[:50]}...")
 
         # 使用原生 DashScope API 进行流式调用
         responses = await AioGeneration.call(
@@ -146,9 +146,9 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
         # 打印最后一个响应的 token 用量
         if last_resp and last_resp.usage:
             usage = last_resp.usage
-            logger.info(f"📊 Token 用量 - 输入: {usage.input_tokens}, 输出: {usage.output_tokens}, 总计: {usage.total_tokens}")
+            logger.debug(f"Token: {usage.input_tokens}/{usage.output_tokens}/{usage.total_tokens}")
 
-        logger.info(f"✓ 书籍信息查询完成，长度: {len(full_response)}")
+        logger.info(f"书籍查询完成，长度: {len(full_response)}")
 
         state["dialogue_response"] = full_response
         state["final_response"] = full_response

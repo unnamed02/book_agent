@@ -67,7 +67,7 @@ def llm_filter_resources(results: List[ResourceResult], title: str, author: str)
         # 根据序号重新排序结果
         filtered_results = [results[i-1] for i in filtered_indices if 0 < i <= len(results)]
 
-        logger.info(f"LLM 筛选: 原始 {len(results)} 条 -> 筛选后 {len(filtered_results)} 条")
+        logger.debug(f"LLM筛选: {len(results)} -> {len(filtered_results)}")
         return filtered_results
 
     except Exception as e:
@@ -80,7 +80,7 @@ def search_digital_resource(title: str, author: str) -> List[ResourceResult]:
     Returns:
         资源列表，每项包含 source, title, author, publisher, link, isbn
     """
-    logger.info(f"搜索电子资源 - 书名: {title}, 作者: {author}")
+    logger.debug(f"搜索电子资源: {title}")
 
     # 使用线程池并发执行搜索任务
     with ThreadPoolExecutor(max_workers=2) as executor:
@@ -101,7 +101,7 @@ def search_digital_resource(title: str, author: str) -> List[ResourceResult]:
 
 def search_zhangyue_resource(title: str, author: str = "") -> List[ResourceResult]:
     """搜索掌阅资源"""
-    logger.info(f"开始搜索掌阅资源: {title}, 作者: {author}")
+    logger.debug(f"搜索掌阅: {title}")
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
         all_results: list[ResourceResult] = []
@@ -172,7 +172,7 @@ def search_zhangyue_resource(title: str, author: str = "") -> List[ResourceResul
 
 def search_cxstar_resource(title: str, author: str = "") -> str:
     """搜索畅想之星资源"""
-    logger.info(f"开始搜索畅想之星资源: {title}, 作者: {author}")
+    logger.debug(f"搜索畅想之星: {title}")
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
@@ -270,7 +270,7 @@ def search_cxstar_resource(title: str, author: str = "") -> str:
 
 def search_chineseall_resource(title: str, author: str = "") -> List[ResourceResult]:
     """搜索中文在线（书香陕西）资源"""
-    logger.info(f"开始搜索中文在线资源: {title}, 作者: {author}")
+    logger.debug(f"搜索中文在线: {title}")
     try:
         headers = {
             "Accept": "*/*",

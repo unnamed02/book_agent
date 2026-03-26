@@ -237,7 +237,7 @@ async def stream_recommendation_workflow_enhanced(
     使用 astream_events() 替代 astream()，提供更细粒度的流式控制
     """
 
-    logger.info(f"🚀 启动增强流式工作流 - 查询: {user_query[:50]}...")
+    logger.info(f"启动流式工作流: {user_query[:50]}...")
 
     # 创建图
     graph = create_recommendation_graph()
@@ -288,7 +288,7 @@ async def stream_recommendation_workflow_enhanced(
                         "node": node_name,
                         "content": get_node_description(node_name)
                     }
-                    logger.info(f"📍 节点开始: {node_name}")
+                    logger.debug(f"[节点] {node_name}")
 
             # 2. LLM Token 流式输出
             elif event_type == "on_chat_model_stream":
@@ -348,7 +348,7 @@ async def stream_recommendation_workflow_enhanced(
                     yield {
                         "type": "node_end",
                         "node": node_name,
-                        "content": f"✓ {node_name} 完成"
+                        "content": f"{node_name} 完成"
                     }
 
                     # 处理特定节点的输出
@@ -387,11 +387,11 @@ async def stream_recommendation_workflow_enhanced(
 
                     # default 节点已通过 token 流式输出，不需要再次发送完整响应
 
-                    logger.info(f"✓ 节点完成: {node_name}")
+                    logger.debug(f"节点完成: {node_name}")
 
         # 流程结束
         yield {"type": "done"}
-        logger.info("✓ 工作流执行完成")
+        logger.info("工作流执行完成")
 
     except Exception as e:
         logger.error(f"工作流执行失败: {e}", exc_info=True)
@@ -405,14 +405,14 @@ async def stream_recommendation_workflow_enhanced(
 def get_node_description(node_name: str) -> str:
     """获取节点的用户友好描述"""
     descriptions = {
-        "route": "🧭 正在分析您的需求...",
+        "route": "正在分析您的需求...",
         "rewrite": "✏️ 正在理解上下文...",
-        "customer_service": "💬 正在查询知识库...",
-        "find_book": "🔍 正在查找书籍...",
-        "generate_recommendations": "📚 正在生成推荐...",
-        "parse_book_list": "📋 正在解析书单...",
-        "fetch_book_details": "📖 正在获取书籍详情...",
-        "book_info": "📊 正在查询书籍信息...",
-        "default": "💭 正在思考..."
+        "customer_service": "正在查询知识库...",
+        "find_book": "正在查找书籍...",
+        "generate_recommendations": "正在生成推荐...",
+        "parse_book_list": "正在解析书单...",
+        "fetch_book_details": "正在获取书籍详情...",
+        "book_info": "正在查询书籍信息...",
+        "default": "正在思考..."
     }
     return descriptions.get(node_name, f"正在执行 {node_name}...")

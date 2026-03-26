@@ -77,7 +77,7 @@ async def lifespan(_app: FastAPI):
     yield
 
     # 关闭时执行
-    logger.info("正在关闭应用...")
+    logger.info("关闭应用...")
 
     # 停止后台任务
     if compact_task:
@@ -86,7 +86,7 @@ async def lifespan(_app: FastAPI):
             await compact_task
         except (asyncio.CancelledError, KeyboardInterrupt):
             pass
-        logger.info("Redis compact 任务已停止")
+        logger.info("Compact任务已停止")
 
     try:
         db_manager = get_db_manager()
@@ -136,7 +136,7 @@ def get_vectorstore():
                 connection_args={"uri": "./milvus_memory.db"},
                 auto_id=True
             )
-            logger.info("✓ Milvus 用户记忆向量数据库连接成功")
+            logger.info("Milvus用户记忆向量数据库连接成功")
         except Exception as e:
             logger.warning(f"⚠ Milvus 用户记忆连接失败: {e}")
             logger.warning("向量检索功能将不可用，但应用可以继续运行")
@@ -156,7 +156,7 @@ def get_kb_vectorstore():
                 connection_args={"uri": "./milvus_kb.db"},
                 auto_id=True
             )
-            logger.info("✓ Milvus 知识库向量数据库连接成功")
+            logger.info("Milvus知识库向量数据库连接成功")
         except Exception as e:
             logger.warning(f"⚠ Milvus 知识库连接失败: {e}")
             logger.warning("RAG 客服功能将不可用，将使用默认客服模式")

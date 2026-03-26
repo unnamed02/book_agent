@@ -23,13 +23,13 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
     2. 构建书籍卡片数据
     3. 过滤无资源的书籍
     """
-    logger.info("📍 节点: fetch_book_details")
+    logger.debug("[节点] fetch_book_details")
 
     books = state.get("recommended_books", [])
     dialogue_part = state.get("dialogue_response", "")
 
-    logger.info(f"📚 接收到的书籍列表: {books}")
-    logger.info(f"📚 书籍数量: {len(books)}")
+    logger.debug(f"书籍列表: {books}")
+    logger.debug(f"书籍数量: {len(books)}")
 
     if not books:
         logger.warning("没有书籍需要获取详情")
@@ -94,7 +94,7 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
 
     state["book_cards"] = book_cards
     state["books_without_resources"] = books_without_resources
-    logger.info(f"✓ 获取 {len(book_cards)} 本书籍的详细信息")
+    logger.info(f"获取{len(book_cards)}本书籍详情")
 
     # 格式化最终响应（用于保存到记忆）
     books_text = "、".join(book_titles) if book_titles else ""
@@ -109,7 +109,7 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
         final_response = ""
 
     state["final_response"] = final_response
-    logger.info("✓ 书籍详情获取完成")
+    logger.debug("书籍详情获取完成")
 
     return state
 
