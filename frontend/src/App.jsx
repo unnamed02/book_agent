@@ -1,9 +1,16 @@
 import { useState, useRef, useEffect } from 'react';
-import { Input, Button, Card, Avatar, Space, Typography, Tooltip } from 'antd';
+import { Input, Button, Card, Avatar, Space, Typography, Tooltip, message as antMessage } from 'antd';
 import { SendOutlined, BookOutlined, UserOutlined, PlusOutlined, SettingOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+
+// 导入新组件
+import BookCard from './components/BookCard';
+import PurchaseForm from './components/PurchaseForm';
+import BooksNotFound from './components/BooksNotFound';
+import ThinkingBox from './components/ThinkingBox';
+import SearchResults from './components/SearchResults';
 
 const ImageComponent = ({ src, alt }) => {
   const [error, setError] = useState(false);
@@ -55,20 +62,25 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
   const messagesEndRef = useRef(null);
+  const scrollTimerRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!isUserScrolling) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // 初始化时从 localStorage 恢复 session_id 和 user_id
+  // 初始化时从 localStorage 恢复 session_id、user_id 和消息历史
   useEffect(() => {
     const savedSessionId = localStorage.getItem('book_agent_session_id');
     const savedUserId = localStorage.getItem('book_agent_user_id');
+    const savedMessages = localStorage.getItem('book_agent_messages');
 
     if (savedSessionId) {
       setSessionId(savedSessionId);
@@ -79,6 +91,48 @@ function App() {
       setUserId(savedUserId);
       console.log('恢复用户ID:', savedUserId);
     }
+
+    if (savedMessages) {
+      try {
+        const parsedMessages = JSON.parse(savedMessages);
+        // 标记所有消息为非流式状态
+        const restoredMessages = parsedMessages.map(msg => ({
+          ...msg,
+          isStreaming: false
+        }));
+        setMessages(restoredMessages);
+        console.log('恢复消息历史:', restoredMessages.length, '条');
+      } catch (e) {
+        console.error('恢复消息历史失败:', e);
+      }
+    }
+  }, []);
+
+  // 保存消息到 localStorage
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem('book_agent_messages', JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  // 滚动控制
+  const handleScroll = () => {
+    setIsUserScrolling(true);
+    if (scrollTimerRef.current) {
+      clearTimeout(scrollTimerRef.current);
+    }
+    scrollTimerRef.current = setTimeout(() => {
+      setIsUserScrolling(false);
+    }, 2000);
+  };
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    };
   }, []);
 
   // 获取API基础URL
@@ -263,6 +317,113 @@ function App() {
                     return newMessages;
                   });
                 }
+              } else if (data.type === 'thinking') {
+                // 思考过程
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    newMessages[newMessages.length - 1] = {
+                      ...lastMsg,
+                      thinkingContent: (lastMsg.thinkingContent || '') + data.content,
+                      isThinking: true
+                    };
+                  } else {
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      thinkingContent: data.content,
+                      isThinking: true,
+                      isStreaming: true
+                    });
+                    hasCreatedMessage = true;
+                  }
+                  return newMessages;
+                });
+              } else if (data.type === 'search_results') {
+                // 搜索结果
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    newMessages[newMessages.length - 1] = {
+                      ...lastMsg,
+                      searchResults: data.content || []
+                    };
+                  }
+                  return newMessages;
+                });
+              } else if (data.type === 'book_cards') {
+                // 书籍卡片
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    newMessages[newMessages.length - 1] = {
+                      ...lastMsg,
+                      type: 'book_cards',
+                      books: data.content || [],
+                      isStreaming: false
+                    };
+                  } else {
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      type: 'book_cards',
+                      books: data.content || [],
+                      isStreaming: false
+                    });
+                    hasCreatedMessage = true;
+                  }
+                  return newMessages;
+                });
+              } else if (data.type === 'purchase_form') {
+                // 荐购表单
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    newMessages[newMessages.length - 1] = {
+                      ...lastMsg,
+                      type: 'purchase_form',
+                      purchaseTitle: data.content?.title || '',
+                      purchaseAuthor: data.content?.author || '',
+                      isStreaming: false
+                    };
+                  } else {
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      type: 'purchase_form',
+                      purchaseTitle: data.content?.title || '',
+                      purchaseAuthor: data.content?.author || '',
+                      isStreaming: false
+                    });
+                    hasCreatedMessage = true;
+                  }
+                  return newMessages;
+                });
+              } else if (data.type === 'books_not_found') {
+                // 未找到的书籍
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    newMessages[newMessages.length - 1] = {
+                      ...lastMsg,
+                      booksNotFound: data.content || []
+                    };
+                  } else {
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      booksNotFound: data.content || [],
+                      isStreaming: false
+                    });
+                    hasCreatedMessage = true;
+                  }
+                  return newMessages;
+                });
               } else if (data.type === 'done') {
                 // 完成，标记为非流式，并立即关闭 loading
                 setLoading(false);  // 立即关闭加载状态
@@ -301,7 +462,26 @@ function App() {
     setMessages([]);
     setSessionId(null);
     localStorage.removeItem('book_agent_session_id');
+    localStorage.removeItem('book_agent_messages');
     console.log('已清除会话，开始新对话');
+  };
+
+  // 处理荐购按钮点击
+  const handleRecommend = (title, author) => {
+    const newMessage = {
+      role: 'assistant',
+      type: 'purchase_form',
+      content: '',
+      purchaseTitle: title,
+      purchaseAuthor: author
+    };
+    setMessages(prev => [...prev, newMessage]);
+  };
+
+  // 处理荐购表单提交
+  const handlePurchaseSubmit = (values) => {
+    console.log('荐购提交:', values);
+    antMessage.success('荐购申请已提交！');
   };
 
   return (
@@ -353,20 +533,23 @@ function App() {
           </div>
 
           {/* Messages */}
-          <div style={{
-            padding: '24px',
-            flex: 1,
-            overflowY: 'auto',
-            background: '#fafafa'
-          }}>
+          <div
+            style={{
+              padding: '24px',
+              flex: 1,
+              overflowY: 'auto',
+              background: '#fafafa'
+            }}
+            onScroll={handleScroll}
+          >
             {messages.length === 0 ? (
               <div style={{ textAlign: 'center', marginTop: '120px' }}>
                 <BookOutlined style={{ fontSize: '64px', color: '#d9d9d9', marginBottom: '16px' }} />
-                <Title level={3} style={{ color: '#595959' }}>你好！我是图书推荐助手</Title>
-                <Text type="secondary">告诉我你想读什么类型的书，我会为你推荐</Text>
+                <Title level={3} style={{ color: '#595959' }}>您好！我是碑林区图书馆AI馆员</Title>
+                <Text type="secondary">告诉我您想读什么类型的书，我会为您推荐</Text>
               </div>
             ) : (
-              <Space vertical size={24} style={{ width: '100%' }}>
+              <Space direction="vertical" size={24} style={{ width: '100%', display: 'flex' }}>
                 {messages.map((msg, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: '12px' }}>
                     <Avatar
@@ -379,24 +562,67 @@ function App() {
                     />
                     <div style={{ flex: 1, paddingTop: '4px' }}>
                       {msg.role === 'assistant' ? (
-                        <Card
-                          size="small"
-                          style={{
-                            background: '#fff',
-                            borderRadius: '12px',
-                            boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                            border: 'none'
-                          }}
-                        >
-                          <div className="markdown-content">
-                            <ReactMarkdown
-                              remarkPlugins={[remarkGfm]}
-                              components={{ img: ImageComponent }}
+                        <div>
+                          {/* 思考过程 */}
+                          {msg.thinkingContent && (
+                            <ThinkingBox
+                              content={msg.thinkingContent}
+                              isThinking={msg.isThinking}
+                            />
+                          )}
+
+                          {/* 搜索来源 */}
+                          {msg.searchResults && msg.searchResults.length > 0 && (
+                            <SearchResults results={msg.searchResults} />
+                          )}
+
+                          {/* 普通 Markdown 内容 */}
+                          {msg.content && (
+                            <Card
+                              size="small"
+                              style={{
+                                background: '#fff',
+                                borderRadius: '12px',
+                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                border: 'none'
+                              }}
                             >
-                              {msg.content}
-                            </ReactMarkdown>
-                          </div>
-                        </Card>
+                              <div className="markdown-content">
+                                <ReactMarkdown
+                                  remarkPlugins={[remarkGfm]}
+                                  components={{ img: ImageComponent }}
+                                >
+                                  {msg.content}
+                                </ReactMarkdown>
+                              </div>
+                            </Card>
+                          )}
+
+                          {/* 书籍卡片 */}
+                          {msg.type === 'book_cards' && msg.books && (
+                            <BookCard
+                              books={msg.books}
+                              onRecommend={handleRecommend}
+                            />
+                          )}
+
+                          {/* 未找到的书籍 */}
+                          {msg.booksNotFound && msg.booksNotFound.length > 0 && (
+                            <BooksNotFound
+                              books={msg.booksNotFound}
+                              onRecommend={handleRecommend}
+                            />
+                          )}
+
+                          {/* 荐购表单 */}
+                          {msg.type === 'purchase_form' && (
+                            <PurchaseForm
+                              title={msg.purchaseTitle}
+                              author={msg.purchaseAuthor}
+                              onSubmit={handlePurchaseSubmit}
+                            />
+                          )}
+                        </div>
                       ) : (
                         <Card
                           size="small"
