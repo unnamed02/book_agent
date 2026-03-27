@@ -45,12 +45,18 @@ class CustomerServiceSlots(IntentSlots):
     question: str = Field(description="用户问题")
 
 
+class PurchaseRecommendationSlots(IntentSlots):
+    """荐购图书意图的槽位"""
+    book_title: Optional[str] = Field(default=None, description="书名（可选）")
+    author: Optional[str] = Field(default=None, description="作者（可选）")
+
+
 class IntentRecognitionResponse(BaseModel):
     """意图识别响应结构"""
-    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/default")
+    query_type: str = Field(description="查询类型：find_book/book_recommendation/book_info/customer_service/purchase_recommendation/default")
 
     # 使用联合类型表示槽位
-    slots: Optional[Union[FindBookSlots, RecommendBookSlots, BookInfoSlots, DefaultQuerySlots, CustomerServiceSlots]] = Field(
+    slots: Optional[Union[FindBookSlots, RecommendBookSlots, BookInfoSlots, DefaultQuerySlots, CustomerServiceSlots, PurchaseRecommendationSlots]] = Field(
         default=None,
         description="槽位信息，根据 query_type 自动选择对应的槽位类型"
     )

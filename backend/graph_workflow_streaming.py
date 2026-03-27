@@ -25,7 +25,8 @@ from nodes import (
     parse_book_list,
     fetch_book_details,
     handle_default_query,
-    handle_book_info
+    handle_book_info,
+    handle_purchase_recommendation
 )
 from nodes.intent_recognition_node import IntentSlots
 
@@ -116,7 +117,7 @@ def route_by_type(state: BookRecommendationState) -> str:
     条件边: 根据查询类型路由
 
     Returns:
-        "clarify" | "customer_service" | "recommend" | "find_book" | "book_info" | "default"
+        "clarify" | "customer_service" | "recommend" | "find_book" | "book_info" | "purchase_recommendation" | "default"
     """
     query_type = state.get("query_type", "book_recommendation")
 
@@ -136,6 +137,10 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "book_info":
         return "book_info"
 
+    # 如果是荐购请求，路由到荐购节点
+    if query_type == "purchase_recommendation":
+        return "purchase_recommendation"
+
     # 如果是无法分类或闲聊/问候，路由到默认处理节点
     if query_type in ("default", "greeting"):
         return "default"
@@ -153,7 +158,8 @@ def create_recommendation_graph() -> StateGraph:
        ├─ 客服咨询 → customer_service → END
        ├─ 找书 → find_book → parse_book_list → fetch_book_details → END
        ├─ 图书推荐 → generate_recommendations → parse_book_list → fetch_book_details → END
-       ├─ 书籍信息查询 → book_info → ENDaa
+       ├─ 书籍信息查询 → book_info → END
+       ├─ 荐购图书 → purchase_recommendation → END
        └─ 无法分类 → default → END
 
     图书推荐路径：
@@ -169,6 +175,7 @@ def create_recommendation_graph() -> StateGraph:
     - parse_book_list: 解析书单文本，提取书籍信息
     - fetch_book_details: 获取书籍详情并构建卡片（找书和推荐共用）
     - default: 处理无法分类的问题，直接调用 LLM 原始输出
+    - purchase_recommendation: 处理荐购请求，返回荐购表单
     """
     workflow = StateGraph(BookRecommendationState)
 
@@ -181,6 +188,7 @@ def create_recommendation_graph() -> StateGraph:
     workflow.add_node("fetch_book_details", fetch_book_details)
     workflow.add_node("default", handle_default_query)
     workflow.add_node("book_info", handle_book_info)
+    workflow.add_node("purchase_recommendation", handle_purchase_recommendation)
 
     # 设置入口点
     workflow.set_entry_point("intent")
@@ -195,6 +203,7 @@ def create_recommendation_graph() -> StateGraph:
             "find_book": "find_book",
             "recommend": "generate_recommendations",
             "book_info": "book_info",
+            "purchase_recommendation": "purchase_recommendation",
             "default": "default"
         }
     )
@@ -208,6 +217,9 @@ def create_recommendation_graph() -> StateGraph:
 
     # 书籍信息查询分支直接结束
     workflow.add_edge("book_info", END)
+
+    # 荐购图书分支直接结束
+    workflow.add_edge("purchase_recommendation", END)
 
     # 找书分支：生成书单 → 解析书单 → 获取详情 → 结束
     workflow.add_edge("find_book", "parse_book_list")
@@ -384,6 +396,29 @@ async def stream_recommendation_workflow_enhanced(
                             yield {
                                 "type": "message",
                                 "content": dialogue_response
+                            }
+
+                    # purchase_recommendation 节点输出荐购表单
+                    elif node_name == "purchase_recommendation":
+                        dialogue_response = output.get("dialogue_response", "")
+                        recommended_books = output.get("recommended_books", [])
+                        
+                        # 发送对话响应
+                        if dialogue_response:
+                            yield {
+                                "type": "message",
+                                "content": dialogue_response
+                            }
+                        
+                        # 发送荐购表单数据
+                        if recommended_books and len(recommended_books) > 0:
+                            book = recommended_books[0]
+                            yield {
+                                "type": "purchase_form",
+                                "content": {
+                                    "title": book.get("purchase_title", ""),
+                                    "author": book.get("purchase_author", "")
+                                }
                             }
 
                     # default 节点已通过 token 流式输出，不需要再次发送完整响应

@@ -15,6 +15,7 @@ INTENT_RECOGNITION_SYSTEM_PROMPT = """你是图书助手的任务调度员，负
 | find_book | 用户明确指定具体书名或作者 | "活着"、"三体"、"余华的书"、"贾平凹作品" |
 | book_info | 询问书籍相关问题（梗概、评价、作者背景、版本对比） | "这本书讲什么"、"哪个版本好"、"作者是谁" |
 | customer_service | 图书馆服务相关问题 | "开馆时间"、"怎么办证"、"Wi-Fi密码"、"怎么续借" |
+| purchase_recommendation | 用户想要荐购图书（推荐图书馆购买某本书） | "荐购"、"推荐购买"、"我想荐购"、"请帮我荐购"、"买本书" |
 | default | 不属于上述任何类别（打招呼、无意义输入、纯闲聊） | "你好"、"在吗" |
 
 ## 槽位填充规则
@@ -35,6 +36,11 @@ INTENT_RECOGNITION_SYSTEM_PROMPT = """你是图书助手的任务调度员，负
 - author: 作者（若有）
 - pub_info: 版本信息列表（出版社、译者等）
 - 书名或作者至少有一个，否则 missing_info = "book_title"
+
+### purchase_recommendation
+- book_title: 书名（可选，如果用户提供了具体书名）
+- author: 作者（可选，如果用户提供了作者）
+- 槽位全为空表示用户未指定具体书籍，将弹出空表单
 
 ### customer_service / default
 - question / query_context: 用户原意

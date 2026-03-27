@@ -11,6 +11,7 @@ from .parse_book_list_node import parse_book_list
 from .fetch_details_node import fetch_book_details
 from .default_node import handle_default_query
 from .book_info_node import handle_book_info
+from .purchase_recommendation_node import handle_purchase_recommendation
 
 __all__ = [
     "recognize_intent",
@@ -19,6 +20,7 @@ __all__ = [
     "handle_recommendation",
     "handle_default_query",
     "handle_book_info",
+    "handle_purchase_recommendation",
     "parse_book_list",
     "fetch_book_details",
 ]

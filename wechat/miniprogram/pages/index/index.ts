@@ -314,6 +314,32 @@ Page({
         })
       }
       this.setData({ messages })
+    } else if (data.type === 'purchase_form') {
+      // 荐购表单 - 显示 purchase-form 组件
+      const messages = this.data.messages
+      const purchaseData = data.content || {}
+      
+      // 如果最后一条消息是 AI 消息，合并表单数据到该消息
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        const lastMessage = messages[messages.length - 1]
+        messages[messages.length - 1] = {
+          ...lastMessage,
+          type: 'purchase_form',
+          purchaseTitle: purchaseData.title || '',
+          purchaseAuthor: purchaseData.author || ''
+        }
+      } else {
+        // 没有 AI 消息时，创建新消息
+        const purchaseMessage: Message = {
+          role: 'assistant',
+          type: 'purchase_form',
+          content: '',
+          purchaseTitle: purchaseData.title || '',
+          purchaseAuthor: purchaseData.author || ''
+        }
+        messages.push(purchaseMessage)
+      }
+      this.setData({ messages })
     } else if (data.type === 'append_message') {
       // 追加消息 - 追加到最后一条消息的 appendContent 字段
       const messages = this.data.messages
