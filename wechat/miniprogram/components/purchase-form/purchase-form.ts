@@ -66,7 +66,7 @@ Component({
           throw new Error('用户ID不存在')
         }
 
-        // 调用API提交荐购
+        // 调用API提交订购
         const result = await apiService.submitPurchaseRecommendation({
           user_id: userId,
           book_title: title.trim(),
@@ -96,7 +96,7 @@ Component({
           throw new Error(result.message || '提交失败')
         }
       } catch (error: any) {
-        console.error('提交荐购失败:', error)
+        console.error('提交订购失败:', error)
         wx.showToast({
           title: error.message || '提交失败，请重试',
           icon: 'none'

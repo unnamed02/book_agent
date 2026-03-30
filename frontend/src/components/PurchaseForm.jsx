@@ -2,9 +2,7 @@ import { useState } from 'react';
 import { Card, Form, Input, Button, message as antMessage, Space } from 'antd';
 import { ShoppingOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
-
-
-const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
+const PurchaseForm = ({ title = '', author = '', userId = '', onSubmit }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -12,7 +10,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
   const initialValues = {
     title: title || '',
     author: author || '',
-    note: '',
+    notes: '',
     contact: ''
   };
 
@@ -25,22 +23,23 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
         ? 'http://localhost:8000'
         : `http://${window.location.hostname}:8000`;
 
-      const response = await fetch(`${apiBaseUrl}/purchase/recommend`, {
+      const response = await fetch(`${apiBaseUrl}/reader-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: values.title,
+          user_id: userId || 'anonymous',
+          book_title: values.title,
           author: values.author,
-          note: values.note,
+          notes: values.notes,
           contact: values.contact
         }),
       });
 
       if (response.ok) {
         setSubmitted(true);
-        antMessage.success('荐购申请已提交，感谢您的推荐！');
+        antMessage.success('订购申请已提交，我们会尽快与您联系！');
         if (onSubmit) {
           onSubmit(values);
         }
@@ -48,7 +47,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
         throw new Error('提交失败');
       }
     } catch (error) {
-      console.error('提交荐购失败:', error);
+      console.error('提交订购失败:', error);
       antMessage.error('提交失败，请稍后重试');
     } finally {
       setSubmitting(false);
@@ -58,7 +57,6 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
   if (submitted) {
     return (
       <Card
-        
         style={{
           width: 375,
           background: '#fff',
@@ -68,8 +66,8 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
       >
         <Space orientation="vertical" align="center" style={{ width: '100%', padding: '20px 0' }}>
           <CheckCircleOutlined style={{ fontSize: 48, color: '#1677ff' }} />
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#1677ff', marginBottom: 8 }}>感谢您的荐购！</div>
-          <div style={{ fontSize: 13, color: '#666' }}>我们会尽快处理您的荐购申请</div>
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1677ff', marginBottom: 8 }}>订购申请已提交！</div>
+          <div style={{ fontSize: 13, color: '#666' }}>我们会尽快处理您的订购申请</div>
         </Space>
       </Card>
     );
@@ -77,7 +75,6 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
 
   return (
     <Card
-      
       style={{
         width: 375,
         background: '#fff',
@@ -88,7 +85,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
       title={
         <Space>
           <ShoppingOutlined style={{ color: '#1677ff' }} />
-          <span style={{ color: '#262626', fontSize: 13 }}>荐购图书</span>
+          <span style={{ color: '#262626', fontSize: 13 }}>读者订购</span>
         </Space>
       }
     >
@@ -120,11 +117,11 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
         </Form.Item>
 
         <Form.Item
-          label="备注（选填）"
-          name="note"
+          label="留言（选填）"
+          name="notes"
         >
           <Input.TextArea
-            placeholder="指定ISBN、出版社、版本等，方便我们确定最优质版本"
+            placeholder="指定ISBN、出版社、版本等要求"
             rows={3}
             maxLength={200}
             showCount
@@ -133,11 +130,11 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
         </Form.Item>
 
         <Form.Item
-          label="电话号码（选填）"
+          label="联系电话（选填）"
           name="contact"
         >
           <Input
-            placeholder="填写后，该书上架将通过短信告知您"
+            placeholder="填写后，到货将通知您"
             disabled={submitting}
           />
         </Form.Item>
@@ -150,7 +147,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
             block
             size="large"
           >
-            {submitting ? '提交中...' : '提交荐购'}
+            {submitting ? '提交中...' : '预付定金'}
           </Button>
         </Form.Item>
       </Form>

@@ -167,7 +167,7 @@ function AdminUsers() {
               </div>
             </div>
             <div>
-              <div style={{ color: '#666', fontSize: '12px', marginBottom: '4px' }}>荐购总数</div>
+              <div style={{ color: '#666', fontSize: '12px', marginBottom: '4px' }}>订购总数</div>
               <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#faad14' }}>
                 {userDetails.recommendation_count}
               </div>

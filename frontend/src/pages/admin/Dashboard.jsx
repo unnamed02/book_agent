@@ -80,7 +80,7 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="荐购总数"
+              title="订购总数"
               value={stats.total_recommendations}
               icon={<BookOutlined style={{ color: '#faad14' }} />}
             />
@@ -89,7 +89,7 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="7天荐购数"
+              title="7天订购数"
               value={stats.recommendations_7days}
               icon={<BookOutlined style={{ color: '#eb2f96' }} />}
             />
@@ -97,12 +97,12 @@ function AdminDashboard() {
         </Col>
       </Row>
 
-      {/* 荐购状态统计 */}
+      {/* 订购状态统计 */}
       <Row gutter={[16, 16]} style={{ marginBottom: '32px' }}>
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="待处理荐购"
+              title="待处理订购"
               value={stats.pending_recommendations}
               icon={<ClockCircleOutlined style={{ color: '#faad14' }} />}
               valueStyle={{ color: '#faad14' }}
@@ -112,7 +112,7 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="已批准荐购"
+              title="已确认订购"
               value={stats.approved_recommendations}
               icon={<CheckOutlined style={{ color: '#52c41a' }} />}
               valueStyle={{ color: '#52c41a' }}
@@ -122,7 +122,7 @@ function AdminDashboard() {
         <Col xs={24} sm={12} lg={6}>
           <Card>
             <Statistic
-              title="已拒绝荐购"
+              title="已完成订购"
               value={stats.rejected_recommendations}
               icon={<CloseOutlined style={{ color: '#f5222d' }} />}
               valueStyle={{ color: '#f5222d' }}
@@ -141,10 +141,10 @@ function AdminDashboard() {
         </Col>
       </Row>
 
-      {/* 荐购概览 */}
+      {/* 订购概览 */}
       <Row gutter={[16, 16]}>
         <Col xs={24}>
-          <Card title="荐购概览" style={{ borderRadius: '8px' }}>
+          <Card title="订购概览" style={{ borderRadius: '8px' }}>
             <Row gutter={[32, 0]}>
               <Col xs={24} sm={12} lg={6}>
                 <div style={{ textAlign: 'center' }}>
@@ -152,7 +152,7 @@ function AdminDashboard() {
                     {recStats?.total || 0}
                   </div>
                   <div style={{ color: '#666', fontSize: '14px', marginTop: '8px' }}>
-                    总荐购数
+                    总订购数
                   </div>
                 </div>
               </Col>

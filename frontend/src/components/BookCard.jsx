@@ -1,5 +1,5 @@
 import { Card, Button, Tag, Typography } from 'antd';
-import { ReadOutlined, LinkOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { ReadOutlined, ShoppingCartOutlined, ShopOutlined, LinkOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -19,12 +19,6 @@ const BookCard = ({ books, onRecommend }) => {
   const handleRecommend = (book) => {
     if (onRecommend) {
       onRecommend(book.title, book.author);
-    }
-  };
-
-  const handleResourceClick = (url) => {
-    if (url) {
-      window.open(url, '_blank');
     }
   };
 
@@ -117,7 +111,7 @@ const BookCard = ({ books, onRecommend }) => {
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
               <ReadOutlined style={{ color: '#1677ff' }} />
-              <span>馆藏信息</span>
+              <span>现售书籍</span>
             </div>
             <div>
               {currentBook.libraryItems.map((item, index) => (
@@ -132,27 +126,44 @@ const BookCard = ({ books, onRecommend }) => {
                     {item.title && (
                       <div style={{ fontWeight: 500, marginBottom: 4 }}>{item.title}</div>
                     )}
+                    {currentBook.author && (
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                        作者: {currentBook.author}
+                      </div>
+                    )}
                     {item.pub_info && (
                       <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
                         {item.pub_info}
                       </div>
                     )}
-                    <div style={{ fontSize: 12, color: '#1677ff' }}>
-                      索书号: {item.call_number} | {item.location}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: '#1677ff' }}>
+                        位置: {item.location} | 架号: {item.shelf_number}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 14, color: '#f5222d', fontWeight: 500 }}>
+                          ¥{item.discount_price || item.price}
+                        </span>
+                        {item.discount && item.discount_price && item.price && (
+                          <span style={{ fontSize: 11, color: '#999', textDecoration: 'line-through' }}>
+                            ¥{item.price}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div style={{ fontSize: 12, marginTop: 4 }}>
                       <Tag 
                         size="small" 
                         style={{ 
-                          background: item.available > 0 ? '#e6f4ff' : '#f5f5f5',
-                          color: item.available > 0 ? '#1677ff' : '#999',
+                          background: item.stock > 0 ? '#e6f4ff' : '#f5f5f5',
+                          color: item.stock > 0 ? '#1677ff' : '#999',
                           border: 'none'
                         }}
                       >
-                        {item.status}
+                        {item.stock > 0 ? '有货' : '缺货'}
                       </Tag>
                       <Text type="secondary" style={{ fontSize: 11, marginLeft: 8 }}>
-                        馆藏{item.total}册，可借{item.available}册
+                        库存{item.stock}本
                       </Text>
                     </div>
                   </div>
@@ -162,62 +173,87 @@ const BookCard = ({ books, onRecommend }) => {
           </div>
         )}
 
-        {/* 电子资源 */}
-        {currentBook.hasResources && currentBook.resources && currentBook.resources.length > 0 && (
+        {/* 网店在售 */}
+        {currentBook.hasOnlineStores && currentBook.onlineStores && currentBook.onlineStores.length > 0 && (
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
-              <LinkOutlined style={{ color: '#1677ff' }} />
-              <span>电子资源</span>
+              <ShopOutlined style={{ color: '#1677ff' }} />
+              <span>网店在售</span>
             </div>
-            {currentBook.resources.map((platform, idx) => (
-              <div key={idx} style={{ marginBottom: 8 }}>
+            <div>
+              {currentBook.onlineStores.map((store, index) => (
                 <div 
+                  key={index}
                   style={{ 
-                    fontSize: 11, 
-                    marginBottom: 4, 
-                    fontWeight: 500,
-                    color: '#666'
+                    padding: '8px 0', 
+                    borderBottom: index < currentBook.onlineStores.length - 1 ? '1px solid #f0f0f0' : 'none' 
                   }}
                 >
-                  [{platform.source}]
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  {platform.books?.map((resource, ridx) => (
-                    <div
-                      key={ridx}
-                      onClick={() => handleResourceClick(resource.link)}
-                      style={{ 
-                        cursor: 'pointer',
-                        padding: '6px 8px',
-                        background: '#f5f5f5',
-                        borderRadius: 4
-                      }}
-                    >
-                      <div style={{ fontSize: 12, color: '#1677ff' }}>{resource.title}</div>
-                      {(resource.author || resource.publisher) && (
-                        <div style={{ fontSize: 10, color: '#1677ff' }}>
-                          {resource.author} {resource.publisher}
-                        </div>
-                      )}
+                  <div style={{ width: '100%' }}>
+                    {store.title && (
+                      <div style={{ fontWeight: 500, marginBottom: 4 }}>{store.title}</div>
+                    )}
+                    {currentBook.author && (
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                        作者: {currentBook.author}
+                      </div>
+                    )}
+                    {store.pub_info && (
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 4 }}>
+                        {store.pub_info}
+                      </div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <Tag size="small" style={{ background: '#e6f4ff', color: '#1677ff', border: 'none', fontSize: 11 }}>
+                        {store.source}
+                      </Tag>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 12, color: '#f5222d', fontWeight: 500 }}>
+                          ¥{store.discount_price || store.price}
+                        </span>
+                        {store.discount && store.discount_price && store.price && (
+                          <span style={{ fontSize: 10, color: '#999', textDecoration: 'line-through' }}>
+                            ¥{store.price}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  ))}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+                      <Button
+                        type="link"
+                        size="small"
+                        onClick={() => window.open(store.link, '_blank')}
+                        style={{ padding: 0, fontSize: 12 }}
+                      >
+                        查看详情 &gt;
+                      </Button>
+                      <Button
+                        type="primary"
+                        size="small"
+                        onClick={() => window.open(store.link, '_blank')}
+                        style={{ fontSize: 12 }}
+                      >
+                        下单
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
 
-        {/* 荐购按钮 */}
+        {/* 读者订购按钮 */}
         <div>
           <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
             <ShoppingCartOutlined style={{ color: '#1677ff' }} />
-            <span>图书荐购</span>
+            <span>读者订购</span>
           </div>
           <div style={{ padding: 8, background: '#f5f5f5', borderRadius: 6 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <div style={{ fontSize: 10, color: '#666' }}>
-                  可提交荐购申请
+                  缺货可提交订购申请
                 </div>
               </div>
               <Button
@@ -226,7 +262,7 @@ const BookCard = ({ books, onRecommend }) => {
                 size="small"
                 onClick={() => handleRecommend(currentBook)}
               >
-                荐购
+                订购
               </Button>
             </div>
           </div>

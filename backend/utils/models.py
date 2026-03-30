@@ -39,17 +39,17 @@ class ConversationArchive(Base):
     archived_at = Column(DateTime, default=func.now(), comment="归档时间")
 
 
-class PurchaseRecommendation(Base):
-    """荐购表单表"""
-    __tablename__ = "purchase_recommendations"
+class ReaderOrder(Base):
+    """读者订购表"""
+    __tablename__ = "reader_orders"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(String(100), ForeignKey("users.user_id"), nullable=False, index=True, comment="用户ID")
     book_title = Column(String(500), nullable=False, comment="书名")
     author = Column(String(200), nullable=True, comment="作者")
-    notes = Column(Text, nullable=True, comment="备注")
+    notes = Column(Text, nullable=True, comment="备注/留言")
     contact = Column(String(100), nullable=True, comment="联系方式")
-    status = Column(String(20), default="pending", comment="状态: pending/approved/rejected")
+    status = Column(String(20), default="pending", comment="状态: pending/confirmed/shipped/completed/cancelled")
     created_at = Column(DateTime, default=func.now(), comment="提交时间")
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), comment="更新时间")
 

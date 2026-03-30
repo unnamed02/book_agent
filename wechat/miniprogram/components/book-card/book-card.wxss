@@ -132,56 +132,6 @@
   line-height: 1.5;
 }
 
-.resources-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16rpx;
-}
-
-.platform-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8rpx;
-}
-
-.platform-name {
-  font-size: 26rpx;
-  color: #333;
-  font-weight: bold;
-  margin-bottom: 4rpx;
-}
-
-.resource-item {
-  padding: 12rpx;
-  background: #f5f5f5;
-  border-radius: 8rpx;
-  font-size: 24rpx;
-  margin-left: 16rpx;
-}
-
-.resource-title {
-  color: #1890ff;
-  margin-bottom: 4rpx;
-}
-
-.resource-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12rpx;
-  font-size: 22rpx;
-  color: #666;
-  line-height: 1.5;
-}
-
-.resource-author,
-.resource-publisher {
-  color: #1890ff;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .page-indicator {
   text-align: center;
   font-size: 24rpx;
@@ -203,6 +153,15 @@
 
 .recommend-link {
   flex-shrink: 0;
+  color: #1890ff;
+  font-size: 24rpx;
+}
+
+.store-btn {
+  font-size: 24rpx;
+}
+
+.store-link {
   color: #1890ff;
   font-size: 24rpx;
 }

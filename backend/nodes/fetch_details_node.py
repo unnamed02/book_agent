@@ -1,13 +1,13 @@
 """
-获取书籍详情节点 - 并行获取豆瓣、馆藏、电子资源信息
+获取书籍详情节点 - 并行获取豆瓣、馆藏、网店在售信息
 """
 
 import logging
 import asyncio
 from typing import Dict, List, Optional, TYPE_CHECKING
 from tools.douban_tool import search_douban_book
-from tools.resource_tool import search_digital_resource
 from tools.library_tool import search_library_collection
+from tools.online_store_tool import search_online_stores
 
 if TYPE_CHECKING:
     from graph_workflow_streaming import BookRecommendationState
@@ -19,9 +19,9 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
     """
     节点: 获取书籍详情并构建卡片（推荐和找书共用）
 
-    1. 并行调用豆瓣、馆藏、电子资源工具
+    1. 并行调用豆瓣、馆藏、网店在售工具
     2. 构建书籍卡片数据
-    3. 过滤无资源的书籍
+    3. 过滤无馆藏的书籍
     """
     logger.debug("[节点] fetch_book_details")
 
@@ -45,7 +45,7 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
 
     # 过滤有效结果并去重，同时构建书籍卡片
     book_cards = []
-    books_without_resources = []
+    books_without_library = []
     seen_books = set()
     book_titles = []
 
@@ -54,7 +54,7 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
 
         # 如果没有获取到详情，记录为未找到
         if not detail or not detail.get("title"):
-            books_without_resources.append({
+            books_without_library.append({
                 "title": original_book.get("title", ""),
                 "author": original_book.get("author", "")
             })
@@ -67,18 +67,18 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
         seen_books.add(book_key)
         book_titles.append(f"《{detail.get('title', '')}》")
 
-        # 解析电子资源并按平台分组
-        resources = _group_resources_by_source(detail.get("digital_resources", []))
-
         # 直接使用馆藏信息数组
         library_items = detail.get("library_info", [])
+        
+        # 获取网店在售信息
+        online_stores = detail.get("online_stores", [])
 
         has_library = library_items is not None and len(library_items) > 0
-        has_resources = len(resources) > 0
+        has_online = len(online_stores) > 0
 
-        # 如果既没有馆藏也没有电子资源，放入无资源列表
-        if not has_library and not has_resources:
-            books_without_resources.append({
+        # 如果没有馆藏，放入无馆藏列表
+        if not has_library:
+            books_without_library.append({
                 "title": detail.get("title", ""),
                 "author": detail.get("author", "")
             })
@@ -88,12 +88,12 @@ async def fetch_book_details(state: "BookRecommendationState") -> "BookRecommend
                 **detail,  # 直接展开所有字段
                 "hasLibrary": has_library,
                 "libraryItems": library_items or [],
-                "hasResources": has_resources,
-                "resources": resources
+                "hasOnlineStores": has_online,
+                "onlineStores": online_stores
             })
 
     state["book_cards"] = book_cards
-    state["books_without_resources"] = books_without_resources
+    state["books_without_library"] = books_without_library
     logger.info(f"获取{len(book_cards)}本书籍详情")
 
     # 格式化最终响应（用于保存到记忆）
@@ -136,8 +136,8 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
     try:
         # 并行调用三个工具
         tasks = [
-            asyncio.to_thread(search_digital_resource, title, author),
-            asyncio.to_thread(search_library_collection, title, author)
+            asyncio.to_thread(search_library_collection, title, author),
+            asyncio.to_thread(search_online_stores, title, author)
         ]
 
         # 只有在需要时才获取豆瓣信息
@@ -147,10 +147,9 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         # 解析结果
-        digital_resources = results[0] if not isinstance(results[0], Exception) else []
-        library_info = results[1] if not isinstance(results[1], Exception) else []
+        library_info = results[0] if not isinstance(results[0], Exception) else []
+        online_stores = results[1] if not isinstance(results[1], Exception) else []
         douban_data = results[2] if fetch_douban and len(results) > 2 and not isinstance(results[2], Exception) else {}
-                   
 
         # 构建完整的书籍详情
         book_detail = {
@@ -163,8 +162,8 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
             "pubdate": douban_data.get("pubdate", ""),
             "isbn": douban_data.get("isbn", ""),
             "summary": douban_data.get("summary", ""),
-            "digital_resources": digital_resources,
-            "library_info": library_info
+            "library_info": library_info,
+            "online_stores": online_stores
         }
 
         return book_detail
@@ -172,30 +171,3 @@ async def _fetch_single_book_detail(book: Dict, fetch_douban: bool = True) -> Op
     except Exception as e:
         logger.error(f"获取书籍详情失败 ({title}): {e}")
         return None
-
-
-
-
-def _group_resources_by_source(digital_resources: List[Dict]) -> List[Dict]:
-    """将电子资源按平台分组"""
-    resources_by_source = {}
-    try:
-        for r in digital_resources:
-            source = r.get("source", "")
-            if source:
-                if source not in resources_by_source:
-                    resources_by_source[source] = []
-                resources_by_source[source].append({
-                    "title": r.get("title", ""),
-                    "link": r.get("link", ""),
-                    "author": r.get("author", ""),
-                    "publisher": r.get("publisher", "")
-                })
-    except Exception as e:
-        logger.error(f"解析电子资源失败: {e}")
-
-    # 转换为数组格式
-    return [
-        {"source": source, "books": books_list}
-        for source, books_list in resources_by_source.items()
-    ]

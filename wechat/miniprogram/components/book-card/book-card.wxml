@@ -36,7 +36,7 @@
 
           <!-- 馆藏信息 -->
           <view wx:if="{{item.hasLibrary}}" class="book-section">
-            <view class="section-title">馆藏信息</view>
+            <view class="section-title">现售书籍</view>
             <view class="library-list">
               <view
                 wx:for="{{item.libraryItems}}"
@@ -45,49 +45,69 @@
                 class="library-item"
               >
                 <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
+                <view wx:if="{{item.author}}" class="library-pub-info">作者: {{item.author}}</view>
                 <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
-                <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
-                <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
+                <view class="library-detail" style="display: flex; justify-content: space-between; align-items: center;">
+                  <text>位置: {{lib.location}} | 架号: {{lib.shelf_number}}</text>
+                  <view style="display: flex; align-items: center; gap: 8rpx;">
+                    <text style="color: #f5222d; font-weight: 500;">¥{{lib.discount_price || lib.price}}</text>
+                    <text wx:if="{{lib.discount && lib.discount_price}}" style="color: #999; font-size: 20rpx; text-decoration: line-through;">¥{{lib.price}}</text>
+                  </view>
+                </view>
+                <view class="library-detail">状态: {{lib.stock > 0 ? '有货' : '缺货'}} (库存{{lib.stock}}本)</view>
               </view>
             </view>
           </view>
 
-          <!-- 电子资源 -->
-          <view wx:if="{{item.hasResources}}" class="book-section">
-            <view class="section-title">电子资源</view>
-            <view class="resources-list">
+          <!-- 网店在售 -->
+          <view wx:if="{{item.hasOnlineStores}}" class="book-section">
+            <view class="section-title">网店在售</view>
+            <view class="library-list">
               <view
-                wx:for="{{item.resources}}"
-                wx:for-item="platform"
-                wx:key="source"
-                class="platform-group"
+                wx:for="{{item.onlineStores}}"
+                wx:for-item="store"
+                wx:key="index"
+                class="library-item"
               >
-                <view class="platform-name">[{{platform.source}}]</view>
-                <view
-                  wx:for="{{platform.books}}"
-                  wx:for-item="book"
-                  wx:key="index"
-                  class="resource-item"
-                  bindtap="onResourceTap"
-                  data-url="{{book.link}}"
-                >
-                  <view class="resource-title">{{book.title}}</view>
-                  <view class="resource-meta">
-                    <text wx:if="{{book.author}}" class="resource-author">{{book.author}}</text>
-                    <text wx:if="{{book.publisher}}" class="resource-publisher">{{book.publisher}}</text>
+                <view wx:if="{{store.title}}" class="library-title">{{store.title}}</view>
+                <view wx:if="{{item.author}}" class="library-pub-info">作者: {{item.author}}</view>
+                <view wx:if="{{store.pub_info}}" class="library-pub-info">{{store.pub_info}}</view>
+                <view class="library-detail" style="display: flex; justify-content: space-between; align-items: center;">
+                  <text style="color: #1677ff; font-size: 24rpx;">{{store.source}}</text>
+                  <view style="display: flex; align-items: center; gap: 8rpx;">
+                    <text style="color: #f5222d; font-weight: 500;">¥{{store.discount_price || store.price}}</text>
+                    <text wx:if="{{store.discount && store.discount_price}}" style="color: #999; font-size: 20rpx; text-decoration: line-through;">¥{{store.price}}</text>
                   </view>
+                </view>
+                <view style="display: flex; justify-content: space-between; align-items: center; margin-top: 8rpx;">
+                  <view 
+                    class="store-link"
+                    bindtap="onStoreLinkTap"
+                    data-url="{{store.link}}"
+                  >
+                    查看详情 &gt;
+                  </view>
+                  <button 
+                    class="store-btn"
+                    size="mini"
+                    type="primary"
+                    bindtap="onStoreLinkTap"
+                    data-url="{{store.link}}"
+                  >
+                    下单
+                  </button>
                 </view>
               </view>
             </view>
           </view>
 
-          <!-- 荐购按钮（所有书籍都显示） -->
+          <!-- 读者订购按钮（所有书籍都显示） -->
           <view class="book-section">
-            <view class="section-title">荐购</view>
+            <view class="section-title">读者订购</view>
             <view class="library-list">
               <view class="library-item recommend-item">
                 <view class="recommend-info">
-                  <text class="recommend-desc">如需增加馆藏或购买其他版本，可提交荐购申请</text>
+                  <text class="recommend-desc">如需订购本书，可提交订购申请</text>
                 </view>
                 <text
                   class="recommend-link"
@@ -95,7 +115,7 @@
                   data-title="{{item.title}}"
                   data-author="{{item.author}}"
                 >
-                  荐购
+                  订购
                 </text>
               </view>
             </view>

@@ -40,8 +40,8 @@ function AdminRecommendations() {
       setRecommendations(recsRes.data);
       setTotal(totalRes.data.total);
     } catch (error) {
-      console.error('获取荐购列表失败:', error);
-      message.error('获取荐购列表失败');
+      console.error('获取订购列表失败:', error);
+      message.error('获取订购列表失败');
     } finally {
       setLoading(false);
     }
@@ -67,8 +67,8 @@ function AdminRecommendations() {
   const handleStatusChange = (id, newStatus) => {
     Modal.confirm({
       title: '确认更新',
-      content: `确定要将荐购状态更改为"${
-        newStatus === 'approved' ? '已批准' : newStatus === 'rejected' ? '已拒绝' : '待处理'
+      content: `确定要将订购状态更改为"${
+        newStatus === 'confirmed' ? '已确认' : newStatus === 'shipped' ? '已发货' : newStatus === 'completed' ? '已完成' : '待处理'
       }"吗？`,
       okText: '确认',
       cancelText: '取消',
@@ -81,8 +81,10 @@ function AdminRecommendations() {
   const getStatusTag = (status) => {
     const statusConfig = {
       pending: { color: 'orange', text: '待处理' },
-      approved: { color: 'green', text: '已批准' },
-      rejected: { color: 'red', text: '已拒绝' }
+      confirmed: { color: 'blue', text: '已确认' },
+      shipped: { color: 'purple', text: '已发货' },
+      completed: { color: 'green', text: '已完成' },
+      cancelled: { color: 'red', text: '已取消' }
     };
     const config = statusConfig[status] || { color: 'gray', text: status };
     return <Tag color={config.color}>{config.text}</Tag>;
@@ -179,7 +181,7 @@ function AdminRecommendations() {
       </Spin>
 
       <Drawer
-        title="荐购详情"
+        title="订购详情"
         onClose={() => setDrawerVisible(false)}
         open={drawerVisible}
         width={500}

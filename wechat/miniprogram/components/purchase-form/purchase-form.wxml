@@ -1,6 +1,6 @@
 <!--components/purchase-form/purchase-form.wxml-->
 <view class="purchase-form-container">
-  <view class="form-title">感谢您的荐购！</view>
+  <view class="form-title">订购申请已提交！</view>
 
   <view class="form-item">
     <view class="form-label">书名</view>
@@ -48,6 +48,6 @@
   </view>
 
   <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || submitted}}">
-    {{submitted ? '已提交' : (submitting ? '提交中...' : '提交荐购')}}
+    {{submitted ? '已提交' : (submitting ? '提交中...' : '预付定金')}}
   </button>
 </view>

@@ -25,7 +25,7 @@ const BooksNotFound = ({ books, onRecommend }) => {
       title={
         <Space>
           <ExclamationCircleOutlined style={{ color: '#1677ff' }} />
-          <span style={{ color: '#262626' }}>以下书籍暂无馆藏和电子资源</span>
+          <span style={{ color: '#262626' }}>以下书籍暂无现售</span>
         </Space>
       }
     >
@@ -59,7 +59,7 @@ const BooksNotFound = ({ books, onRecommend }) => {
                   size="small"
                   onClick={() => handleRecommend(book)}
                 >
-                  荐购
+                  订购
                 </Button>
               </div>
             </div>

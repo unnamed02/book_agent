@@ -21,7 +21,7 @@
     <!-- 空状态 -->
     <view wx:if="{{messages.length === 0}}" class="empty-state">
       <image class="empty-icon-img" src="../../images/bg.png" mode="aspectFit"></image>
-      <view class="empty-title">您好！我是碑林区图书馆AI馆员</view>
+      <view class="empty-title">您好！我是咸阳市新华书店AI店员</view>
       <view class="empty-desc">告诉我您想读什么类型的书，我会为您推荐</view>
     </view>
 
@@ -75,7 +75,7 @@
             <!-- 未找到的书籍 -->
             <books-not-found wx:if="{{item.booksNotFound && item.booksNotFound.length > 0}}" books="{{item.booksNotFound}}" bind:recommend="onRecommend" />
 
-            <!-- 荐购表单 -->
+            <!-- 读者订购表单 -->
             <purchase-form
               wx:if="{{item.type === 'purchase_form'}}"
               title="{{item.purchaseTitle}}"

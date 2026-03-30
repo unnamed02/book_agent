@@ -221,6 +221,7 @@ function App() {
                 if (!hasCreatedMessage) {
                   setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
                   hasCreatedMessage = true;
+                  setLoading(false);  // 关闭加载动画
                 } else {
                   setMessages(prev => {
                     const newMessages = [...prev];
@@ -338,6 +339,7 @@ function App() {
                       isStreaming: true
                     });
                     hasCreatedMessage = true;
+                    setLoading(false);  // 关闭加载动画
                   }
                   return newMessages;
                 });
@@ -345,12 +347,25 @@ function App() {
                 // 搜索结果
                 setMessages(prev => {
                   const newMessages = [...prev];
+                  const searchResults = Array.isArray(data.content) ? data.content : [];
+                  
                   if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    // 如果已有助手消息，更新它
                     const lastMsg = newMessages[newMessages.length - 1];
                     newMessages[newMessages.length - 1] = {
                       ...lastMsg,
-                      searchResults: data.content || []
+                      searchResults: searchResults
                     };
+                  } else {
+                    // 如果还没有助手消息，创建一个新的
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      searchResults: searchResults,
+                      isStreaming: true
+                    });
+                    hasCreatedMessage = true;
+                    setLoading(false);  // 关闭加载动画
                   }
                   return newMessages;
                 });
@@ -379,7 +394,7 @@ function App() {
                   return newMessages;
                 });
               } else if (data.type === 'purchase_form') {
-                // 荐购表单
+                // 读者订购表单
                 setMessages(prev => {
                   const newMessages = [...prev];
                   if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
@@ -429,12 +444,14 @@ function App() {
                 // 完成，标记为非流式，并立即关闭 loading
                 setLoading(false);  // 立即关闭加载状态
                 if (hasCreatedMessage) {
+                  // 清理状态消息
+                  const finalContent = (currentContent || fullContent).replace(/\*正在.*\.\.\.\*\n\n/g, '');
                   setMessages(prev => {
                     const newMessages = [...prev];
                     newMessages[newMessages.length - 1] = {
                       ...newMessages[newMessages.length - 1],
                       isStreaming: false,
-                      content: currentContent || fullContent
+                      content: finalContent
                     };
                     return newMessages;
                   });
@@ -467,7 +484,7 @@ function App() {
     console.log('已清除会话，开始新对话');
   };
 
-  // 处理荐购按钮点击
+  // 处理订购按钮点击
   const handleRecommend = (title, author) => {
     const newMessage = {
       role: 'assistant',
@@ -479,10 +496,10 @@ function App() {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  // 处理荐购表单提交
+  // 处理订购表单提交
   const handlePurchaseSubmit = (values) => {
-    console.log('荐购提交:', values);
-    antMessage.success('荐购申请已提交！');
+    console.log('订购提交:', values);
+    antMessage.success('订购申请已提交！');
   };
 
   return (
@@ -509,7 +526,7 @@ function App() {
           }}>
             <Space>
               <Avatar icon={<BookOutlined />} style={{ background: '#1677ff' }} />
-              <Title level={4} style={{ margin: 0 }}>碑林区图书馆AI馆员</Title>
+              <Title level={4} style={{ margin: 0 }}>咸阳市新华书店AI店员</Title>
             </Space>
             <Space>
               {messages.length > 0 && (
@@ -546,7 +563,7 @@ function App() {
             {messages.length === 0 ? (
               <div style={{ textAlign: 'center', marginTop: '120px' }}>
                 <BookOutlined style={{ fontSize: '64px', color: '#d9d9d9', marginBottom: '16px' }} />
-                <Title level={3} style={{ color: '#595959' }}>您好！我是碑林区图书馆AI馆员</Title>
+                <Title level={3} style={{ color: '#595959' }}>您好！我是咸阳市新华书店AI店员</Title>
                 <Text type="secondary">告诉我您想读什么类型的书，我会为您推荐</Text>
               </div>
             ) : (
@@ -572,11 +589,6 @@ function App() {
                             />
                           )}
 
-                          {/* 搜索来源 */}
-                          {msg.searchResults && msg.searchResults.length > 0 && (
-                            <SearchResults results={msg.searchResults} />
-                          )}
-
                           {/* 普通 Markdown 内容 */}
                           {msg.content && (
                             <Card
@@ -599,6 +611,11 @@ function App() {
                             </Card>
                           )}
 
+                          {/* 搜索来源 */}
+                          {msg.searchResults && msg.searchResults.length > 0 && (
+                            <SearchResults results={msg.searchResults} />
+                          )}
+
                           {/* 书籍卡片 - 画廊效果 */}
                           {msg.type === 'book_cards' && msg.books && (
                             <BookGallery
@@ -615,13 +632,15 @@ function App() {
                             />
                           )}
 
-                          {/* 荐购表单 */}
+                          {/* 读者订购表单 */}
                           {msg.type === 'purchase_form' && (
-                            <PurchaseForm
-                              title={msg.purchaseTitle}
-                              author={msg.purchaseAuthor}
-                              onSubmit={handlePurchaseSubmit}
-                            />
+                            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                              <PurchaseForm
+                                title={msg.purchaseTitle}
+                                author={msg.purchaseAuthor}
+                                onSubmit={handlePurchaseSubmit}
+                              />
+                            </div>
                           )}
                         </div>
                       ) : (

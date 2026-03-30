@@ -103,7 +103,7 @@ function AdminApp() {
     {
       key: 'recommendations',
       icon: <BookOutlined />,
-      label: '荐购管理'
+      label: '订购管理'
     },
     {
       key: 'conversations',

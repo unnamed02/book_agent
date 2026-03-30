@@ -217,8 +217,8 @@ async def proxy_image(url: str):
         return Response(status_code=404)
 
 
-class PurchaseRecommendationRequest(BaseModel):
-    """荐购表单请求"""
+class ReaderOrderRequest(BaseModel):
+    """读者订购请求"""
     user_id: str
     book_title: str
     author: Optional[str] = None
@@ -226,14 +226,14 @@ class PurchaseRecommendationRequest(BaseModel):
     contact: Optional[str] = None
 
 
-@app.post("/purchase-recommendation")
-async def submit_purchase_recommendation(
-    request: PurchaseRecommendationRequest,
+@app.post("/reader-order")
+async def submit_reader_order(
+    request: ReaderOrderRequest,
     db: AsyncSession = Depends(get_db)
 ):
-    """提交荐购表单"""
+    """提交读者订购"""
     try:
-        from utils.models import PurchaseRecommendation, User
+        from utils.models import ReaderOrder, User
 
         # 确保用户存在
         user = await db.get(User, request.user_id)
@@ -242,8 +242,8 @@ async def submit_purchase_recommendation(
             db.add(user)
             await db.flush()
 
-        # 创建荐购记录
-        recommendation = PurchaseRecommendation(
+        # 创建订购记录
+        order = ReaderOrder(
             user_id=request.user_id,
             book_title=request.book_title,
             author=request.author,
@@ -252,21 +252,21 @@ async def submit_purchase_recommendation(
             status="pending"
         )
 
-        db.add(recommendation)
+        db.add(order)
         await db.commit()
-        await db.refresh(recommendation)
+        await db.refresh(order)
 
-        logger.info(f"用户 {request.user_id} 提交荐购: {request.book_title}")
+        logger.info(f"用户 {request.user_id} 提交订购: {request.book_title}")
 
         return {
             "success": True,
-            "message": "荐购提交成功",
-            "id": recommendation.id
+            "message": "订购提交成功，我们会尽快与您联系",
+            "id": order.id
         }
 
     except Exception as e:
         await db.rollback()
-        logger.error(f"提交荐购失败: {e}")
+        logger.error(f"提交订购失败: {e}")
         return {
             "success": False,
             "message": f"提交失败: {str(e)}"

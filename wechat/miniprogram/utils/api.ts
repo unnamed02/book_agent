@@ -150,7 +150,7 @@ class ApiService {
     }
   }
 
-  // 提交荐购表单
+  // 提交读者订购表单
   submitPurchaseRecommendation(data: {
     user_id: string
     book_title: string

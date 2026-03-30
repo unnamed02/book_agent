@@ -93,7 +93,7 @@ class BookRecommendationState(TypedDict):
 
     # 卡片数据（推荐和找书共用）
     book_cards: List[Dict]  # 书籍卡片数据
-    books_without_resources: List[Dict]  # 没有馆藏和电子资源的书籍
+    books_without_library: List[Dict]  # 没有馆藏的书籍
 
     # 输出
     dialogue_response: str  # 对话响应
@@ -137,7 +137,7 @@ def route_by_type(state: BookRecommendationState) -> str:
     if query_type == "book_info":
         return "book_info"
 
-    # 如果是荐购请求，路由到荐购节点
+    # 如果是订购请求，路由到订购节点
     if query_type == "purchase_recommendation":
         return "purchase_recommendation"
 
@@ -159,7 +159,7 @@ def create_recommendation_graph() -> StateGraph:
        ├─ 找书 → find_book → parse_book_list → fetch_book_details → END
        ├─ 图书推荐 → generate_recommendations → parse_book_list → fetch_book_details → END
        ├─ 书籍信息查询 → book_info → END
-       ├─ 荐购图书 → purchase_recommendation → END
+       ├─ 读者订购 → purchase_recommendation → END
        └─ 无法分类 → default → END
 
     图书推荐路径：
@@ -175,7 +175,7 @@ def create_recommendation_graph() -> StateGraph:
     - parse_book_list: 解析书单文本，提取书籍信息
     - fetch_book_details: 获取书籍详情并构建卡片（找书和推荐共用）
     - default: 处理无法分类的问题，直接调用 LLM 原始输出
-    - purchase_recommendation: 处理荐购请求，返回荐购表单
+    - purchase_recommendation: 处理订购请求，返回订购表单
     """
     workflow = StateGraph(BookRecommendationState)
 
@@ -218,7 +218,7 @@ def create_recommendation_graph() -> StateGraph:
     # 书籍信息查询分支直接结束
     workflow.add_edge("book_info", END)
 
-    # 荐购图书分支直接结束
+    # 读者订购分支直接结束
     workflow.add_edge("purchase_recommendation", END)
 
     # 找书分支：生成书单 → 解析书单 → 获取详情 → 结束
@@ -266,7 +266,7 @@ async def stream_recommendation_workflow_enhanced(
         recommended_books=[],
         book_list_text="",
         book_cards=[],
-        books_without_resources=[],
+        books_without_library=[],
         dialogue_response="",
         final_response="",
         recent_recommendations=[],
@@ -373,11 +373,11 @@ async def stream_recommendation_workflow_enhanced(
                                 "content": book_cards
                             }
                         
-                        books_without_resources = output.get("books_without_resources", [])
-                        if books_without_resources:
+                        books_without_library = output.get("books_without_library", [])
+                        if books_without_library:
                             yield {
                                 "type": "books_not_found",
-                                "content": books_without_resources
+                                "content": books_without_library
                             }
 
                     # intent 节点反问（信息不足时直接结束）
@@ -398,7 +398,7 @@ async def stream_recommendation_workflow_enhanced(
                                 "content": dialogue_response
                             }
 
-                    # purchase_recommendation 节点输出荐购表单
+                    # purchase_recommendation 节点输出订购表单
                     elif node_name == "purchase_recommendation":
                         dialogue_response = output.get("dialogue_response", "")
                         recommended_books = output.get("recommended_books", [])
@@ -410,7 +410,7 @@ async def stream_recommendation_workflow_enhanced(
                                 "content": dialogue_response
                             }
                         
-                        # 发送荐购表单数据
+                        # 发送订购表单数据
                         if recommended_books and len(recommended_books) > 0:
                             book = recommended_books[0]
                             yield {

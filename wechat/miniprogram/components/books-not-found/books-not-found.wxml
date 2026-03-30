@@ -17,7 +17,7 @@
         data-title="{{item.title}}"
         data-author="{{item.author}}"
       >
-        荐购
+        订购
       </text>
     </view>
   </view>

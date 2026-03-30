@@ -46,7 +46,7 @@ class CustomerServiceSlots(IntentSlots):
 
 
 class PurchaseRecommendationSlots(IntentSlots):
-    """荐购图书意图的槽位"""
+    """读者订购意图的槽位"""
     book_title: Optional[str] = Field(default=None, description="书名（可选）")
     author: Optional[str] = Field(default=None, description="作者（可选）")
 

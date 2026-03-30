@@ -315,7 +315,7 @@ Page({
       }
       this.setData({ messages })
     } else if (data.type === 'purchase_form') {
-      // 荐购表单 - 显示 purchase-form 组件
+      // 读者订购表单 - 显示 purchase-form 组件
       const messages = this.data.messages
       const purchaseData = data.content || {}
       
@@ -491,13 +491,13 @@ Page({
     })
   },
 
-  // 处理荐购按钮点击
+  // 处理订购按钮点击
   async onRecommend(e: any) {
     const { title, author } = e.detail
     const { sessionId, userId } = this.data
 
     // 生成用户消息内容
-    const messageContent = `荐购 ${title} ${author || ''}`
+    const messageContent = `订购 ${title} ${author || ''}`
 
     // 立即发送消息到后端保存
     try {
@@ -549,7 +549,7 @@ Page({
     this.scrollToBottom()
   },
 
-  // 处理荐购表单提交
+  // 处理订购表单提交
   onPurchaseSubmit(e: any) {
     const { message } = e.detail
 
