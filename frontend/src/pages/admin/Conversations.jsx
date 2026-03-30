@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Input, Button, Spin, Empty, message, List, Drawer, Collapse, Tag } from 'antd';
+import { Input, Button, Spin, Empty, message, Drawer, Collapse, Tag } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -97,41 +97,39 @@ function AdminConversations() {
       <Spin spinning={loading}>
         {hasSearched ? (
           conversations.length > 0 ? (
-            <List
-              dataSource={conversations}
-              renderItem={(session) => (
-                <List.Item
+            <div>
+              {conversations.map((session) => (
+                <div
                   key={session.session_id}
                   style={{
                     padding: '12px',
                     border: '1px solid #f0f0f0',
                     borderRadius: '4px',
-                    marginBottom: '8px'
+                    marginBottom: '8px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
                   }}
                 >
-                  <List.Item.Meta
-                    title={
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                        <span>会话 ID: {session.session_id.substring(0, 20)}...</span>
-                        <Tag color="blue">{session.messages_count} 条消息</Tag>
-                      </div>
-                    }
-                    description={
-                      <div style={{ color: '#666', fontSize: '12px' }}>
-                        <div>创建时间: {new Date(session.created_at).toLocaleString('zh-CN')}</div>
-                        <div>最后活跃: {new Date(session.last_active_at).toLocaleString('zh-CN')}</div>
-                      </div>
-                    }
-                  />
+                  <div>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '4px' }}>
+                      <span>会话 ID: {session.session_id.substring(0, 20)}...</span>
+                      <Tag color="blue">{session.messages_count} 条消息</Tag>
+                    </div>
+                    <div style={{ color: '#666', fontSize: '12px' }}>
+                      <div>创建时间: {new Date(session.created_at).toLocaleString('zh-CN')}</div>
+                      <div>最后活跃: {new Date(session.last_active_at).toLocaleString('zh-CN')}</div>
+                    </div>
+                  </div>
                   <Button
                     type="link"
                     onClick={() => handleViewSession(session)}
                   >
                     查看详情
                   </Button>
-                </List.Item>
-              )}
-            />
+                </div>
+              ))}
+            </div>
           ) : (
             <Empty description={`未找到用户 ${searchUserId} 的对话历史`} />
           )

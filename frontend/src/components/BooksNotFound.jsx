@@ -1,5 +1,5 @@
-import { Card, List, Button, Space, Typography, Tag } from 'antd';
-import { BookOutlined, ShoppingOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Card, Button, Space, Typography } from 'antd';
+import { ShoppingCartOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
@@ -18,41 +18,44 @@ const BooksNotFound = ({ books, onRecommend }) => {
     <Card
       style={{
         marginTop: 16,
-        background: '#fffbe6',
+        background: '#fff',
         borderRadius: 12,
-        border: '1px solid #ffe58f'
+        border: '1px solid #e8e8e8'
       }}
       title={
         <Space>
-          <ExclamationCircleOutlined style={{ color: '#faad14' }} />
-          <span>以下书籍暂无馆藏和电子资源</span>
+          <ExclamationCircleOutlined style={{ color: '#1677ff' }} />
+          <span style={{ color: '#262626' }}>以下书籍暂无馆藏和电子资源</span>
         </Space>
       }
     >
-      <List
-        dataSource={books}
-        renderItem={(book, index) => (
-          <List.Item
+      <div>
+        {books.map((book, index) => (
+          <div
+            key={index}
             style={{
-              padding: '12px 0',
-              borderBottom: index < books.length - 1 ? '1px solid #f0f0f0' : 'none'
+              padding: '8px 12px',
+              borderBottom: index < books.length - 1 ? '1px solid #f0f0f0' : 'none',
+              background: '#f5f5f5',
+              borderRadius: 4,
+              marginBottom: 8
             }}
           >
             <div style={{ width: '100%' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: 500, marginBottom: 4 }}>
+                  <div style={{ fontWeight: 500, marginBottom: 4, color: '#262626' }}>
                     《{book.title}》
                   </div>
                   {book.author && (
-                    <div style={{ fontSize: 13, color: '#666' }}>
+                    <div style={{ fontSize: 13, color: '#1677ff' }}>
                       {book.author}
                     </div>
                   )}
                 </div>
                 <Button
                   type="primary"
-                  icon={<ShoppingOutlined />}
+                  icon={<ShoppingCartOutlined />}
                   size="small"
                   onClick={() => handleRecommend(book)}
                 >
@@ -60,9 +63,9 @@ const BooksNotFound = ({ books, onRecommend }) => {
                 </Button>
               </div>
             </div>
-          </List.Item>
-        )}
-      />
+          </div>
+        ))}
+      </div>
     </Card>
   );
 };

@@ -7,6 +7,7 @@ import remarkGfm from 'remark-gfm';
 
 // 导入新组件
 import BookCard from './components/BookCard';
+import BookGallery from './components/BookGallery';
 import PurchaseForm from './components/PurchaseForm';
 import BooksNotFound from './components/BooksNotFound';
 import ThinkingBox from './components/ThinkingBox';
@@ -549,7 +550,7 @@ function App() {
                 <Text type="secondary">告诉我您想读什么类型的书，我会为您推荐</Text>
               </div>
             ) : (
-              <Space direction="vertical" size={24} style={{ width: '100%', display: 'flex' }}>
+              <Space orientation="vertical" size={24} style={{ width: '100%', display: 'flex' }}>
                 {messages.map((msg, idx) => (
                   <div key={idx} style={{ display: 'flex', gap: '12px' }}>
                     <Avatar
@@ -598,9 +599,9 @@ function App() {
                             </Card>
                           )}
 
-                          {/* 书籍卡片 */}
+                          {/* 书籍卡片 - 画廊效果 */}
                           {msg.type === 'book_cards' && msg.books && (
-                            <BookCard
+                            <BookGallery
                               books={msg.books}
                               onRecommend={handleRecommend}
                             />

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, Collapse, Spin, Typography } from 'antd';
+import { Card, Collapse, Typography } from 'antd';
 import { BulbOutlined, LoadingOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -17,9 +17,9 @@ const ThinkingBox = ({ content, isThinking = false }) => {
       size="small"
       style={{
         marginBottom: 12,
-        background: '#f5f5f5',
+        background: '#fff',
         borderRadius: 8,
-        border: 'none'
+        border: '1px solid #e8e8e8'
       }}
       bodyStyle={{ padding: 12 }}
     >
@@ -32,11 +32,11 @@ const ThinkingBox = ({ content, isThinking = false }) => {
           header={
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {isThinking ? (
-                <LoadingOutlined style={{ color: '#1890ff' }} />
+                <LoadingOutlined style={{ color: '#1677ff' }} />
               ) : (
-                <BulbOutlined style={{ color: '#1890ff' }} />
+                <BulbOutlined style={{ color: '#1677ff' }} />
               )}
-              <Text strong style={{ fontSize: 13 }}>
+              <Text strong style={{ fontSize: 13, color: '#1677ff' }}>
                 {isThinking ? '正在思考...' : '思考过程'}
               </Text>
             </div>
@@ -51,7 +51,7 @@ const ThinkingBox = ({ content, isThinking = false }) => {
               lineHeight: 1.6,
               whiteSpace: 'pre-wrap',
               fontFamily: 'monospace',
-              background: '#fafafa',
+              background: '#e6f4ff',
               padding: 12,
               borderRadius: 6,
               maxHeight: '300px',

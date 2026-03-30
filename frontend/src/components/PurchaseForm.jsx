@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { Card, Form, Input, Button, message as antMessage, Space, Typography } from 'antd';
+import { Card, Form, Input, Button, message as antMessage, Space } from 'antd';
 import { ShoppingOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
-const { Title, Text } = Typography;
-const { TextArea } = Form.Item;
+
 
 const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  // 设置初始值
   const initialValues = {
     title: title || '',
     author: author || '',
@@ -23,7 +21,6 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
 
     setSubmitting(true);
     try {
-      // 调用 API 提交荐购
       const apiBaseUrl = window.location.hostname === 'localhost'
         ? 'http://localhost:8000'
         : `http://${window.location.hostname}:8000`;
@@ -61,17 +58,18 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
   if (submitted) {
     return (
       <Card
+        
         style={{
-          marginTop: 16,
-          background: '#f6ffed',
+          width: 375,
+          background: '#fff',
           borderRadius: 12,
-          border: '1px solid #b7eb8f'
+          border: '1px solid #e8e8e8'
         }}
       >
-        <Space direction="vertical" align="center" style={{ width: '100%', padding: '20px 0' }}>
-          <CheckCircleOutlined style={{ fontSize: 48, color: '#52c41a' }} />
-          <Title level={5} style={{ margin: 0 }}>感谢您的荐购！</Title>
-          <Text type="secondary">我们会尽快处理您的荐购申请</Text>
+        <Space orientation="vertical" align="center" style={{ width: '100%', padding: '20px 0' }}>
+          <CheckCircleOutlined style={{ fontSize: 48, color: '#1677ff' }} />
+          <div style={{ fontSize: 16, fontWeight: 600, color: '#1677ff', marginBottom: 8 }}>感谢您的荐购！</div>
+          <div style={{ fontSize: 13, color: '#666' }}>我们会尽快处理您的荐购申请</div>
         </Space>
       </Card>
     );
@@ -79,16 +77,18 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
 
   return (
     <Card
+      
       style={{
-        marginTop: 16,
+        width: 375,
         background: '#fff',
         borderRadius: 12,
-        border: '1px solid #f0f0f0'
+        border: '1px solid #e8e8e8',
+        overflow: 'hidden'
       }}
       title={
         <Space>
-          <ShoppingOutlined />
-          <span>荐购图书</span>
+          <ShoppingOutlined style={{ color: '#1677ff' }} />
+          <span style={{ color: '#262626', fontSize: 13 }}>荐购图书</span>
         </Space>
       }
     >

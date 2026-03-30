@@ -1,4 +1,4 @@
-import { Card, List, Tag, Space, Typography } from 'antd';
+import { Card, Tag, Space, Typography } from 'antd';
 import { SearchOutlined, LinkOutlined } from '@ant-design/icons';
 
 const { Text } = Typography;
@@ -21,47 +21,48 @@ const SearchResults = ({ results, onResultClick }) => {
       size="small"
       style={{
         marginTop: 12,
-        background: '#f0f5ff',
+        background: '#fff',
         borderRadius: 8,
-        border: '1px solid #d6e4ff'
+        border: '1px solid #e8e8e8'
       }}
       title={
         <Space>
-          <SearchOutlined style={{ color: '#1890ff' }} />
-          <Text strong style={{ fontSize: 13 }}>
+          <SearchOutlined style={{ color: '#1677ff' }} />
+          <Text strong style={{ fontSize: 13, color: '#1677ff' }}>
             已阅读 {results.length} 个页面
           </Text>
         </Space>
       }
     >
-      <List
-        size="small"
-        dataSource={results}
-        renderItem={(item, index) => (
-          <List.Item
+      <div>
+        {results.map((item, index) => (
+          <div
+            key={index}
             style={{
-              padding: '8px 0',
+              padding: '6px 8px',
               cursor: 'pointer',
-              borderBottom: index < results.length - 1 ? '1px solid #e8e8e8' : 'none'
+              borderBottom: index < results.length - 1 ? '1px solid #f0f0f0' : 'none',
+              background: '#e6f4ff',
+              borderRadius: 4,
+              marginBottom: 4
             }}
             onClick={() => handleClick(item)}
           >
             <Space>
-              <Tag color="blue" size="small">[{item.index}]</Tag>
+              <Tag size="small" style={{ background: '#fff', border: 'none' }}>[{item.index}]</Tag>
               <Text
                 style={{
                   fontSize: 13,
-                  color: '#1890ff',
-                  textDecoration: 'underline'
+                  color: '#1677ff'
                 }}
               >
                 {item.title}
               </Text>
-              <LinkOutlined style={{ fontSize: 12, color: '#999' }} />
+              <LinkOutlined style={{ fontSize: 12, color: '#1677ff' }} />
             </Space>
-          </List.Item>
-        )}
-      />
+          </div>
+        ))}
+      </div>
     </Card>
   );
 };

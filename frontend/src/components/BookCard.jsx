@@ -1,17 +1,20 @@
-import { useState } from 'react';
-import { Card, Button, Tag, Space, Typography, List, Empty } from 'antd';
-import { ReadOutlined, LinkOutlined, ShoppingOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons';
+import { Card, Button, Tag, Typography } from 'antd';
+import { ReadOutlined, LinkOutlined, ShoppingCartOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 const BookCard = ({ books, onRecommend }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const getApiBaseUrl = () => {
+    return window.location.hostname === 'localhost'
+      ? 'http://localhost:8000'
+      : `http://${window.location.hostname}:8000`;
+  };
 
   if (!books || books.length === 0) {
     return null;
   }
 
-  const currentBook = books[currentIndex];
+  const currentBook = books[0];
 
   const handleRecommend = (book) => {
     if (onRecommend) {
@@ -25,30 +28,23 @@ const BookCard = ({ books, onRecommend }) => {
     }
   };
 
-  const goToPrev = () => {
-    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : books.length - 1));
-  };
-
-  const goToNext = () => {
-    setCurrentIndex((prev) => (prev < books.length - 1 ? prev + 1 : 0));
-  };
-
   return (
-    <div style={{ marginTop: 16, background: '#f5f5f5', padding: '16px', borderRadius: 12 }}>
-      {/* 导航按钮 */}
-      {books.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <Button type="text" icon={<LeftOutlined />} onClick={goToPrev} size="small">
-            上一本
-          </Button>
-          <Text type="secondary" style={{ fontSize: 12 }}>
-            {currentIndex + 1} / {books.length}
-          </Text>
-          <Button type="text" icon={<RightOutlined />} onClick={goToNext} size="small">
-            下一本
-          </Button>
-        </div>
-      )}
+    <div className="book-card-container">
+      <style>{`
+        .book-card-container .ant-card-body::-webkit-scrollbar {
+          width: 4px;
+        }
+        .book-card-container .ant-card-body::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .book-card-container .ant-card-body::-webkit-scrollbar-thumb {
+          background: #ccc;
+          border-radius: 2px;
+        }
+        .book-card-container .ant-card-body::-webkit-scrollbar-thumb:hover {
+          background: #999;
+        }
+      `}</style>
 
       {/* 书籍卡片 */}
       <Card
@@ -56,22 +52,31 @@ const BookCard = ({ books, onRecommend }) => {
         style={{
           background: '#fff',
           borderRadius: 12,
-          maxHeight: '60vh',
-          overflow: 'auto'
+          maxHeight: 540,
+          border: '1px solid #e8e8e8',
+          overflow: 'hidden'
         }}
-        bodyStyle={{ padding: 16 }}
+        styles={{ 
+          body: { 
+            padding: 12,
+            maxHeight: 540,
+            overflow: 'auto',
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#ccc transparent'
+          } 
+        }}
       >
         {/* 书籍封面和基本信息 */}
-        <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
           {currentBook.image && (
             <img
-              src={currentBook.image}
+              src={`${getApiBaseUrl()}/proxy-image?url=${encodeURIComponent(currentBook.image)}`}
               alt={currentBook.title}
               style={{
-                width: 100,
-                height: 140,
+                width: 80,
+                height: 110,
                 objectFit: 'cover',
-                borderRadius: 8,
+                borderRadius: 6,
                 flexShrink: 0
               }}
               onError={(e) => {
@@ -79,21 +84,21 @@ const BookCard = ({ books, onRecommend }) => {
               }}
             />
           )}
-          <div style={{ flex: 1 }}>
-            <Title level={5} style={{ margin: 0, marginBottom: 8 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Title level={5} style={{ margin: 0, marginBottom: 4, fontSize: 14 }}>
               《{currentBook.title}》
             </Title>
-            <Text type="secondary" style={{ display: 'block', marginBottom: 8 }}>
+            <Text type="secondary" style={{ display: 'block', marginBottom: 4, fontSize: 12 }}>
               {currentBook.author || '作者未知'}
             </Text>
             {currentBook.publisher && currentBook.publisher !== '未知' && (
-              <Tag size="small" style={{ marginBottom: 8 }}>
+              <Tag size="small" style={{ marginBottom: 4, background: '#e6f4ff', color: '#1677ff', border: 'none', fontSize: 10 }}>
                 {currentBook.publisher}
               </Tag>
             )}
             {currentBook.rating && (
-              <Tag color="orange" size="small" style={{ marginBottom: 8 }}>
-                ⭐ {currentBook.rating}
+              <Tag size="small" style={{ marginBottom: 4, background: '#e6f4ff', color: '#1677ff', border: 'none', fontSize: 10 }}>
+                {currentBook.rating}分
               </Tag>
             )}
           </div>
@@ -101,24 +106,28 @@ const BookCard = ({ books, onRecommend }) => {
 
         {/* 推荐理由 */}
         {currentBook.reason && (
-          <div style={{ marginBottom: 16, padding: 12, background: '#f6ffed', borderRadius: 8 }}>
-            <Text type="secondary" style={{ fontSize: 12 }}>推荐理由：</Text>
-            <Text style={{ fontSize: 13 }}>{currentBook.reason}</Text>
+          <div style={{ marginBottom: 12, padding: 8, background: '#f5f5f5', borderRadius: 6 }}>
+            <Text style={{ fontSize: 12, color: '#666' }}>推荐理由：</Text>
+            <Text style={{ fontSize: 12 }}>{currentBook.reason}</Text>
           </div>
         )}
 
         {/* 馆藏信息 */}
         {currentBook.hasLibrary && currentBook.libraryItems && currentBook.libraryItems.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <ReadOutlined />
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
+              <ReadOutlined style={{ color: '#1677ff' }} />
               <span>馆藏信息</span>
             </div>
-            <List
-              size="small"
-              dataSource={currentBook.libraryItems}
-              renderItem={(item) => (
-                <List.Item style={{ padding: '8px 0', borderBottom: '1px solid #f0f0f0' }}>
+            <div>
+              {currentBook.libraryItems.map((item, index) => (
+                <div 
+                  key={index}
+                  style={{ 
+                    padding: '8px 0', 
+                    borderBottom: index < currentBook.libraryItems.length - 1 ? '1px solid #f0f0f0' : 'none' 
+                  }}
+                >
                   <div style={{ width: '100%' }}>
                     {item.title && (
                       <div style={{ fontWeight: 500, marginBottom: 4 }}>{item.title}</div>
@@ -128,13 +137,17 @@ const BookCard = ({ books, onRecommend }) => {
                         {item.pub_info}
                       </div>
                     )}
-                    <div style={{ fontSize: 12, color: '#666' }}>
+                    <div style={{ fontSize: 12, color: '#1677ff' }}>
                       索书号: {item.call_number} | {item.location}
                     </div>
                     <div style={{ fontSize: 12, marginTop: 4 }}>
-                      <Tag
-                        color={item.available > 0 ? 'success' : 'error'}
-                        size="small"
+                      <Tag 
+                        size="small" 
+                        style={{ 
+                          background: item.available > 0 ? '#e6f4ff' : '#f5f5f5',
+                          color: item.available > 0 ? '#1677ff' : '#999',
+                          border: 'none'
+                        }}
                       >
                         {item.status}
                       </Tag>
@@ -143,66 +156,79 @@ const BookCard = ({ books, onRecommend }) => {
                       </Text>
                     </div>
                   </div>
-                </List.Item>
-              )}
-            />
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
         {/* 电子资源 */}
         {currentBook.hasResources && currentBook.resources && currentBook.resources.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <LinkOutlined />
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
+              <LinkOutlined style={{ color: '#1677ff' }} />
               <span>电子资源</span>
             </div>
             {currentBook.resources.map((platform, idx) => (
-              <div key={idx} style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 13, color: '#1890ff', marginBottom: 8 }}>
+              <div key={idx} style={{ marginBottom: 8 }}>
+                <div 
+                  style={{ 
+                    fontSize: 11, 
+                    marginBottom: 4, 
+                    fontWeight: 500,
+                    color: '#666'
+                  }}
+                >
                   [{platform.source}]
                 </div>
-                <Space direction="vertical" style={{ width: '100%' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {platform.books?.map((resource, ridx) => (
-                    <Button
+                    <div
                       key={ridx}
-                      type="link"
-                      size="small"
                       onClick={() => handleResourceClick(resource.link)}
-                      style={{ textAlign: 'left', padding: 0, height: 'auto' }}
+                      style={{ 
+                        cursor: 'pointer',
+                        padding: '6px 8px',
+                        background: '#f5f5f5',
+                        borderRadius: 4
+                      }}
                     >
-                      <div>
-                        <div style={{ fontSize: 13 }}>{resource.title}</div>
-                        {(resource.author || resource.publisher) && (
-                          <div style={{ fontSize: 11, color: '#999' }}>
-                            {resource.author} {resource.publisher}
-                          </div>
-                        )}
-                      </div>
-                    </Button>
+                      <div style={{ fontSize: 12, color: '#1677ff' }}>{resource.title}</div>
+                      {(resource.author || resource.publisher) && (
+                        <div style={{ fontSize: 10, color: '#1677ff' }}>
+                          {resource.author} {resource.publisher}
+                        </div>
+                      )}
+                    </div>
                   ))}
-                </Space>
+                </div>
               </div>
             ))}
           </div>
         )}
 
         {/* 荐购按钮 */}
-        <div style={{ padding: 12, background: '#f5f5f5', borderRadius: 8 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 500 }}>荐购</div>
-              <div style={{ fontSize: 11, color: '#999' }}>
-                如需增加馆藏或购买其他版本，可提交荐购申请
+        <div>
+          <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
+            <ShoppingCartOutlined style={{ color: '#1677ff' }} />
+            <span>图书荐购</span>
+          </div>
+          <div style={{ padding: 8, background: '#f5f5f5', borderRadius: 6 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <div style={{ fontSize: 10, color: '#666' }}>
+                  可提交荐购申请
+                </div>
               </div>
+              <Button
+                type="primary"
+                icon={<ShoppingCartOutlined />}
+                size="small"
+                onClick={() => handleRecommend(currentBook)}
+              >
+                荐购
+              </Button>
             </div>
-            <Button
-              type="primary"
-              icon={<ShoppingOutlined />}
-              size="small"
-              onClick={() => handleRecommend(currentBook)}
-            >
-              荐购
-            </Button>
           </div>
         </div>
       </Card>
