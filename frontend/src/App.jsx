@@ -54,6 +54,66 @@ const StrongComponent = ({ children }) => {
   );
 };
 
+// 【】包裹的文字组件 - 蓝色可点击复制
+const BracketText = ({ text }) => {
+  const handleClick = (e) => {
+    e.preventDefault();
+    navigator.clipboard.writeText(text).then(() => {
+      const target = e.target;
+      target.innerText = '已复制!';
+      target.style.color = '#52c41a';
+      setTimeout(() => {
+        target.innerText = '【' + text + '】';
+        target.style.color = '#1677ff';
+      }, 1000);
+    }).catch(err => {
+      console.error('复制失败:', err);
+    });
+  };
+
+  return (
+    <span
+      onClick={handleClick}
+      style={{
+        color: '#1677ff',
+        cursor: 'pointer',
+        userSelect: 'none',
+        transition: 'all 0.2s',
+        fontWeight: 500
+      }}
+      title="点击复制"
+    >
+      【{text}】
+    </span>
+  );
+};
+
+// 处理文本中的【】包裹内容，返回分段数组
+const parseBracketText = (text) => {
+  if (!text) return [];
+  const parts = [];
+  const regex = /【([^】]+)】/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // 添加【】之前的普通文本
+    if (match.index > lastIndex) {
+      parts.push({ type: 'text', content: text.slice(lastIndex, match.index) });
+    }
+    // 添加【】包裹的内容（去掉【】）
+    parts.push({ type: 'bracket', content: match[1] });
+    lastIndex = match.index + match[0].length;
+  }
+
+  // 添加剩余的普通文本
+  if (lastIndex < text.length) {
+    parts.push({ type: 'text', content: text.slice(lastIndex) });
+  }
+
+  return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+};
+
 const { TextArea } = Input;
 const { Title, Text } = Typography;
 
@@ -345,12 +405,28 @@ function App() {
                 // 搜索结果
                 setMessages(prev => {
                   const newMessages = [...prev];
+                  const searchResults = Array.isArray(data.content) ? data.content : [];
+                  
                   if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    // 如果已有助手消息，更新它
                     const lastMsg = newMessages[newMessages.length - 1];
                     newMessages[newMessages.length - 1] = {
                       ...lastMsg,
-                      searchResults: data.content || []
+                      searchResults: searchResults,
+                      isStreaming: true
                     };
+                    hasCreatedMessage = true;
+                    setLoading(false);  // 关闭加载动画
+                  } else {
+                    // 如果还没有助手消息，创建一个新消息
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      searchResults: searchResults,
+                      isStreaming: true
+                    });
+                    hasCreatedMessage = true;
+                    setLoading(false);  // 关闭加载动画
                   }
                   return newMessages;
                 });
@@ -386,6 +462,7 @@ function App() {
                     const lastMsg = newMessages[newMessages.length - 1];
                     newMessages[newMessages.length - 1] = {
                       ...lastMsg,
+                      id: lastMsg.id || Date.now().toString(),
                       type: 'purchase_form',
                       purchaseTitle: data.content?.title || '',
                       purchaseAuthor: data.content?.author || '',
@@ -393,6 +470,7 @@ function App() {
                     };
                   } else {
                     newMessages.push({
+                      id: Date.now().toString(),
                       role: 'assistant',
                       content: '',
                       type: 'purchase_form',
@@ -470,6 +548,7 @@ function App() {
   // 处理荐购按钮点击
   const handleRecommend = (title, author) => {
     const newMessage = {
+      id: Date.now().toString(),
       role: 'assistant',
       type: 'purchase_form',
       content: '',
@@ -480,9 +559,19 @@ function App() {
   };
 
   // 处理荐购表单提交
-  const handlePurchaseSubmit = (values) => {
-    console.log('荐购提交:', values);
-    antMessage.success('荐购申请已提交！');
+  const handlePurchaseSubmit = (data) => {
+    console.log('荐购提交:', data);
+    
+    // 追加助手感谢消息到聊天记录
+    if (data.message) {
+      const thankYouMessage = {
+        id: Date.now().toString(),
+        role: 'assistant',
+        content: data.message,
+        type: 'text'
+      };
+      setMessages(prev => [...prev, thankYouMessage]);
+    }
   };
 
   return (
@@ -509,7 +598,7 @@ function App() {
           }}>
             <Space>
               <Avatar icon={<BookOutlined />} style={{ background: '#1677ff' }} />
-              <Title level={4} style={{ margin: 0 }}>碑林区图书馆AI馆员</Title>
+              <Title level={4} style={{ margin: 0 }}>某某区图书馆AI馆员</Title>
             </Space>
             <Space>
               {messages.length > 0 && (
@@ -546,7 +635,7 @@ function App() {
             {messages.length === 0 ? (
               <div style={{ textAlign: 'center', marginTop: '120px' }}>
                 <BookOutlined style={{ fontSize: '64px', color: '#d9d9d9', marginBottom: '16px' }} />
-                <Title level={3} style={{ color: '#595959' }}>您好！我是碑林区图书馆AI馆员</Title>
+                <Title level={3} style={{ color: '#595959' }}>您好！我是某某区图书馆AI馆员</Title>
                 <Text type="secondary">告诉我您想读什么类型的书，我会为您推荐</Text>
               </div>
             ) : (
@@ -572,11 +661,6 @@ function App() {
                             />
                           )}
 
-                          {/* 搜索来源 */}
-                          {msg.searchResults && msg.searchResults.length > 0 && (
-                            <SearchResults results={msg.searchResults} />
-                          )}
-
                           {/* 普通 Markdown 内容 */}
                           {msg.content && (
                             <Card
@@ -591,7 +675,25 @@ function App() {
                               <div className="markdown-content">
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
-                                  components={{ img: ImageComponent }}
+                                  components={{
+                                    img: ImageComponent,
+                                    strong: StrongComponent,
+                                    text: ({ value }) => {
+                                      // 处理【】包裹的文字
+                                      const parts = parseBracketText(value);
+                                      return (
+                                        <>
+                                          {parts.map((part, idx) =>
+                                            part.type === 'bracket' ? (
+                                              <BracketText key={idx} text={part.content} />
+                                            ) : (
+                                              <span key={idx}>{part.content}</span>
+                                            )
+                                          )}
+                                        </>
+                                      );
+                                    }
+                                  }}
                                 >
                                   {msg.content}
                                 </ReactMarkdown>
@@ -617,11 +719,20 @@ function App() {
 
                           {/* 荐购表单 */}
                           {msg.type === 'purchase_form' && (
-                            <PurchaseForm
-                              title={msg.purchaseTitle}
-                              author={msg.purchaseAuthor}
-                              onSubmit={handlePurchaseSubmit}
-                            />
+                            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                              <PurchaseForm
+                                key={msg.id || index}
+                                title={msg.purchaseTitle}
+                                author={msg.purchaseAuthor}
+                                submitted={msg.purchaseSubmitted || false}
+                                onSubmit={(data) => handlePurchaseSubmit(data, msg.id)}
+                              />
+                            </div>
+                          )}
+
+                          {/* 搜索来源 - 放到最下面 */}
+                          {msg.searchResults && msg.searchResults.length > 0 && (
+                            <SearchResults results={msg.searchResults} />
                           )}
                         </div>
                       ) : (
@@ -635,7 +746,18 @@ function App() {
                             border: 'none'
                           }}
                         >
-                          <Text>{msg.content}</Text>
+                          <Text>
+                            {(() => {
+                              const parts = parseBracketText(msg.content);
+                              return parts.map((part, idx) =>
+                                part.type === 'bracket' ? (
+                                  <BracketText key={idx} text={part.content} />
+                                ) : (
+                                  <span key={idx}>{part.content}</span>
+                                )
+                              );
+                            })()}
+                          </Text>
                         </Card>
                       )}
                     </div>

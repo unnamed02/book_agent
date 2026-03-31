@@ -21,7 +21,7 @@
     <!-- 空状态 -->
     <view wx:if="{{messages.length === 0}}" class="empty-state">
       <image class="empty-icon-img" src="../../images/bg.png" mode="aspectFit"></image>
-      <view class="empty-title">您好！我是碑林区图书馆AI馆员</view>
+      <view class="empty-title">您好！我是某某区图书馆AI馆员</view>
       <view class="empty-desc">告诉我您想读什么类型的书，我会为您推荐</view>
     </view>
 

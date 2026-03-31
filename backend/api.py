@@ -227,6 +227,7 @@ class PurchaseRecommendationRequest(BaseModel):
 
 
 @app.post("/purchase-recommendation")
+@app.post("/purchase/recommend")
 async def submit_purchase_recommendation(
     request: PurchaseRecommendationRequest,
     db: AsyncSession = Depends(get_db)

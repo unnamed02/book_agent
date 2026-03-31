@@ -4,10 +4,9 @@ import { ShoppingOutlined, CheckCircleOutlined } from '@ant-design/icons';
 
 
 
-const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
+const PurchaseForm = ({ title = '', author = '', submitted: initialSubmitted = false, onSubmit }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
 
   const initialValues = {
     title: title || '',
@@ -17,7 +16,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
   };
 
   const handleSubmit = async (values) => {
-    if (submitting || submitted) return;
+    if (submitting) return;
 
     setSubmitting(true);
     try {
@@ -25,27 +24,40 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
         ? 'http://localhost:8000'
         : `http://${window.location.hostname}:8000`;
 
+      // 从 localStorage 获取用户ID，如果没有则生成一个
+      let userId = localStorage.getItem('library_user_id');
+      if (!userId) {
+        userId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('library_user_id', userId);
+      }
+
       const response = await fetch(`${apiBaseUrl}/purchase/recommend`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title: values.title,
+          user_id: userId,
+          book_title: values.title,
           author: values.author,
-          note: values.note,
+          notes: values.note,
           contact: values.contact
         }),
       });
 
-      if (response.ok) {
-        setSubmitted(true);
-        antMessage.success('荐购申请已提交，感谢您的推荐！');
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        antMessage.success('提交成功');
         if (onSubmit) {
-          onSubmit(values);
+          onSubmit({
+            title: values.title,
+            author: values.author,
+            message: '感谢您的推荐，该书上架会第一时间通知！请问还有什么可以帮您的吗？'
+          });
         }
       } else {
-        throw new Error('提交失败');
+        throw new Error(result.message || '提交失败');
       }
     } catch (error) {
       console.error('提交荐购失败:', error);
@@ -55,10 +67,9 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
     }
   };
 
-  if (submitted) {
+  if (initialSubmitted) {
     return (
       <Card
-        
         style={{
           width: 375,
           background: '#fff',
@@ -66,7 +77,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
           border: '1px solid #e8e8e8'
         }}
       >
-        <Space orientation="vertical" align="center" style={{ width: '100%', padding: '20px 0' }}>
+        <Space direction="vertical" align="center" style={{ width: '100%', padding: '20px 0' }}>
           <CheckCircleOutlined style={{ fontSize: 48, color: '#1677ff' }} />
           <div style={{ fontSize: 16, fontWeight: 600, color: '#1677ff', marginBottom: 8 }}>感谢您的荐购！</div>
           <div style={{ fontSize: 13, color: '#666' }}>我们会尽快处理您的荐购申请</div>
