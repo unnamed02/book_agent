@@ -24,7 +24,7 @@ Component({
   methods: {
     updateDisplayBooks() {
       const books = this.properties.books || []
-      const displayBooks = this.data.expanded ? books : books.slice(0, 3)
+      const displayBooks = this.data.expanded ? books : []
       this.setData({ displayBooks })
     },
 
