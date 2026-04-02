@@ -3,10 +3,16 @@
   margin-top: 24rpx;
 }
 
+.not-found-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16rpx 0;
+}
+
 .not-found-title {
   font-size: 28rpx;
   color: #333;
-  margin-bottom: 12rpx;
   font-weight: normal;
 }
 

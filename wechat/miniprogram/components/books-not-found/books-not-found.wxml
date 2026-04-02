@@ -1,7 +1,10 @@
 <!--components/books-not-found/books-not-found.wxml-->
 <view class="books-not-found-container">
-  <view class="not-found-title">以下{{books.length}}本书籍未找到资源：</view>
-  <view class="books-list">
+  <view class="not-found-header" bindtap="onToggle">
+    <text class="not-found-title">以下{{books.length}}本书籍未找到资源</text>
+    <text class="toggle-btn">{{expanded ? '收起' : '展开'}}</text>
+  </view>
+  <view wx:if="{{expanded}}" class="books-list">
     <view
       wx:for="{{displayBooks}}"
       wx:key="index"
@@ -20,8 +23,5 @@
         订购
       </text>
     </view>
-  </view>
-  <view wx:if="{{books.length > 3}}" class="toggle-btn" bindtap="onToggle">
-    {{expanded ? '收起' : '展开'}}
   </view>
 </view>
