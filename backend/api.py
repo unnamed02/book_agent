@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import logging
 import json
 import uuid
-import requests
+import httpx
 import redis.asyncio as redis
 import os
 import asyncio
@@ -197,16 +197,37 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
+
+# 允许代理的图片域名白名单（防止 SSRF）
+ALLOWED_IMAGE_HOSTS = {
+    "img1.doubanio.com",
+    "img2.doubanio.com",
+    "img3.doubanio.com",
+    "img9.doubanio.com",
+    "book.douban.com",
+}
+
+
 @app.get("/proxy-image")
 async def proxy_image(url: str):
     """代理图片请求，主要用于豆瓣图片"""
+    # 校验 URL 域名，防止 SSRF
+    try:
+        from urllib.parse import urlparse
+        parsed = urlparse(url)
+        if parsed.scheme not in ("http", "https") or parsed.hostname not in ALLOWED_IMAGE_HOSTS:
+            logger.warning(f"拒绝代理非白名单URL: {url}")
+            return Response(status_code=403)
+    except Exception:
+        return Response(status_code=400)
+
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://book.douban.com/'
         }
-        response = requests.get(url, headers=headers, timeout=10)
-        logger.info(response)
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(url, headers=headers)
         response.raise_for_status()
         return Response(
             content=response.content,
