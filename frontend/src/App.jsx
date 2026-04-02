@@ -345,12 +345,25 @@ function App() {
                 // 搜索结果
                 setMessages(prev => {
                   const newMessages = [...prev];
+                  const searchResults = Array.isArray(data.content) ? data.content : [];
+
                   if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    // 如果已有助手消息，更新它
                     const lastMsg = newMessages[newMessages.length - 1];
                     newMessages[newMessages.length - 1] = {
                       ...lastMsg,
-                      searchResults: data.content || []
+                      searchResults: searchResults
                     };
+                  } else {
+                    // 如果还没有助手消息，创建一个新的
+                    newMessages.push({
+                      role: 'assistant',
+                      content: '',
+                      searchResults: searchResults,
+                      isStreaming: true
+                    });
+                    hasCreatedMessage = true;
+                    setLoading(false);  // 关闭加载动画
                   }
                   return newMessages;
                 });
@@ -617,11 +630,13 @@ function App() {
 
                           {/* 荐购表单 */}
                           {msg.type === 'purchase_form' && (
-                            <PurchaseForm
-                              title={msg.purchaseTitle}
-                              author={msg.purchaseAuthor}
-                              onSubmit={handlePurchaseSubmit}
-                            />
+                            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                              <PurchaseForm
+                                title={msg.purchaseTitle}
+                                author={msg.purchaseAuthor}
+                                onSubmit={handlePurchaseSubmit}
+                              />
+                            </div>
                           )}
                         </div>
                       ) : (

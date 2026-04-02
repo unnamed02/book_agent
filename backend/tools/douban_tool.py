@@ -74,7 +74,7 @@ def search_douban_book(title: str, author: str, use_llm_optimize: bool = True) -
             target = items[0].get("target", {})
             return {
                 "title": target.get("title", ""),
-                "rating": target.get("rating", {}).get("value", ""),
+                "rating": target.get("rating", {}).get("value") or "",
                 "cover_url": target.get("cover_url", ""),
                 "publisher": target.get("publisher", ""),
                 "pubdate": target.get("pubdate", ""),

@@ -96,7 +96,7 @@ const BookCard = ({ books, onRecommend }) => {
                 {currentBook.publisher}
               </Tag>
             )}
-            {currentBook.rating && (
+            {currentBook.rating && currentBook.rating !== '0' && currentBook.rating !== 0 && (
               <Tag size="small" style={{ marginBottom: 4, background: '#e6f4ff', color: '#1677ff', border: 'none', fontSize: 10 }}>
                 {currentBook.rating}分
               </Tag>
