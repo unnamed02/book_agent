@@ -61,9 +61,26 @@ class ApiService {
   baseUrl: string
 
   constructor() {
-    // 微信小程序中需要配置服务器域名
-    // 开发环境可以在开发者工具中开启"不校验合法域名"
-    this.baseUrl = 'http://localhost:8000' // 默认本地开发
+    // 根据小程序环境自动切换 API 地址
+    // __wxConfig.envVersion 取值: develop(开发版) / trial(体验版) / release(正式版)
+    const envVersion = (wx as any).getAccountInfoSync?.().miniProgram?.envVersion || 'develop'
+    
+    // ===== 配置区域：根据你的实际情况修改 =====
+    const API_CONFIG = {
+      // 开发环境 - 本地测试（需开启"不校验合法域名"）
+      develop: 'http://localhost:8000',
+      
+      // 体验版 - 测试服务器
+      trial: 'https://your-trial-server.com',
+      
+      // 正式版 - 生产服务器（必须 HTTPS）
+      release: 'https://your-production-server.com'
+    }
+    // ==========================================
+    
+    this.baseUrl = API_CONFIG[envVersion as keyof typeof API_CONFIG] || API_CONFIG.develop
+    
+    console.log(`[API] 当前环境: ${envVersion}, API地址: ${this.baseUrl}`)
   }
 
   // 设置 API 基础 URL

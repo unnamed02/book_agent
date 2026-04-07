@@ -1,0 +1,138 @@
+# ============================================
+# AI 图书推荐助手 - Docker Compose 配置
+# 试用阶段推荐配置
+# ============================================
+
+version: '3.8'
+
+services:
+  # --------------------------------------------
+  # PostgreSQL 数据库
+  # --------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    container_name: book_agent_postgres
+    environment:
+      POSTGRES_USER: book_agent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-book_agent_password}
+      POSTGRES_DB: book_agent
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U book_agent"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command:
+      - "postgres"
+      - "-c"
+      - "max_connections=100"
+
+  # --------------------------------------------
+  # Redis 缓存
+  # --------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: book_agent_redis
+    command: >
+      redis-server
+      --appendonly yes
+      --appendfsync everysec
+      --auto-aof-rewrite-percentage 100
+      --auto-aof-rewrite-min-size 256mb
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # --------------------------------------------
+  # Milvus 向量数据库（单机版）
+  # --------------------------------------------
+  milvus:
+    image: milvusdb/milvus:v2.4.1
+    container_name: book_agent_milvus
+    command: ["milvus", "run", "standalone"]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus_data:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - etcd
+      - minio
+    restart: unless-stopped
+
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.5
+    container_name: book_agent_etcd
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+    volumes:
+      - etcd_data:/etcd
+    command: >
+      etcd
+      -advertise-client-urls http://etcd:2379
+      -listen-client-urls http://0.0.0.0:2379
+      --data-dir /etcd
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:RELEASE.2023-03-20T20-16-18Z
+    container_name: book_agent_minio
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - minio_data:/minio_data
+    command: minio server /minio_data
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    restart: unless-stopped
+
+  # --------------------------------------------
+  # 后端服务（可选，也可以用 PM2 直接部署）
+  # --------------------------------------------
+  # backend:
+  #   build:
+  #     context: ./backend
+  #	dockerfile: Dockerfile
+  #   container_name: book_agent_backend
+  #   environment:
+  #     - DATABASE_URL=postgresql+asyncpg://book_agent:${POSTGRES_PASSWORD:-book_agent_password}@postgres:5432/book_agent
+  #     - REDIS_URL=redis://redis:6379/0
+  #     - MILVUS_URI=http://milvus:19530
+  #   ports:
+  #     - "8000:8000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  milvus_data:
+  etcd_data:
+  minio_data:
+
+# 网络配置（可选）
+# networks:
+#   default:
+#     name: book_agent_network

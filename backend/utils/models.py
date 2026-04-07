@@ -84,12 +84,30 @@ class DatabaseManager:
         )
 
         # 创建异步引擎
-        self.engine = create_async_engine(
-            self.database_url,
-            echo=False,  # 生产环境设为False
-            poolclass=NullPool if "sqlite" in self.database_url else None,
-            pool_pre_ping=True,  # 连接健康检查
-        )
+        # SQLite: 使用 NullPool（无连接池）
+        # PostgreSQL: 配置连接池支持高并发
+        if "sqlite" in self.database_url:
+            self.engine = create_async_engine(
+                self.database_url,
+                echo=False,
+                poolclass=NullPool,
+                pool_pre_ping=True,
+            )
+        else:
+            # PostgreSQL 连接池配置
+            # pool_size: 基础连接数（默认值偏小，适合试用阶段）
+            # max_overflow: 峰值时额外创建的连接数
+            # pool_timeout: 获取连接的超时时间
+            # pool_recycle: 连接回收时间，防止连接被数据库断开
+            self.engine = create_async_engine(
+                self.database_url,
+                echo=False,
+                pool_size=10,           # 基础连接数：10
+                max_overflow=20,        # 峰值额外连接：20
+                pool_timeout=30,        # 等待连接超时：30秒
+                pool_recycle=3600,      # 连接回收时间：1小时
+                pool_pre_ping=True,     # 连接健康检查
+            )
 
         # 创建会话工厂
         self.async_session_maker = async_sessionmaker(

@@ -110,9 +110,19 @@ async def lifespan(_app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+import os
+
+# CORS 配置：生产环境应该限制具体域名
+cors_origins = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+if cors_origins == ["*"]:
+    # 开发环境允许所有域名
+    logger.warning("CORS 允许所有域名，生产环境请设置 ALLOWED_ORIGINS 环境变量")
+else:
+    logger.info(f"CORS 允许的域名: {cors_origins}")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -123,6 +133,84 @@ app.add_middleware(
 async def root():
     """健康检查端点"""
     return {"status": "ok", "message": "Book recommendation API is running"}
+
+
+@app.get("/health")
+async def health_check():
+    """
+    详细健康检查端点
+    用于监控系统状态和并发能力评估
+    """
+    import psutil
+    
+    health_data = {
+        "status": "ok",
+        "timestamp": datetime.now().isoformat(),
+        "version": "1.0.0",
+        "services": {}
+    }
+    
+    # 数据库状态检查
+    try:
+        db_manager = get_db_manager()
+        # 简单检查连接是否正常
+        db_type = "PostgreSQL" if "postgresql" in db_manager.database_url else "SQLite"
+        health_data["services"]["database"] = {
+            "status": "ok",
+            "type": db_type
+        }
+    except Exception as e:
+        health_data["services"]["database"] = {
+            "status": "error",
+            "error": str(e)
+        }
+        health_data["status"] = "degraded"
+    
+    # Redis 状态检查
+    if redis_client:
+        try:
+            await redis_client.ping()
+            # 获取 Redis 信息
+            info = await redis_client.info()
+            health_data["services"]["redis"] = {
+                "status": "ok",
+                "connected_clients": info.get("connected_clients", "N/A"),
+                "used_memory_human": info.get("used_memory_human", "N/A")
+            }
+        except Exception as e:
+            health_data["services"]["redis"] = {
+                "status": "error",
+                "error": str(e)
+            }
+            health_data["status"] = "degraded"
+    else:
+        health_data["services"]["redis"] = {
+            "status": "disabled"
+        }
+    
+    # 会话状态
+    if session_manager:
+        health_data["services"]["session"] = {
+            "active_sessions": session_manager.get_session_count(),
+            "max_sessions": session_manager.max_sessions
+        }
+    
+    # 系统资源
+    try:
+        memory = psutil.virtual_memory()
+        cpu_percent = psutil.cpu_percent(interval=0.1)
+        health_data["system"] = {
+            "cpu_percent": cpu_percent,
+            "memory_percent": memory.percent,
+            "memory_available_gb": round(memory.available / (1024**3), 2),
+            "load_average": psutil.getloadavg() if hasattr(psutil, 'getloadavg') else None
+        }
+    except Exception as e:
+        health_data["system"] = {
+            "error": str(e)
+        }
+    
+    return health_data
 
 # 向量数据库（共享实例）
 vectorstore = None
