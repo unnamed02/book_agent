@@ -46,8 +46,16 @@
               >
                 <view wx:if="{{lib.title}}" class="library-title">{{lib.title}}</view>
                 <view wx:if="{{lib.pub_info}}" class="library-pub-info">{{lib.pub_info}}</view>
-                <view class="library-detail">索书号: {{lib.call_number}} | {{lib.location}}</view>
-                <view class="library-detail">状态: {{lib.status}} (馆藏{{lib.total}}册，可借{{lib.available}}册)</view>
+                <view class="library-meta-row">
+                  <text class="meta-label">索书号</text>
+                  <text class="meta-value">{{lib.call_number}}</text>
+                  <text class="meta-divider">|</text>
+                  <text class="meta-value">{{lib.location}}</text>
+                </view>
+                <view class="library-status">
+                  <text class="status-badge {{lib.available > 0 ? 'status-available' : 'status-unavailable'}}">{{lib.status}}</text>
+                  <text class="library-count">馆藏{{lib.total}}册，可借{{lib.available}}册</text>
+                </view>
               </view>
             </view>
           </view>

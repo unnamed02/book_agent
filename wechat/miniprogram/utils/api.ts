@@ -68,13 +68,13 @@ class ApiService {
     // ===== 配置区域：根据你的实际情况修改 =====
     const API_CONFIG = {
       // 开发环境 - 本地测试（需开启"不校验合法域名"）
-      develop: 'http://localhost:8000',
-      
+      develop: 'https://www.mingdikeji.top/api/xabl',
+
       // 体验版 - 测试服务器
-      trial: 'https://your-trial-server.com',
-      
+      trial: 'https://www.mingdikeji.top/api/xabl',
+
       // 正式版 - 生产服务器（必须 HTTPS）
-      release: 'https://your-production-server.com'
+      release: 'https://www.mingdikeji.top/api/xabl'
     }
     // ==========================================
     

@@ -132,6 +132,63 @@
   line-height: 1.5;
 }
 
+/* 索书号 + 馆藏地点 同一行 */
+.library-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8rpx;
+  margin-bottom: 8rpx;
+  flex-wrap: wrap;
+}
+
+.meta-label {
+  color: #1890ff;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.meta-value {
+  color: #1890ff;
+  font-size: 24rpx;
+  font-weight: bold;
+}
+
+.meta-divider {
+  color: #ccc;
+  font-size: 24rpx;
+  margin: 0 8rpx;
+}
+
+/* 状态行 */
+.library-status {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4rpx 16rpx;
+  border-radius: 8rpx;
+  font-size: 22rpx;
+  font-weight: bold;
+}
+
+.status-available {
+  background: #f0f9ff;
+  color: #1890ff;
+}
+
+.status-unavailable {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.library-count {
+  color: #999;
+  font-size: 22rpx;
+}
+
 .resources-list {
   display: flex;
   flex-direction: column;

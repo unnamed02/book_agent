@@ -29,23 +29,25 @@ Component({
     },
 
     onResourceTap(e: any) {
-      const url = e.currentTarget.dataset.url
+      let url = e.currentTarget.dataset.url
       if (!url) return
 
+      // 掌阅链接简化：只保留 bookId 参数
+      if (url.includes('zhangyue.com')) {
+        const bookIdMatch = url.match(/bookId=(\d+)/)
+        if (bookIdMatch) {
+          const base = url.split('?')[0]
+          url = `${base}?bookId=${bookIdMatch[1]}`
+        }
+      }
+
       wx.showModal({
-        title: '打开链接',
-        content: '是否要打开此链接？',
-        confirmText: '打开',
-        cancelText: '复制',
+        title: '请复制至浏览器打开',
+        content: url,
+        confirmText: '复制',
+        cancelText: '取消',
         success: (res) => {
           if (res.confirm) {
-            wx.navigateTo({
-              url: `/pages/webview/webview?url=${encodeURIComponent(url)}`,
-              fail: () => {
-                this.copyLink(url)
-              }
-            })
-          } else if (res.cancel) {
             this.copyLink(url)
           }
         }
