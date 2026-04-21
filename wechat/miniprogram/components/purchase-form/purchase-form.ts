@@ -40,6 +40,18 @@ Component({
       this.setData({ contact: e.detail.value })
     },
 
+    onAIRecommend() {
+      const { title, author } = this.data
+      if (!title || !title.trim()) {
+        wx.showToast({ title: '请先输入书名', icon: 'none' })
+        return
+      }
+      this.triggerEvent('aiRecommend', {
+        title: title.trim(),
+        author: author?.trim() || ''
+      })
+    },
+
     async onSubmit() {
       const { title, author, note, contact, submitting } = this.data
 

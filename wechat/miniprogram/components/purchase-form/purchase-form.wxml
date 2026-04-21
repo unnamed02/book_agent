@@ -47,7 +47,13 @@
     />
   </view>
 
-  <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || submitted}}">
-    {{submitted ? '已提交' : (submitting ? '提交中...' : '提交荐购')}}
-  </button>
+  <view class="btn-group">
+    <button class="ai-btn" bindtap="onAIRecommend" disabled="{{!title || submitting}}">
+      <text class="ai-btn-icon">✨</text>
+      <text>AI推荐</text>
+    </button>
+    <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || submitted}}">
+      {{submitted ? '已提交' : (submitting ? '提交中...' : '提交荐购')}}
+    </button>
+  </view>
 </view>

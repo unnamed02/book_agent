@@ -67,8 +67,8 @@ class ApiService {
     
     // ===== 配置区域：根据你的实际情况修改 =====
     const API_CONFIG = {
-      // 开发环境 - 本地测试（需开启"不校验合法域名"）
-      develop: 'https://www.mingdikeji.top/api/xabl',
+      // 开发环境 - 本地测试（需在微信开发者工具中勾选"不校验合法域名"）
+      develop: 'http://localhost:8000',
 
       // 体验版 - 测试服务器
       trial: 'https://www.mingdikeji.top/api/xabl',

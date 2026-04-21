@@ -139,6 +139,61 @@ Page({
     )
   },
 
+  // AI推荐：分析这本书哪个版本好
+  onAIRecommend(e: any) {
+    const { title, author } = e.detail
+    if (!title) return
+
+    const messageContent = author
+      ? `《${title}》（${author}著）哪个出版社的什么版本好？`
+      : `《${title}》哪个出版社的什么版本好？`
+
+    const userMessage: Message = {
+      role: 'user',
+      content: messageContent,
+    }
+
+    const messages = [...this.data.messages, userMessage]
+    this.setData({ messages, loading: true, canSend: false })
+    this.scrollToBottom()
+
+    let currentContent = ''
+    let hasCreatedMessage = false
+
+    apiService.sendChatMessage(
+      {
+        message: userMessage.content,
+        session_id: this.data.sessionId || undefined,
+        user_id: this.data.userId || undefined,
+      },
+      (data: SSEData) => {
+        this.handleSSEMessage(data, (content: string) => {
+          currentContent = content
+          hasCreatedMessage = this.updateAssistantMessage(content, hasCreatedMessage, true)
+        })
+      },
+      (error: any) => {
+        console.error('AI推荐失败:', error)
+        wx.showToast({ title: '推荐失败，请重试', icon: 'none' })
+        const errorMessage: Message = {
+          role: 'assistant',
+          content: '抱歉，发生了错误。请稍后再试。',
+          isStreaming: false,
+        }
+        this.setData({ messages: [...this.data.messages, errorMessage], loading: false })
+      },
+      () => {
+        this.setData({ loading: false })
+        if (hasCreatedMessage) {
+          const messages = this.data.messages
+          messages[messages.length - 1].isStreaming = false
+          this.setData({ messages })
+        }
+        storageService.setMessages(this.data.messages)
+      }
+    )
+  },
+
   // 处理SSE消息
   handleSSEMessage(data: SSEData, updateContent: (content: string) => void) {
     if (data.type === 'session') {

@@ -81,6 +81,7 @@
               title="{{item.purchaseTitle}}"
               author="{{item.purchaseAuthor}}"
               bind:submit="onPurchaseSubmit"
+              bind:aiRecommend="onAIRecommend"
             />
           </view>
         </view>
