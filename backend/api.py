@@ -42,6 +42,8 @@ redis_client: Optional[redis.Redis] = None
 session_manager: Optional[SessionManager] = None
 # 全局后台任务
 compact_task: Optional[asyncio.Task] = None
+# 活跃的生成任务 {session_id: asyncio.Task}
+active_generators: Dict[str, asyncio.Task] = {}
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -261,29 +263,66 @@ class ChatRequest(BaseModel):
     session_id: Optional[str] = None
     user_id: Optional[str] = None  # 用户ID,支持多用户记忆
 
+class StopChatRequest(BaseModel):
+    session_id: str
+    user_id: Optional[str] = None
+
 @app.post("/chat/stream")
 async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     """流式响应的聊天接口（使用 LangGraph 增强流式工作流）"""
 
     async def generate():
-        # 获取或创建会话
-        session = await session_manager.get_or_create_session(
-            session_id=request.session_id,
-            user_id=request.user_id,
-            db=db
-        )
+        # 检查该会话是否已有活跃任务
+        if request.session_id in active_generators:
+            existing_task = active_generators[request.session_id]
+            if existing_task and not existing_task.done():
+                yield f"data: {json.dumps({'type': 'busy', 'content': '当前有正在进行的对话，请稍后再试'}, ensure_ascii=False)}\n\n"
+                return
 
-        # 使用增强版流式工作流（支持 token 级别流式输出）
-        async for event in stream_recommendation_workflow_enhanced(
-            user_query=request.message,
-            session_id=session.session_id,
-            user_id=session.user_id,
-            session=session
-        ):
-            # 将事件转换为 SSE 格式并发送
-            yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        # 注册当前任务
+        current_task = asyncio.current_task()
+        if current_task:
+            active_generators[request.session_id] = current_task
+
+        try:
+            # 获取或创建会话
+            session = await session_manager.get_or_create_session(
+                session_id=request.session_id,
+                user_id=request.user_id,
+                db=db
+            )
+
+            # 使用增强版流式工作流（支持 token 级别流式输出）
+            async for event in stream_recommendation_workflow_enhanced(
+                user_query=request.message,
+                session_id=session.session_id,
+                user_id=session.user_id,
+                session=session
+            ):
+                # 将事件转换为 SSE 格式并发送
+                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except asyncio.CancelledError:
+            logger.info(f"生成任务被取消: session_id={request.session_id}")
+            yield f"data: {json.dumps({'type': 'done'}, ensure_ascii=False)}\n\n"
+            return
+        finally:
+            # 清理活跃任务记录
+            active_generators.pop(request.session_id, None)
 
     return StreamingResponse(generate(), media_type="text/event-stream")
+
+@app.post("/chat/stop")
+async def chat_stop(request: StopChatRequest):
+    """停止指定会话的生成任务"""
+    session_id = request.session_id
+
+    task = active_generators.pop(session_id, None)
+    if task and not task.done():
+        task.cancel()
+        logger.info(f"已取消生成任务: session_id={session_id}")
+        return {"success": True, "message": "已停止生成"}
+
+    return {"success": False, "message": "没有正在进行的生成任务"}
 
 @app.get("/proxy-image")
 async def proxy_image(url: str):

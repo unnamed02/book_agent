@@ -111,7 +111,7 @@ class ApiService {
     onMessage: (data: SSEData) => void,
     onError: (error: any) => void,
     onComplete: () => void
-  ) {
+  ): any {
     const requestTask: any = wx.request({
       url: `${this.baseUrl}/chat/stream`,
       method: 'POST',
@@ -178,6 +178,33 @@ class ApiService {
     return new Promise((resolve, reject) => {
       wx.request({
         url: `${this.baseUrl}/purchase-recommendation`,
+        method: 'POST',
+        header: {
+          'Content-Type': 'application/json',
+        },
+        data,
+        success: (res: any) => {
+          if (res.statusCode === 200) {
+            resolve(res.data)
+          } else {
+            reject(new Error(`请求失败: ${res.statusCode}`))
+          }
+        },
+        fail: (error: any) => {
+          reject(error)
+        },
+      })
+    })
+  }
+
+  // 停止指定会话的生成任务
+  stopChat(data: {
+    session_id?: string
+    user_id?: string
+  }): Promise<{ success: boolean; message: string }> {
+    return new Promise((resolve, reject) => {
+      wx.request({
+        url: `${this.baseUrl}/chat/stop`,
         method: 'POST',
         header: {
           'Content-Type': 'application/json',

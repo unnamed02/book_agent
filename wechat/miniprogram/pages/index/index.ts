@@ -28,6 +28,7 @@ Page({
     scrollToView: '',
     canSend: false,
     isUserScrolling: false,
+    currentRequestTask: null as any,
   },
 
   scrollTimer: null as number | null,
@@ -90,7 +91,7 @@ Page({
     let currentContent = ''
     let hasCreatedMessage = false
 
-    apiService.sendChatMessage(
+    const requestTask = apiService.sendChatMessage(
       {
         message: userMessage.content,
         session_id: sessionId || undefined,
@@ -120,11 +121,12 @@ Page({
         this.setData({
           messages: [...this.data.messages, errorMessage],
           loading: false,
+          currentRequestTask: null,
         })
       },
       // onComplete
       () => {
-        this.setData({ loading: false })
+        this.setData({ loading: false, currentRequestTask: null })
 
         // 标记消息为非流式
         if (hasCreatedMessage) {
@@ -137,6 +139,47 @@ Page({
         storageService.setMessages(this.data.messages)
       }
     )
+
+    this.setData({ currentRequestTask: requestTask })
+  },
+
+  // 停止生成
+  async onStopGeneration() {
+    const { currentRequestTask, messages, sessionId } = this.data
+
+    // 先通知后端停止生成
+    if (sessionId) {
+      try {
+        await apiService.stopChat({ session_id: sessionId })
+      } catch (e) {
+        console.error('通知后端停止失败:', e)
+      }
+    }
+
+    // 中断前端请求
+    if (currentRequestTask) {
+      try {
+        currentRequestTask.abort()
+      } catch (e) {
+        console.error('中断请求失败:', e)
+      }
+    }
+
+    // 标记最后一条助手消息为非流式
+    const newMessages = [...messages]
+    if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+      newMessages[newMessages.length - 1] = {
+        ...newMessages[newMessages.length - 1],
+        isStreaming: false,
+      }
+    }
+
+    this.setData({
+      loading: false,
+      currentRequestTask: null,
+      messages: newMessages,
+    })
+    storageService.setMessages(newMessages)
   },
 
   // AI推荐：分析这本书哪个版本好
@@ -177,7 +220,7 @@ Page({
     let currentContent = ''
     let hasCreatedMessage = false
 
-    apiService.sendChatMessage(
+    const requestTask = apiService.sendChatMessage(
       {
         message: userMessage.content,
         session_id: this.data.sessionId || undefined,
@@ -197,10 +240,10 @@ Page({
           content: '抱歉，发生了错误。请稍后再试。',
           isStreaming: false,
         }
-        this.setData({ messages: [...this.data.messages, errorMessage], loading: false })
+        this.setData({ messages: [...this.data.messages, errorMessage], loading: false, currentRequestTask: null })
       },
       () => {
-        this.setData({ loading: false })
+        this.setData({ loading: false, currentRequestTask: null })
         if (hasCreatedMessage) {
           const messages = this.data.messages
           messages[messages.length - 1].isStreaming = false
@@ -209,11 +252,18 @@ Page({
         storageService.setMessages(this.data.messages)
       }
     )
+
+    this.setData({ currentRequestTask: requestTask })
   },
 
   // 处理SSE消息
   handleSSEMessage(data: SSEData, updateContent: (content: string) => void) {
-    if (data.type === 'session') {
+    if (data.type === 'busy') {
+      // 当前有正在进行的对话
+      wx.showToast({ title: data.content || '请稍后再试', icon: 'none' })
+      this.setData({ loading: false, currentRequestTask: null })
+      return
+    } else if (data.type === 'session') {
       // 保存会话信息
       if (data.session_id) {
         this.setData({ sessionId: data.session_id })

@@ -124,12 +124,21 @@
     </view>
     <view class="btn-wrapper">
       <button
+        wx:if="{{!loading}}"
         class="btn-send {{canSend ? 'btn-send-active' : ''}}"
         bindtap="sendMessage"
-        disabled="{{!canSend || loading}}"
+        disabled="{{!canSend}}"
         hover-class="btn-hover"
       >
-        发送
+        <text>发送</text>
+      </button>
+      <button
+        wx:if="{{loading}}"
+        class="btn-stop"
+        bindtap="onStopGeneration"
+        hover-class="btn-hover"
+      >
+        <text>停止</text>
       </button>
     </view>
   </view>
