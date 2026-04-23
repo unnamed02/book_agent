@@ -1,9 +1,11 @@
 /* components/purchase-form/purchase-form.wxss */
 .purchase-form-container {
-  padding: 24rpx;
+  padding: 0;
   background: white;
   border-radius: 12rpx;
   margin-top: 16rpx;
+  box-sizing: border-box;
+  width: 100%;
 }
 
 .form-title {
@@ -12,12 +14,6 @@
   color: #333;
   margin-bottom: 24rpx;
   text-align: center;
-}
-
-.form-section {
-  background: white;
-  border-radius: 8rpx;
-  padding: 24rpx;
 }
 
 .form-item {
@@ -33,14 +29,6 @@
   color: #333;
   margin-bottom: 12rpx;
   font-weight: 500;
-}
-
-.form-value {
-  font-size: 28rpx;
-  color: #666;
-  padding: 16rpx;
-  background: #f5f5f5;
-  border-radius: 6rpx;
 }
 
 .form-input {
@@ -75,6 +63,7 @@
   height: 76rpx;
   line-height: 76rpx;
   padding: 0;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,6 +72,7 @@
   color: #1677ff;
   background: #e6f4ff;
   border: none;
+  min-width: 0 !important;
 }
 
 .ai-btn::after {
@@ -98,6 +88,7 @@
   height: 76rpx;
   line-height: 76rpx;
   padding: 0;
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -106,6 +97,7 @@
   color: #ffffff;
   background: #1677ff;
   border: none;
+  min-width: 0 !important;
 }
 
 .submit-btn::after {

@@ -53,7 +53,7 @@
       <text>AI推荐</text>
     </button>
     <button class="submit-btn" bindtap="onSubmit" loading="{{submitting}}" disabled="{{submitting || submitted}}">
-      {{submitted ? '已提交' : (submitting ? '提交中...' : '提交荐购')}}
+      <text>{{submitted ? '已提交' : (submitting ? '提交中...' : '提交荐购')}}</text>
     </button>
   </view>
 </view>

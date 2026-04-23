@@ -263,3 +263,55 @@
   color: #1890ff;
   font-size: 24rpx;
 }
+
+.btn-group {
+  display: flex;
+  gap: 16rpx;
+  margin-top: 12rpx;
+}
+
+.ai-btn {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  border-radius: 8rpx;
+  color: #1677ff;
+  background: #e6f4ff;
+  border: none;
+  min-width: 0 !important;
+}
+
+.ai-btn::after {
+  border: none;
+}
+
+.ai-btn-icon {
+  margin-right: 8rpx;
+}
+
+.recommend-btn {
+  flex: 1;
+  height: 76rpx;
+  line-height: 76rpx;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28rpx;
+  border-radius: 8rpx;
+  color: #ffffff;
+  background: #1677ff;
+  border: none;
+  min-width: 0 !important;
+}
+
+.recommend-btn::after {
+  border: none;
+}

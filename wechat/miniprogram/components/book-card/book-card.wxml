@@ -89,23 +89,16 @@
             </view>
           </view>
 
-          <!-- 荐购按钮（所有书籍都显示） -->
+          <!-- AI导读 & 荐购按钮 -->
           <view class="book-section">
-            <view class="section-title">荐购</view>
-            <view class="library-list">
-              <view class="library-item recommend-item">
-                <view class="recommend-info">
-                  <text class="recommend-desc">如需增加馆藏或购买其他版本，可提交荐购申请</text>
-                </view>
-                <text
-                  class="recommend-link"
-                  bindtap="onRecommendTap"
-                  data-title="{{item.title}}"
-                  data-author="{{item.author}}"
-                >
-                  荐购
-                </text>
-              </view>
+            <view class="btn-group">
+              <button class="ai-btn" bindtap="onAIReadTap" data-title="{{item.title}}" data-author="{{item.author}}">
+                <text class="ai-btn-icon">✨</text>
+                <text>AI导读</text>
+              </button>
+              <button class="recommend-btn" bindtap="onRecommendTap" data-title="{{item.title}}" data-author="{{item.author}}">
+                <text>荐购</text>
+              </button>
             </view>
           </view>
         </view>

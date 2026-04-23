@@ -69,6 +69,11 @@ Component({
     onRecommendTap(e: any) {
       const { title, author } = e.currentTarget.dataset
       this.triggerEvent('recommend', { title, author })
+    },
+
+    onAIReadTap(e: any) {
+      const { title, author } = e.currentTarget.dataset
+      this.triggerEvent('aiRead', { title, author })
     }
   }
 })

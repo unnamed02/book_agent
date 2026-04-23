@@ -67,7 +67,7 @@
             </view>
 
             <!-- 书籍卡片 -->
-            <book-card wx:if="{{item.type === 'book_cards' && item.books}}" books="{{item.books}}" bind:recommend="onRecommend" />
+            <book-card wx:if="{{item.type === 'book_cards' && item.books}}" books="{{item.books}}" bind:recommend="onRecommend" bind:aiRead="onAIRead" />
 
             <!-- 追加内容 -->
             <markdown wx:if="{{item.appendContent}}" content="{{item.appendContent}}" searchResults="{{item.searchResults || []}}" />

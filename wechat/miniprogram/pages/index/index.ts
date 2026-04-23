@@ -148,6 +148,23 @@ Page({
       ? `《${title}》（${author}著）哪个出版社的什么版本好？`
       : `《${title}》哪个出版社的什么版本好？`
 
+    this.sendAIQuestion(messageContent, '推荐失败，请重试')
+  },
+
+  // AI导读：生成书籍导读
+  onAIRead(e: any) {
+    const { title, author } = e.detail
+    if (!title) return
+
+    const messageContent = author
+      ? `请为《${title}》（${author}著）生成一份AI导读，包括：核心观点、内容框架、适合人群、阅读建议。`
+      : `请为《${title}》生成一份AI导读，包括：核心观点、内容框架、适合人群、阅读建议。`
+
+    this.sendAIQuestion(messageContent, '导读生成失败，请重试')
+  },
+
+  // 通用AI提问方法
+  sendAIQuestion(messageContent: string, errorToast: string) {
     const userMessage: Message = {
       role: 'user',
       content: messageContent,
@@ -173,8 +190,8 @@ Page({
         })
       },
       (error: any) => {
-        console.error('AI推荐失败:', error)
-        wx.showToast({ title: '推荐失败，请重试', icon: 'none' })
+        console.error('AI请求失败:', error)
+        wx.showToast({ title: errorToast, icon: 'none' })
         const errorMessage: Message = {
           role: 'assistant',
           content: '抱歉，发生了错误。请稍后再试。',
