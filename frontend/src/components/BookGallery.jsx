@@ -3,7 +3,7 @@ import { Button, Space } from 'antd';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import BookCard from './BookCard';
 
-const BookGallery = ({ books, onRecommend }) => {
+const BookGallery = ({ books, onRecommend, onAIRead }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const containerRef = useRef(null);
 
@@ -114,7 +114,7 @@ const BookGallery = ({ books, onRecommend }) => {
               ...getCardStyle(idx),
             }}
           >
-            <BookCard books={[book]} onRecommend={onRecommend} />
+            <BookCard books={[book]} onRecommend={onRecommend} onAIRead={onAIRead} />
           </div>
         ))}
       </div>

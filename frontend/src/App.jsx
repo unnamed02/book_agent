@@ -19,6 +19,43 @@ const ImageComponent = ({ src, alt }) => {
   return <img src={src} alt={alt} onError={() => setError(true)} />;
 };
 
+// 自定义文本组件 - 处理引用下标 [ref_n]
+const TextComponent = ({ children }) => {
+  if (typeof children !== 'string') {
+    return <span>{children}</span>;
+  }
+  
+  const parts = children.split(/(\[ref_\d+\])/g);
+  if (parts.length <= 1) {
+    return <span>{children}</span>;
+  }
+  
+  return (
+    <span>
+      {parts.map((part, i) => {
+        const match = part.match(/^\[ref_(\d+)\]$/);
+        if (match) {
+          return (
+            <span
+              key={i}
+              style={{
+                color: '#0ea5e9',
+                fontSize: '0.85em',
+                verticalAlign: 'super',
+                fontWeight: 600,
+                padding: '0 4px',
+              }}
+            >
+              [{match[1]}]
+            </span>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
+    </span>
+  );
+};
+
 // 自定义加粗文本组件 - 点击可复制
 const StrongComponent = ({ children }) => {
   const handleClick = (e) => {
@@ -66,6 +103,7 @@ function App() {
   const [isUserScrolling, setIsUserScrolling] = useState(false);
   const messagesEndRef = useRef(null);
   const scrollTimerRef = useRef(null);
+  const abortControllerRef = useRef(null);
 
   const scrollToBottom = () => {
     if (!isUserScrolling) {
@@ -169,6 +207,9 @@ function App() {
       // 使用当前域名和协议，兼容本地和远程部署
       const apiBaseUrl = getApiBaseUrl();
 
+      // 创建新的 AbortController
+      abortControllerRef.current = new AbortController();
+
       const response = await fetch(`${apiBaseUrl}/chat/stream`, {
         method: 'POST',
         headers: {
@@ -179,6 +220,7 @@ function App() {
           session_id: sessionId,
           user_id: userId
         }),
+        signal: abortControllerRef.current.signal,
       });
 
       const reader = response.body.getReader();
@@ -480,15 +522,57 @@ function App() {
         }
       }
     } catch (error) {
-      console.error('发送消息失败:', error);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: '抱歉，发生了错误。请稍后再试。',
-        isStreaming: false
-      }]);
+      if (error.name === 'AbortError') {
+        console.log('请求已被用户中断');
+        // 标记最后一条助手消息为非流式
+        setMessages(prev => {
+          const newMessages = [...prev];
+          if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+            newMessages[newMessages.length - 1] = {
+              ...newMessages[newMessages.length - 1],
+              isStreaming: false,
+            };
+          }
+          return newMessages;
+        });
+      } else {
+        console.error('发送消息失败:', error);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: '抱歉，发生了错误。请稍后再试。',
+          isStreaming: false
+        }]);
+      }
     } finally {
       setLoading(false);
+      abortControllerRef.current = null;
     }
+  };
+
+  // 停止生成
+  const stopGeneration = async () => {
+    // 中断前端请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // 通知后端停止生成
+    if (sessionId) {
+      try {
+        const apiBaseUrl = getApiBaseUrl();
+        await fetch(`${apiBaseUrl}/chat/stop`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+      } catch (e) {
+        console.error('通知后端停止失败:', e);
+      }
+    }
+
+    setLoading(false);
   };
 
   // 开始新会话
@@ -510,6 +594,139 @@ function App() {
       purchaseAuthor: author
     };
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  // 处理AI推荐按钮点击
+  const handleAIRecommend = (title, author) => {
+    const messageContent = author
+      ? `《${title}》（${author}著）哪个出版社的什么版本好？`
+      : `《${title}》哪个出版社的什么版本好？`;
+    sendAIQuestion(messageContent);
+  };
+
+  // 处理AI导读按钮点击
+  const handleAIRead = (title, author) => {
+    const messageContent = author
+      ? `请为《${title}》（${author}著）生成一份AI导读，包括：核心观点、内容框架、适合人群、阅读建议。`
+      : `请为《${title}》生成一份AI导读，包括：核心观点、内容框架、适合人群、阅读建议。`;
+    sendAIQuestion(messageContent);
+  };
+
+  // 通用AI提问方法
+  const sendAIQuestion = async (messageContent) => {
+    const userMessage = { role: 'user', content: messageContent };
+    setMessages(prev => [...prev, userMessage]);
+    setLoading(true);
+
+    try {
+      const apiBaseUrl = getApiBaseUrl();
+
+      const response = await fetch(`${apiBaseUrl}/chat/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: messageContent,
+          session_id: sessionId,
+          user_id: userId
+        }),
+      });
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let currentContent = '';
+      let fullContent = '';
+      let hasCreatedMessage = false;
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.type === 'session') {
+                if (data.session_id) {
+                  setSessionId(data.session_id);
+                  localStorage.setItem('book_agent_session_id', data.session_id);
+                }
+                if (data.user_id) {
+                  setUserId(data.user_id);
+                  localStorage.setItem('book_agent_user_id', data.user_id);
+                }
+              } else if (data.type === 'token') {
+                currentContent += data.content;
+                fullContent += data.content;
+
+                if (!hasCreatedMessage) {
+                  setMessages(prev => [...prev, { role: 'assistant', content: currentContent, isStreaming: true }]);
+                  hasCreatedMessage = true;
+                } else {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      content: currentContent
+                    };
+                    return newMessages;
+                  });
+                }
+              } else if (data.type === 'content_blocked') {
+                setLoading(false);
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    newMessages.pop();
+                  }
+                  newMessages.push({
+                    role: 'assistant',
+                    content: data.content,
+                    isStreaming: false
+                  });
+                  return newMessages;
+                });
+                hasCreatedMessage = false;
+                currentContent = '';
+                fullContent = '';
+              } else if (data.type === 'done') {
+                setLoading(false);
+                if (hasCreatedMessage) {
+                  setMessages(prev => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1] = {
+                      ...newMessages[newMessages.length - 1],
+                      isStreaming: false,
+                      content: currentContent || fullContent
+                    };
+                    return newMessages;
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('解析SSE数据失败:', e, line);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error('AI请求失败:', error);
+      antMessage.error('请求失败，请稍后重试');
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '抱歉，发生了错误。请稍后再试。',
+        isStreaming: false
+      }]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // 处理荐购表单提交
@@ -624,7 +841,7 @@ function App() {
                               <div className="markdown-content">
                                 <ReactMarkdown
                                   remarkPlugins={[remarkGfm]}
-                                  components={{ img: ImageComponent }}
+                                  components={{ img: ImageComponent, text: TextComponent }}
                                 >
                                   {msg.content}
                                 </ReactMarkdown>
@@ -637,6 +854,7 @@ function App() {
                             <BookGallery
                               books={msg.books}
                               onRecommend={handleRecommend}
+                              onAIRead={handleAIRead}
                             />
                           )}
 
@@ -655,6 +873,7 @@ function App() {
                                 title={msg.purchaseTitle}
                                 author={msg.purchaseAuthor}
                                 onSubmit={handlePurchaseSubmit}
+                                onAIRecommend={handleAIRecommend}
                               />
                             </div>
                           )}
@@ -722,20 +941,35 @@ function App() {
                   resize: 'none'
                 }}
               />
-              <Button
-                type="primary"
-                icon={<SendOutlined />}
-                onClick={sendMessage}
-                loading={loading}
-                disabled={!input.trim()}
-                style={{
-                  height: 'auto',
-                  borderRadius: '12px',
-                  marginLeft: '8px'
-                }}
-              >
-                发送
-              </Button>
+              {loading ? (
+                <Button
+                  style={{
+                    height: 'auto',
+                    borderRadius: '12px',
+                    marginLeft: '8px',
+                    background: '#e0e0e0',
+                    color: '#666',
+                    border: 'none'
+                  }}
+                  onClick={stopGeneration}
+                >
+                  停止
+                </Button>
+              ) : (
+                <Button
+                  type="primary"
+                  icon={<SendOutlined />}
+                  onClick={sendMessage}
+                  disabled={!input.trim()}
+                  style={{
+                    height: 'auto',
+                    borderRadius: '12px',
+                    marginLeft: '8px'
+                  }}
+                >
+                  发送
+                </Button>
+              )}
             </Space.Compact>
           </div>
         </Card>

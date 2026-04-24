@@ -1,9 +1,9 @@
-import { Card, Button, Tag, Typography } from 'antd';
-import { ReadOutlined, LinkOutlined, ShoppingCartOutlined } from '@ant-design/icons';
+import { Card, Button, Tag, Typography, Space } from 'antd';
+import { ReadOutlined, LinkOutlined, ShoppingCartOutlined, SparklesOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
-const BookCard = ({ books, onRecommend }) => {
+const BookCard = ({ books, onRecommend, onAIRead }) => {
   const getApiBaseUrl = () => {
     return window.location.hostname === 'localhost'
       ? 'http://localhost:8000'
@@ -19,6 +19,12 @@ const BookCard = ({ books, onRecommend }) => {
   const handleRecommend = (book) => {
     if (onRecommend) {
       onRecommend(book.title, book.author);
+    }
+  };
+
+  const handleAIRead = (book) => {
+    if (onAIRead) {
+      onAIRead(book.title, book.author);
     }
   };
 
@@ -207,29 +213,31 @@ const BookCard = ({ books, onRecommend }) => {
           </div>
         )}
 
-        {/* 荐购按钮 */}
+        {/* AI导读 & 荐购按钮 */}
         <div>
-          <div style={{ fontWeight: 600, marginBottom: 6, display: 'flex', alignItems: 'center', gap: 4, color: '#262626', fontSize: 13 }}>
-            <ShoppingCartOutlined style={{ color: '#1677ff' }} />
-            <span>图书荐购</span>
-          </div>
-          <div style={{ padding: 8, background: '#f5f5f5', borderRadius: 6 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <div style={{ fontSize: 10, color: '#666' }}>
-                  可提交荐购申请
-                </div>
-              </div>
-              <Button
-                type="primary"
-                icon={<ShoppingCartOutlined />}
-                size="small"
-                onClick={() => handleRecommend(currentBook)}
-              >
-                荐购
-              </Button>
-            </div>
-          </div>
+          <Space style={{ width: '100%' }}>
+            <Button
+              style={{
+                flex: 1,
+                background: '#e6f4ff',
+                color: '#1677ff',
+                border: 'none'
+              }}
+              icon={<SparklesOutlined />}
+              size="small"
+              onClick={() => handleAIRead(currentBook)}
+            >
+              AI导读
+            </Button>
+            <Button
+              type="primary"
+              icon={<ShoppingCartOutlined />}
+              size="small"
+              onClick={() => handleRecommend(currentBook)}
+            >
+              荐购
+            </Button>
+          </Space>
         </div>
       </Card>
     </div>

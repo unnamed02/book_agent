@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { Card, Form, Input, Button, message as antMessage, Space } from 'antd';
-import { ShoppingOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { ShoppingOutlined, CheckCircleOutlined, SparklesOutlined } from '@ant-design/icons';
 
 
 
-const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
+const PurchaseForm = ({ title = '', author = '', onSubmit, onAIRecommend }) => {
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -143,15 +143,35 @@ const PurchaseForm = ({ title = '', author = '', onSubmit }) => {
         </Form.Item>
 
         <Form.Item style={{ marginBottom: 0 }}>
-          <Button
-            type="primary"
-            htmlType="submit"
-            loading={submitting}
-            block
-            size="large"
-          >
-            {submitting ? '提交中...' : '提交荐购'}
-          </Button>
+          <Space style={{ width: '100%' }}>
+            <Button
+              style={{
+                flex: 1,
+                background: '#e6f4ff',
+                color: '#1677ff',
+                border: 'none'
+              }}
+              icon={<SparklesOutlined />}
+              size="large"
+              disabled={!title}
+              onClick={() => {
+                if (onAIRecommend) {
+                  onAIRecommend(title, author);
+                }
+              }}
+            >
+              AI推荐
+            </Button>
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={submitting}
+              size="large"
+              style={{ flex: 1 }}
+            >
+              {submitting ? '提交中...' : '提交荐购'}
+            </Button>
+          </Space>
         </Form.Item>
       </Form>
     </Card>
