@@ -234,7 +234,7 @@ Component({
               result.push({
                 type: 'reference',
                 index: parseInt(refMatch[1]),
-                content: `[${refMatch[1]}]`
+                content: `${refMatch[1]}`
               })
               i = textEnd + 1
               continue

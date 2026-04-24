@@ -438,6 +438,26 @@ function App() {
                   }
                   return newMessages;
                 });
+              } else if (data.type === 'content_blocked') {
+                // 内容被审核拦截，移除已渲染的助手消息，显示错误提示
+                setLoading(false);
+                setMessages(prev => {
+                  // 移除最后一条正在流式输出的助手消息
+                  const newMessages = [...prev];
+                  if (newMessages.length > 0 && newMessages[newMessages.length - 1].role === 'assistant') {
+                    newMessages.pop();
+                  }
+                  // 添加错误提示消息
+                  newMessages.push({
+                    role: 'assistant',
+                    content: data.content,
+                    isStreaming: false
+                  });
+                  return newMessages;
+                });
+                hasCreatedMessage = false;
+                currentContent = '';
+                fullContent = '';
               } else if (data.type === 'done') {
                 // 完成，标记为非流式，并立即关闭 loading
                 setLoading(false);  // 立即关闭加载状态

@@ -476,6 +476,20 @@ Page({
           this.setData({ messages })
         }
       }
+    } else if (data.type === 'content_blocked') {
+      // 内容被审核拦截，移除已渲染的助手消息，显示错误提示
+      const messages = this.data.messages
+      // 移除最后一条正在流式输出的助手消息
+      if (messages.length > 0 && messages[messages.length - 1].role === 'assistant') {
+        messages.pop()
+      }
+      // 添加错误提示消息
+      messages.push({
+        role: 'assistant',
+        content: data.content || '抱歉，生成的内容可能不符合相关法律政策规定，试试别的问题吧',
+        isStreaming: false
+      })
+      this.setData({ messages, loading: false })
     } else if (data.type === 'done') {
       // 完成
       this.setData({ loading: false })

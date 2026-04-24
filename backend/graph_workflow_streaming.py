@@ -337,7 +337,15 @@ async def stream_recommendation_workflow_enhanced(
                         "node": current_node
                     }
 
-            # 4. 搜索结果
+            # 4. 内容被拦截（审核失败）
+            elif event_type == "on_custom_event" and event["name"] == "on_content_blocked":
+                data = event["data"]
+                yield {
+                    "type": "content_blocked",
+                    "content": data.get("message", "抱歉，生成的内容可能不符合相关法律政策规定，试试别的问题吧")
+                }
+
+            # 5. 搜索结果
             elif event_type == "on_custom_event" and event["name"] == "on_search_results":
                 search_results = event["data"]["search_results"]
 

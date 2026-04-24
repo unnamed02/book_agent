@@ -74,7 +74,17 @@ async def handle_default_query(state: "BookRecommendationState") -> "BookRecomme
                 error_msg = f"API错误: {resp.code} - {resp.message}"
                 logger.error(error_msg)
                 state["error"] = error_msg
-                state["final_response"] = "抱歉，服务暂时不可用，请稍后再试。"
+
+                # 检查是否是内容审核失败
+                if "DataInspectionFailed" in error_msg or "inappropriate content" in error_msg:
+                    state["dialogue_response"] = ""
+                    state["final_response"] = ""
+                    dispatch_custom_event(
+                        "on_content_blocked",
+                        {"message": "抱歉，生成的内容可能不符合相关法律政策规定，试试别的问题吧"}
+                    )
+                else:
+                    state["final_response"] = "抱歉，服务暂时不可用，请稍后再试。"
                 return state
 
         # 保存完整响应

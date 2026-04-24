@@ -47,7 +47,7 @@
         <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
-        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">[{{inline.content}}]</text>
       </block>
     </view>
 
@@ -60,7 +60,7 @@
         <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
-        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">[{{inline.content}}]</text>
       </block>
     </view>
     <view wx:elif="{{item.type === 'ol'}}" class="markdown-ol">
@@ -71,7 +71,7 @@
         <text wx:elif="{{inline.type === 'highlight'}}" class="markdown-highlight" bindtap="onHighlightTap" data-content="{{inline.content}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'italic'}}" class="markdown-italic">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'link'}}" class="markdown-link" bindtap="onLinkTap" data-url="{{inline.url}}">{{inline.text}}</text>
-        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">{{inline.content}}</text>
+        <text wx:elif="{{inline.type === 'reference'}}" class="markdown-reference">[{{inline.content}}]</text>
       </block>
     </view>
 
