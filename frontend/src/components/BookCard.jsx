@@ -1,13 +1,14 @@
 import { Card, Button, Tag, Typography, Space } from 'antd';
-import { ReadOutlined, LinkOutlined, ShoppingCartOutlined, SparklesOutlined } from '@ant-design/icons';
+import { ReadOutlined, LinkOutlined, ShoppingCartOutlined, BulbOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
 const BookCard = ({ books, onRecommend, onAIRead }) => {
   const getApiBaseUrl = () => {
-    return window.location.hostname === 'localhost'
-      ? 'http://localhost:8000'
-      : `http://${window.location.hostname}:8000`;
+    if (import.meta.env.DEV) {
+      return '';
+    }
+    return `http://${window.location.hostname}:8000`;
   };
 
   if (!books || books.length === 0) {
@@ -223,7 +224,7 @@ const BookCard = ({ books, onRecommend, onAIRead }) => {
                 color: '#1677ff',
                 border: 'none'
               }}
-              icon={<SparklesOutlined />}
+              icon={<BulbOutlined />}
               size="small"
               onClick={() => handleAIRead(currentBook)}
             >

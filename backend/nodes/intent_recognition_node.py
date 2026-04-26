@@ -29,7 +29,7 @@ class RecommendBookSlots(IntentSlots):
 
 class BookInfoSlots(IntentSlots):
     """书籍信息查询的槽位（版本比较、梗概、导读等）"""
-    query: str = Field(description="查询类型描述，如：版本比较、梗概介绍、导读、书评等")
+    query: Optional[str] = Field(default=None, description="查询类型描述，如：版本比较、梗概介绍、导读、书评等")
     book_title: Optional[str] = Field(default=None, description="书名")
     author: Optional[str] = Field(default=None, description="作者")
     pub_info: Optional[List[str]] = Field(default=None, description="版本信息列表（出版社、译者等）")
@@ -108,6 +108,9 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
                 has_title = slots and getattr(slots, "book_title", None)
                 has_author = slots and getattr(slots, "author", None)
                 if has_title or has_author:
+                    # query 提取失败时，兜底为原始 query
+                    if slots and (not getattr(slots, "query", None)):
+                        slots.query = user_query
                     state["slots"] = slots
                     logger.debug(f"槽位: {slots}")
                     return state
@@ -137,6 +140,10 @@ async def recognize_intent(state: "BookRecommendationState") -> "BookRecommendat
         else:
             # 信息完整，保存槽位对象到状态
             if result.slots:
+                # book_info 类型 query 兜底
+                if result.query_type == "book_info":
+                    if not getattr(result.slots, "query", None):
+                        result.slots.query = user_query
                 state["slots"] = result.slots
                 logger.debug(f"槽位: {result.slots}")
 

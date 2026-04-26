@@ -176,9 +176,11 @@ function App() {
 
   // 获取API基础URL
   const getApiBaseUrl = () => {
-    return window.location.hostname === 'localhost'
-      ? 'http://localhost:8000'
-      : `http://${window.location.hostname}:8000`;
+    // 开发环境下使用相对路径，让 Vite 代理转发请求
+    if (import.meta.env.DEV) {
+      return '';
+    }
+    return `http://${window.location.hostname}:8000`;
   };
 
   // 将豆瓣图片URL替换为代理URL
@@ -536,10 +538,10 @@ function App() {
           return newMessages;
         });
       } else {
-        console.error('发送消息失败:', error);
+        console.error('发送消息失败:', error.name, error.message, error);
         setMessages(prev => [...prev, {
           role: 'assistant',
-          content: '抱歉，发生了错误。请稍后再试。',
+          content: `抱歉，发生了错误 (${error.name || '未知'}: ${error.message || '无详细信息'})。请稍后再试。`,
           isStreaming: false
         }]);
       }
@@ -813,85 +815,91 @@ function App() {
                     />
                     <div style={{ flex: 1, paddingTop: '4px' }}>
                       {msg.role === 'assistant' ? (
-                        <div>
-                          {/* 思考过程 */}
-                          {msg.thinkingContent && (
-                            <ThinkingBox
-                              content={msg.thinkingContent}
-                              isThinking={msg.isThinking}
-                            />
-                          )}
-
-                          {/* 搜索来源 */}
-                          {msg.searchResults && msg.searchResults.length > 0 && (
-                            <SearchResults results={msg.searchResults} />
-                          )}
-
-                          {/* 普通 Markdown 内容 */}
-                          {msg.content && (
-                            <Card
-                              size="small"
-                              style={{
-                                background: '#fff',
-                                borderRadius: '12px',
-                                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                                border: 'none'
-                              }}
-                            >
-                              <div className="markdown-content">
-                                <ReactMarkdown
-                                  remarkPlugins={[remarkGfm]}
-                                  components={{ img: ImageComponent, text: TextComponent }}
-                                >
-                                  {msg.content}
-                                </ReactMarkdown>
-                              </div>
-                            </Card>
-                          )}
-
-                          {/* 书籍卡片 - 画廊效果 */}
-                          {msg.type === 'book_cards' && msg.books && (
-                            <BookGallery
-                              books={msg.books}
-                              onRecommend={handleRecommend}
-                              onAIRead={handleAIRead}
-                            />
-                          )}
-
-                          {/* 未找到的书籍 */}
-                          {msg.booksNotFound && msg.booksNotFound.length > 0 && (
-                            <BooksNotFound
-                              books={msg.booksNotFound}
-                              onRecommend={handleRecommend}
-                            />
-                          )}
-
-                          {/* 荐购表单 */}
-                          {msg.type === 'purchase_form' && (
-                            <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
-                              <PurchaseForm
-                                title={msg.purchaseTitle}
-                                author={msg.purchaseAuthor}
-                                onSubmit={handlePurchaseSubmit}
-                                onAIRecommend={handleAIRecommend}
+                        <>
+                          <div>
+                            {/* 思考过程 */}
+                            {msg.thinkingContent && (
+                              <ThinkingBox
+                                content={msg.thinkingContent}
+                                isThinking={msg.isThinking}
                               />
-                            </div>
-                          )}
-                        </div>
+                            )}
+
+                            {/* 搜索来源 */}
+                            {msg.searchResults && msg.searchResults.length > 0 && (
+                              <SearchResults results={msg.searchResults} />
+                            )}
+
+                            {/* 普通 Markdown 内容 */}
+                            {msg.content && (
+                              <Card
+                                size="small"
+                                style={{
+                                  background: '#fff',
+                                  borderRadius: '12px',
+                                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                                  border: 'none'
+                                }}
+                              >
+                                <div className="markdown-content">
+                                  <ReactMarkdown
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{ img: ImageComponent, text: TextComponent }}
+                                  >
+                                    {msg.content}
+                                  </ReactMarkdown>
+                                </div>
+                              </Card>
+                            )}
+
+                            {/* 书籍卡片 - 画廊效果 */}
+                            {msg.type === 'book_cards' && msg.books && (
+                              <BookGallery
+                                books={msg.books}
+                                onRecommend={handleRecommend}
+                                onAIRead={handleAIRead}
+                              />
+                            )}
+
+                            {/* 未找到的书籍 */}
+                            {msg.booksNotFound && msg.booksNotFound.length > 0 && (
+                              <BooksNotFound
+                                books={msg.booksNotFound}
+                                onRecommend={handleRecommend}
+                              />
+                            )}
+
+                            {/* 荐购表单 */}
+                            {msg.type === 'purchase_form' && (
+                              <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                                <PurchaseForm
+                                  title={msg.purchaseTitle}
+                                  author={msg.purchaseAuthor}
+                                  onSubmit={handlePurchaseSubmit}
+                                  onAIRecommend={handleAIRecommend}
+                                />
+                              </div>
+                            )}
+                          </div>
+                          {/* AI免责声明 */}
+                          <div style={{ textAlign: 'center', padding: '4px 0 0 0' }}>
+                            <Text style={{ fontSize: 11, color: '#bbb' }}>内容由AI生成，请仔细甄别</Text>
+                          </div>
+                        </>
                       ) : (
-                        <Card
-                          size="small"
-                          style={{
-                            background: '#e6f4ff',
-                            borderRadius: '12px',
-                            display: 'inline-block',
-                            maxWidth: '80%',
-                            border: 'none'
-                          }}
-                        >
-                          <Text>{msg.content}</Text>
-                        </Card>
-                      )}
+                      <Card
+                        size="small"
+                        style={{
+                          background: '#e6f4ff',
+                          borderRadius: '12px',
+                          display: 'inline-block',
+                          maxWidth: '80%',
+                          border: 'none'
+                        }}
+                      >
+                        <Text>{msg.content}</Text>
+                      </Card>
+                    )}
                     </div>
                   </div>
                 ))}

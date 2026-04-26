@@ -74,6 +74,11 @@ page {
   flex-direction: column;
 }
 
+/* 加载状态与上一条消息保持间距 */
+.loading-item {
+  margin-top: 16rpx;
+}
+
 /* --- 用户消息 (限制宽度) --- */
 .message-user {
   display: flex;
@@ -112,9 +117,9 @@ page {
 /* --- 助手消息 (修改：占满屏幕) --- */
 .message-assistant {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: flex-start;
-  gap: 16rpx;
+  gap: 0;
   width: 100%; /* 占满一行 */
   /* 不再设置 padding-right 留白 */
 }
@@ -229,6 +234,18 @@ page {
   border-radius: 8rpx;
   color: #666;
   background: #e0e0e0;
+}
+
+/* AI免责声明 */
+.ai-disclaimer {
+  text-align: center;
+  padding: 8rpx 0 0 0;
+  width: 100%;
+}
+
+.ai-disclaimer text {
+  font-size: 20rpx;
+  color: #bbb;
 }
 
 /* 4. 其他 UI 元素 */

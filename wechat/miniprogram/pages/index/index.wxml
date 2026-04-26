@@ -1,5 +1,5 @@
 <!--index.wxml-->
-<navigation-bar title="AI馆员" back="{{false}}" color="black" background="#FFF"></navigation-bar>
+<navigation-bar title="碑图AI馆员" back="{{false}}" color="black" background="#FFF"></navigation-bar>
 
 <!-- 新会话按钮 -->
 <view wx:if="{{messages.length > 0}}" class="new-session-btn" bindtap="startNewSession">
@@ -84,11 +84,16 @@
               bind:aiRecommend="onAIRecommend"
             />
           </view>
+
+          <!-- AI免责声明 -->
+          <view class="ai-disclaimer">
+            <text>内容由AI生成，请仔细甄别</text>
+          </view>
         </view>
       </view>
 
       <!-- 加载状态 -->
-      <view wx:if="{{loading}}" class="message-item">
+      <view wx:if="{{loading}}" class="message-item loading-item">
         <view class="message-assistant">
           <view class="message-content assistant-content loading-content">
             <view class="loading-dots">

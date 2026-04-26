@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Card, Form, Input, Button, message as antMessage, Space } from 'antd';
-import { ShoppingOutlined, CheckCircleOutlined, SparklesOutlined } from '@ant-design/icons';
+import { ShoppingOutlined, CheckCircleOutlined, BulbOutlined } from '@ant-design/icons';
 
 
 
@@ -21,9 +21,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit, onAIRecommend }) => {
 
     setSubmitting(true);
     try {
-      const apiBaseUrl = window.location.hostname === 'localhost'
-        ? 'http://localhost:8000'
-        : `http://${window.location.hostname}:8000`;
+      const apiBaseUrl = import.meta.env.DEV ? '' : `http://${window.location.hostname}:8000`;
 
       const response = await fetch(`${apiBaseUrl}/purchase/recommend`, {
         method: 'POST',
@@ -151,7 +149,7 @@ const PurchaseForm = ({ title = '', author = '', onSubmit, onAIRecommend }) => {
                 color: '#1677ff',
                 border: 'none'
               }}
-              icon={<SparklesOutlined />}
+              icon={<BulbOutlined />}
               size="large"
               disabled={!title}
               onClick={() => {
