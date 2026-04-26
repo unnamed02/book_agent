@@ -89,7 +89,7 @@ async def handle_book_info(state: "BookRecommendationState") -> "BookRecommendat
             search_options={
                 "enable_source": True,
                 "enable_citation": True,
-                "citation_format": "【index】"
+                "citation_format": "[index]"
             }
         )
 

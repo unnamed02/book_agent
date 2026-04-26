@@ -240,6 +240,22 @@ Component({
               continue
             }
 
+            // 检查是否是引用标注 [n]
+            const numMatch = linkText.match(/^(\d+)$/)
+            if (numMatch) {
+              if (current) {
+                result.push({ type: 'text', content: current })
+                current = ''
+              }
+              result.push({
+                type: 'reference',
+                index: parseInt(numMatch[1]),
+                content: numMatch[1]
+              })
+              i = textEnd + 1
+              continue
+            }
+
             // 检查是否是普通链接 [text](url)
             const urlStart = text.indexOf('(', textEnd)
             const urlEnd = text.indexOf(')', urlStart)
