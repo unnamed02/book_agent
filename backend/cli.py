@@ -122,10 +122,11 @@ async def get_messages(db, redis_client, session_id):
     return messages
 
 
-def select_list(items, title):
+def select_list(items, title, headers=None):
     """
     列表选择器
     items: [(display_text, data), ...]
+    headers: 可选的表头字符串列表，会在列表上方显示
     返回选中的 data 或 None（按 q）
     """
     if not items:
@@ -137,6 +138,11 @@ def select_list(items, title):
     while True:
         console.clear()
         console.print(f"[bold cyan]{title}[/bold cyan]  [dim](↑↓选择 Enter确认 q返回)[/dim]\n")
+
+        if headers:
+            header_line = "   ".join(f"[bold underline]{h}[/bold underline]" for h in headers)
+            console.print(header_line)
+            console.print("[dim]" + "─" * 60 + "[/dim]")
 
         for i, (display, _) in enumerate(items):
             if i == selected:
@@ -250,7 +256,7 @@ async def main():
 
         # === 第一层：选择用户 ===
         while True:
-            user = select_list(user_items, "用户列表")
+            user = select_list(user_items, "用户列表", headers=["用户ID", "创建时间"])
             if user is None:
                 break
 
@@ -269,7 +275,7 @@ async def main():
 
             # === 第二层：选择会话 ===
             while True:
-                session = select_list(session_items, f"用户: {user.user_id}")
+                session = select_list(session_items, f"用户: {user.user_id}", headers=["会话ID", "最后活跃时间"])
                 if session is None:
                     break
 
