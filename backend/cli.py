@@ -9,8 +9,10 @@ import json
 import os
 import sys
 
-# 把 backend 目录加入路径
+# 加载环境变量
+from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+load_dotenv()
 
 from sqlalchemy import select
 from rich.console import Console
