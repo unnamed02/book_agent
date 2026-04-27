@@ -122,19 +122,20 @@ async def get_messages(db, redis_client, session_id):
     return messages
 
 
-def select_list(items, title, headers=None):
+def select_list(items, title, headers=None, start_index=0):
     """
     列表选择器
     items: [(display_text, data), ...]
     headers: 可选的表头字符串列表，会在列表上方显示
-    返回选中的 data 或 None（按 q）
+    start_index: 初始选中位置
+    返回 (选中的 data, 最后停留的索引) 或 (None, 最后停留的索引)（按 q）
     """
     if not items:
         console.print("[yellow]暂无数据[/yellow]")
         console.input("按 Enter 继续...")
-        return None
+        return None, 0
 
-    selected = 0
+    selected = max(0, min(start_index, len(items) - 1))
     while True:
         console.clear()
         console.print(f"[bold cyan]{title}[/bold cyan]  [dim](↑↓选择 Enter确认 q返回)[/dim]\n")
@@ -156,9 +157,9 @@ def select_list(items, title, headers=None):
         elif key == 'DOWN':
             selected = min(len(items) - 1, selected + 1)
         elif key in ('\r', '\n'):
-            return items[selected][1]
+            return items[selected][1], selected
         elif key == 'q':
-            return None
+            return None, selected
 
 
 def scroll_view(lines, title):
@@ -255,8 +256,9 @@ async def main():
             user_items.append((display, u))
 
         # === 第一层：选择用户 ===
+        user_idx = 0
         while True:
-            user = select_list(user_items, "用户列表", headers=["用户ID", "创建时间"])
+            user, user_idx = select_list(user_items, "用户列表", headers=["用户ID", "创建时间"], start_index=user_idx)
             if user is None:
                 break
 
@@ -274,8 +276,9 @@ async def main():
                 session_items.append((display, s))
 
             # === 第二层：选择会话 ===
+            session_idx = 0
             while True:
-                session = select_list(session_items, f"用户: {user.user_id}", headers=["会话ID", "最后活跃时间"])
+                session, session_idx = select_list(session_items, f"用户: {user.user_id}", headers=["会话ID", "最后活跃时间"], start_index=session_idx)
                 if session is None:
                     break
 
