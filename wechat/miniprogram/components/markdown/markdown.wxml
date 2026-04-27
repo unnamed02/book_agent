@@ -64,7 +64,6 @@
       </block>
     </view>
     <view wx:elif="{{item.type === 'ol'}}" class="markdown-ol">
-      <text class="markdown-number">{{index + 1}}. </text>
       <block wx:for="{{item.content}}" wx:for-item="inline" wx:key="index">
         <text wx:if="{{inline.type === 'text'}}">{{inline.content}}</text>
         <text wx:elif="{{inline.type === 'bold'}}" class="markdown-bold" bindtap="onBoldTap" data-content="{{inline.content}}">{{inline.content}}</text>

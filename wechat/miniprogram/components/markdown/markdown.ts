@@ -93,8 +93,8 @@ Component({
           parsed.push({ type: 'hr' })
         }
         // 列表处理
-        else if (line.match(/^[\d]+\.\s/)) {
-          const content = line.replace(/^[\d]+\.\s/, '')
+        else if (line.match(/^[\d]+\./)) {
+          const content = line.replace(/^[\d]+\.\s*/, '')
           parsed.push({ type: 'ol', content: this.parseInline(content) })
         } else if (line.match(/^[-*]\s/)) {
           const content = line.replace(/^[-*]\s/, '')

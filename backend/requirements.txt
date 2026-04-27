@@ -15,6 +15,7 @@ dashscope
 pymilvus==2.6.5
 langchain-milvus==0.2.2
 psutil
+rich
 httpx[http2]
 beautifulsoup4
 rapidfuzz
