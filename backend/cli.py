@@ -2,6 +2,10 @@
 """
 管理后台 CLI - 查看用户和消息记录
 用法: cd backend && python cli.py
+
+交互逻辑：
+  - 任意界面按 q 回退到上一层
+  - 消息查看按 j/k 上下翻页，按 q 返回会话列表
 """
 
 import asyncio
@@ -9,8 +13,8 @@ import json
 import os
 import sys
 
-# 加载环境变量
 from dotenv import load_dotenv
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 load_dotenv()
 
@@ -25,14 +29,7 @@ from utils.models import get_db_manager, User, UserSession, ConversationArchive
 console = Console()
 
 
-async def get_db():
-    """获取数据库会话"""
-    db_manager = get_db_manager()
-    return db_manager.async_session_maker()
-
-
 async def get_redis():
-    """获取 Redis 连接"""
     try:
         import redis.asyncio as redis_lib
         redis_url = os.getenv("REDIS_URL", "redis://localhost:6379")
@@ -44,13 +41,11 @@ async def get_redis():
 
 
 async def list_users(db):
-    """查询所有用户"""
     result = await db.execute(select(User).order_by(User.created_at.desc()))
     return result.scalars().all()
 
 
 async def list_sessions(db, user_id):
-    """查询用户的所有会话"""
     result = await db.execute(
         select(UserSession)
         .where(UserSession.user_id == user_id)
@@ -60,10 +55,8 @@ async def list_sessions(db, user_id):
 
 
 async def get_messages(db, redis_client, session_id):
-    """获取会话消息（Redis + 数据库归档）"""
     messages = []
 
-    # 1. 从 Redis 获取活跃消息
     if redis_client:
         try:
             key = f"conversation:{session_id}"
@@ -77,14 +70,12 @@ async def get_messages(db, redis_client, session_id):
         except Exception as e:
             console.print(f"[red]Redis 读取失败: {e}[/red]")
 
-    # 2. 从数据库获取归档消息
     result = await db.execute(
         select(ConversationArchive).where(ConversationArchive.session_id == session_id)
     )
     archive = result.scalar_one_or_none()
     if archive and archive.messages:
-        # 归档消息可能和 Redis 重复，简单去重（按内容）
-        existing_contents = {m.get("content", "") for m in messages}
+        existing_contents = {m.get("content", "") for m in messages if isinstance(m, dict)}
         for m in archive.messages:
             if isinstance(m, dict) and m.get("content", "") not in existing_contents:
                 messages.append(m)
@@ -93,7 +84,6 @@ async def get_messages(db, redis_client, session_id):
 
 
 def print_users(users):
-    """打印用户列表"""
     if not users:
         console.print("[yellow]暂无用户[/yellow]")
         return
@@ -116,7 +106,6 @@ def print_users(users):
 
 
 def print_sessions(sessions):
-    """打印会话列表"""
     if not sessions:
         console.print("[yellow]该用户暂无会话[/yellow]")
         return
@@ -138,12 +127,14 @@ def print_sessions(sessions):
     console.print(f"[dim]共 {len(sessions)} 个会话[/dim]")
 
 
-def print_messages(messages):
-    """打印消息，支持上下滚动"""
+def show_messages(messages):
+    """分页显示消息，支持上下翻页，按 q 返回上一层"""
     if not messages:
         console.print("[yellow]暂无消息[/yellow]")
+        console.input("\n按 Enter 继续...")
         return
 
+    # 预处理消息文本
     lines = []
     for m in messages:
         if not isinstance(m, dict):
@@ -152,21 +143,46 @@ def print_messages(messages):
         content = m.get("content", "")
         if not content:
             continue
-
         if role == "user":
-            lines.append(f"[bold blue]【用户】[/bold blue] {content}")
+            lines.append(("user", f"【用户】 {content}"))
         elif role == "assistant":
-            lines.append(f"[bold green]【AI】[/bold green] {content}")
+            lines.append(("ai", f"【AI】 {content}"))
         else:
-            lines.append(f"[bold dim]【{role}】[/bold dim] {content}")
-        lines.append("")
+            lines.append(("other", f"【{role}】 {content}"))
+        lines.append(("sep", ""))
 
-    text = Text.from_markup("\n".join(lines))
-    panel = Panel(text, title=f"消息记录（共 {len(messages)} 条）", border_style="blue")
+    total_lines = len(lines)
+    page_size = max(1, console.size.height - 8)  # 根据终端高度自适应
+    top = 0
 
-    # 使用系统 pager 支持上下滚动（Linux/Mac: less, Windows: more）
-    with console.pager(styles=True):
-        console.print(panel)
+    while True:
+        console.clear()
+        console.print(f"[bold cyan]消息记录[/bold cyan] [dim]({len(messages)} 条，滚动 {top+1}-{min(top+page_size, total_lines)}/{total_lines})[/dim]\n")
+
+        # 渲染当前窗口
+        for i in range(top, min(top + page_size, total_lines)):
+            role, text = lines[i]
+            if role == "user":
+                console.print(f"[bold blue]{text}[/bold blue]")
+            elif role == "ai":
+                console.print(f"[bold green]{text}[/bold green]")
+            elif role == "sep":
+                console.print("")
+            else:
+                console.print(f"[bold dim]{text}[/bold dim]")
+
+        console.print("\n[dim cyan][j]↓下滚  [k]↑上滚  [q]返回[/dim cyan]")
+        choice = console.input(": ").strip().lower()
+
+        if choice == "q":
+            return
+        elif choice == "j":
+            if top + page_size < total_lines:
+                top += 3
+        elif choice == "k":
+            if top > 0:
+                top -= 3
+        # 其他按键忽略，继续循环
 
 
 async def main():
@@ -176,20 +192,19 @@ async def main():
     async with db_manager.async_session_maker() as db:
         redis_client = await get_redis()
         if redis_client:
-            console.print("[dim]Redis 已连接[/dim]")
+            console.print("[dim]Redis 已连接[/dim]\n")
         else:
-            console.print("[dim]Redis 未连接，仅显示数据库归档消息[/dim]")
+            console.print("[dim]Redis 未连接，仅显示数据库归档消息[/dim]\n")
 
-        # 获取所有用户
         users = await list_users(db)
         if not users:
             console.print("[yellow]数据库中没有用户记录[/yellow]")
             return
 
+        # === 第一层：用户列表 ===
         while True:
             console.clear()
             print_users(users)
-
             choice = console.input("\n请选择用户序号 ([cyan]q[/cyan] 退出): ").strip().lower()
             if choice == "q":
                 break
@@ -207,21 +222,19 @@ async def main():
 
             user = users[idx]
 
-            # 查看用户会话
+            # === 第二层：会话列表 ===
             while True:
                 sessions = await list_sessions(db, user.user_id)
                 console.clear()
-                console.print(f"[bold cyan]用户: {user.user_id}[/bold cyan]")
+                console.print(f"[bold cyan]用户: {user.user_id}[/bold cyan]\n")
                 print_sessions(sessions)
 
                 if not sessions:
                     console.input("\n按 Enter 返回...")
                     break
 
-                s_choice = console.input("\n请选择会话序号 ([cyan]b[/cyan] 返回, [cyan]q[/cyan] 退出): ").strip().lower()
+                s_choice = console.input("\n请选择会话序号 ([cyan]q[/cyan] 返回): ").strip().lower()
                 if s_choice == "q":
-                    return
-                if s_choice == "b":
                     break
 
                 try:
@@ -237,12 +250,12 @@ async def main():
 
                 session = sessions[s_idx]
 
-                # 查看消息
+                # === 第三层：消息查看 ===
                 messages = await get_messages(db, redis_client, session.session_id)
                 console.clear()
                 console.print(f"[bold cyan]用户: {user.user_id} | 会话: {session.session_id}[/bold cyan]\n")
-                print_messages(messages)
-                console.input("\n按 Enter 返回...")
+                show_messages(messages)
+                # show_messages 内部按 q 返回，继续回到会话列表
 
     console.print("[dim]再见！[/dim]")
 
