@@ -1,14 +1,11 @@
 import requests
 import logging
-import urllib3
 import os
 import re
 from dotenv import load_dotenv
 from typing import Dict
 
 load_dotenv()
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 DOUBAN_API_KEY = os.getenv("DOUBAN_API_KEY", "")
 
@@ -65,7 +62,7 @@ def search_douban_book(title: str, author: str, use_llm_optimize: bool = True) -
             "Referer": "https://servicewechat.com/wx2f9b06c1de1ccfca/91/page-frame.html",
             "User-Agent": "MicroMessenger/"
         }
-        response = requests.get(url, headers=headers, timeout=10, verify=False)
+        response = requests.get(url, headers=headers, timeout=10)
         data = response.json()
 
         # 获取第一个结果

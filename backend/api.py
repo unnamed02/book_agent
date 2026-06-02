@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_milvus import Milvus
@@ -16,6 +16,7 @@ import requests
 import redis.asyncio as redis
 import os
 import asyncio
+import urllib.parse
 from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 from contextlib import asynccontextmanager
@@ -44,6 +45,8 @@ session_manager: Optional[SessionManager] = None
 compact_task: Optional[asyncio.Task] = None
 # 活跃的生成任务 {session_id: asyncio.Task}
 active_generators: Dict[str, asyncio.Task] = {}
+# 保护 active_generators 的锁
+active_generators_lock = asyncio.Lock()
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
@@ -55,7 +58,14 @@ async def lifespan(_app: FastAPI):
         db_manager = get_db_manager()
         await db_manager.init_db()
         db_type = "PostgreSQL" if "postgresql" in db_manager.database_url else "SQLite"
-        logger.info(f"数据库初始化成功 ({db_type}: {db_manager.database_url.split('@')[-1] if '@' in db_manager.database_url else 'local'})")
+        # 安全地打印数据库连接信息，隐藏密码
+        safe_url = db_manager.database_url
+        if '@' in safe_url:
+            # 只显示 host:port/db 部分
+            safe_url = safe_url.split('@')[-1]
+        else:
+            safe_url = "local"
+        logger.info(f"数据库初始化成功 ({db_type}: {safe_url})")
     except Exception as e:
         logger.warning(f"数据库初始化失败: {e}，记忆功能将不可用")
 
@@ -259,7 +269,7 @@ def get_kb_vectorstore():
     return kb_vectorstore
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str = Field(..., max_length=10000, description="用户消息，最多10000字符")
     session_id: Optional[str] = None
     user_id: Optional[str] = None  # 用户ID,支持多用户记忆
 
@@ -272,17 +282,18 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
     """流式响应的聊天接口（使用 LangGraph 增强流式工作流）"""
 
     async def generate():
-        # 检查该会话是否已有活跃任务
-        if request.session_id in active_generators:
-            existing_task = active_generators[request.session_id]
-            if existing_task and not existing_task.done():
-                yield f"data: {json.dumps({'type': 'busy', 'content': '当前有正在进行的对话，请稍后再试'}, ensure_ascii=False)}\n\n"
-                return
+        async with active_generators_lock:
+            # 检查该会话是否已有活跃任务
+            if request.session_id in active_generators:
+                existing_task = active_generators[request.session_id]
+                if existing_task and not existing_task.done():
+                    yield f"data: {json.dumps({'type': 'busy', 'content': '当前有正在进行的对话，请稍后再试'}, ensure_ascii=False)}\n\n"
+                    return
 
-        # 注册当前任务
-        current_task = asyncio.current_task()
-        if current_task:
-            active_generators[request.session_id] = current_task
+            # 注册当前任务
+            current_task = asyncio.current_task()
+            if current_task:
+                active_generators[request.session_id] = current_task
 
         try:
             # 获取或创建会话
@@ -307,7 +318,8 @@ async def chat_stream(request: ChatRequest, db: AsyncSession = Depends(get_db)):
             return
         finally:
             # 清理活跃任务记录
-            active_generators.pop(request.session_id, None)
+            async with active_generators_lock:
+                active_generators.pop(request.session_id, None)
 
     return StreamingResponse(generate(), media_type="text/event-stream")
 
@@ -316,7 +328,8 @@ async def chat_stop(request: StopChatRequest):
     """停止指定会话的生成任务"""
     session_id = request.session_id
 
-    task = active_generators.pop(session_id, None)
+    async with active_generators_lock:
+        task = active_generators.pop(session_id, None)
     if task and not task.done():
         task.cancel()
         logger.info(f"已取消生成任务: session_id={session_id}")
@@ -324,21 +337,64 @@ async def chat_stop(request: StopChatRequest):
 
     return {"success": False, "message": "没有正在进行的生成任务"}
 
+# 允许代理的图片域名白名单
+ALLOWED_IMAGE_DOMAINS = {
+    'doubanio.com',
+    'img1.doubanio.com',
+    'img2.doubanio.com',
+    'img3.doubanio.com',
+    'img9.doubanio.com',
+    'book.douban.com',
+}
+
 @app.get("/proxy-image")
 async def proxy_image(url: str):
     """代理图片请求，主要用于豆瓣图片"""
     try:
+        # 解析 URL 并校验域名
+        parsed = urllib.parse.urlparse(url)
+        domain = parsed.netloc.lower()
+        # 移除端口
+        if ':' in domain:
+            domain = domain.split(':')[0]
+
+        # 检查域名是否在白名单中
+        allowed = False
+        for allowed_domain in ALLOWED_IMAGE_DOMAINS:
+            if domain == allowed_domain or domain.endswith('.' + allowed_domain):
+                allowed = True
+                break
+
+        if not allowed:
+            logger.warning(f"拒绝代理非白名单域名图片: {domain}")
+            return Response(status_code=403)
+
+        # 禁止访问内网 IP
+        import socket
+        try:
+            ip = socket.getaddrinfo(domain, None)[0][4][0]
+            # 检查是否是内网 IP
+            ip_parts = ip.split('.')
+            if len(ip_parts) == 4:
+                if ip_parts[0] in ('10', '127') or \
+                   (ip_parts[0] == '172' and 16 <= int(ip_parts[1]) <= 31) or \
+                   (ip_parts[0] == '192' and ip_parts[1] == '168'):
+                    logger.warning(f"拒绝代理内网 IP 图片: {ip}")
+                    return Response(status_code=403)
+        except Exception:
+            pass  # 域名解析失败，继续尝试
+
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
             'Referer': 'https://book.douban.com/'
         }
-        response = requests.get(url, headers=headers, timeout=10)
-        logger.info(response)
-        response.raise_for_status()
-        return Response(
-            content=response.content,
-            media_type=response.headers.get('content-type', 'image/jpeg')
-        )
+        with requests.get(url, headers=headers, timeout=10, stream=True) as response:
+            response.raise_for_status()
+            content = response.content
+            return Response(
+                content=content,
+                media_type=response.headers.get('content-type', 'image/jpeg')
+            )
     except Exception as e:
         logger.error(f"代理图片失败: {url}, 错误: {str(e)}")
         return Response(status_code=404)
@@ -428,7 +484,14 @@ async def save_message(
         # 异步保存到 Redis
         if session.redis_client:
             human_msg = json.dumps({"type": "human", "content": request.message}, ensure_ascii=False)
-            asyncio.create_task(session.bg_write(human_msg, ""))
+            task = asyncio.create_task(session.bg_write(human_msg, ""))
+            # 添加异常回调，避免未处理的异常
+            def _on_task_done(t):
+                try:
+                    t.result()
+                except Exception as ex:
+                    logger.warning(f"Redis 后台写入失败: {ex}")
+            task.add_done_callback(_on_task_done)
 
         logger.info(f"消息已保存: {request.session_id}")
 

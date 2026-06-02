@@ -31,16 +31,27 @@ function AdminApp() {
     }
   }, []);
 
-  const handleAdminLogin = () => {
-    // 简单的密码验证（实际应用中应该使用后端验证）
-    // 默认密码为 'admin123'（可以改成环境变量）
-    if (adminPassword === 'admin123') {
-      localStorage.setItem('admin_authenticated', 'true');
-      setIsAdmin(true);
-      setShowLoginModal(false);
-      message.success('登录成功');
-    } else {
-      message.error('密码错误');
+  const handleAdminLogin = async () => {
+    // 调用后端验证密码
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || `http://${window.location.hostname}:8000`;
+      const response = await fetch(`${apiBaseUrl}/admin/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: adminPassword })
+      });
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('admin_authenticated', 'true');
+        localStorage.setItem('admin_token', data.token || '');
+        setIsAdmin(true);
+        setShowLoginModal(false);
+        message.success('登录成功');
+      } else {
+        message.error(data.message || '密码错误');
+      }
+    } catch (e) {
+      message.error('登录请求失败，请检查网络');
     }
   };
 

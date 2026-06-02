@@ -186,7 +186,7 @@ def search_cxstar_resource(title: str, author: str = "") -> str:
         # 构建搜索条件
         payload = {
             "searchType": 0,
-            "pinst": "1ad691ca0000cc0bce",  # 机构ID，可能需要根据实际情况调整
+            "pinst": os.getenv("CXSTAR_INST_ID", ""),  # 机构ID，从环境变量读取
             "pubdate": "",
             "page": 1,
             "size": 20,
@@ -283,7 +283,7 @@ def search_chineseall_resource(title: str, author: str = "") -> List[ResourceRes
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-site",
-            "Sx-Token": "sBcr9381620A1C10u2Q6pV02Aa57OOtQ",
+            "Sx-Token": os.getenv("CHINESEALL_TOKEN", ""),
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36"
         }
         all_results: list[ResourceResult] = []
